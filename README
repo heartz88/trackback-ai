@@ -1,0 +1,298 @@
+# TrackBackAI
+
+> A Cooperative Music Creation Platform for Completing Unfinished Tracks
+
+**Final Year Project - 6COSC023W**
+**Student:** David Afful (W1886235)
+**Supervisor:** Francesco Tusa
+**University of Westminster**
+
+---
+
+## Overview
+
+TrackBackAI is a web platform that helps music producers complete their unfinished tracks by connecting them with collaborators who have complementary skills. The platform uses Music Information Retrieval (MIR) technology to automatically analyze audio and match producers based on musical characteristics.
+
+### The Problem
+
+Music producers often create short loops or ideas that never become finished tracks - a phenomenon known as "Loop Land." Current platforms focus on sharing completed music, but there's no dedicated solution for collaborative track completion.
+
+### The Solution
+
+TrackBackAI provides:
+
+- Automated audio analysis (BPM, energy level, key)
+- Smart producer matching based on musical features
+- Structured collaboration workflow (upload → discover → collaborate → vote → complete)
+- Real-time messaging and notifications
+
+---
+
+## Features
+
+- 🎵 **Audio Upload & Analysis** - Automatic BPM and energy detection
+- 🔍 **Track Discovery** - Filter by BPM, key, and energy level
+- 🤝 **Collaboration System** - Request to work on tracks, submit versions
+- 💬 **Real-time Messaging** - Chat with collaborators
+- 🔔 **Notifications** - Stay updated on collaboration activity
+- 🎨 **Light/Dark Mode** - Adaptive teal-themed interface
+- 📊 **Waveform Visualization** - Visual audio playback
+
+---
+
+## Tech Stack
+
+### Frontend
+
+- React 18
+- Tailwind CSS (custom teal theme)
+- Socket.io Client
+- React Router
+
+### Backend
+
+- Node.js + Express
+- PostgreSQL
+- Socket.io (WebSockets)
+- JWT Authentication
+
+### ML Service
+
+- Python + Flask
+- Librosa (audio analysis)
+- NumPy/SciPy
+
+### DevOps
+
+- Docker & Docker Compose
+
+---
+
+## Prerequisites
+
+- Node.js (v20+)
+- Python (v3.11+)
+- PostgreSQL (v16+)
+- Docker & Docker Compose (optional)
+
+---
+
+## Installation
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/yourusername/trackbackai.git
+cd trackbackai
+```
+
+### 2. Backend Setup
+
+```bash
+cd backend
+npm install
+
+# Create .env file with:
+# NODE_ENV=development
+# PORT=5000
+# DB_HOST=localhost
+# DB_PORT=5432
+# DB_NAME=trackbackai
+# DB_USER=postgres
+# DB_PASSWORD=your_password
+# JWT_SECRET=your_secret_key
+# ML_SERVICE_URL=http://localhost:8000
+# FRONTEND_URL=http://localhost:3000
+
+# Initialize database
+psql -U postgres -f init.sql
+```
+
+### 3. Frontend Setup
+
+```bash
+cd frontend
+npm install
+
+# Create .env file with:
+# REACT_APP_API_URL=http://localhost:5000
+# REACT_APP_SOCKET_URL=http://localhost:5000
+```
+
+### 4. ML Service Setup
+
+```bash
+cd ml-service
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+---
+
+## Running the Application
+
+### Using Docker (Recommended)
+
+```bash
+docker-compose up --build
+```
+
+Access the app:
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
+- ML Service: http://localhost:8000
+
+### Manual Start
+
+**Terminal 1 - Backend:**
+
+```bash
+cd backend
+npm run dev
+```
+
+**Terminal 2 - Frontend:**
+
+```bash
+cd frontend
+npm start
+```
+
+**Terminal 3 - ML Service:**
+
+```bash
+cd ml-service
+source venv/bin/activate
+python app.py
+```
+
+---
+
+## Project Structure
+
+```
+trackbackai/
+├── backend/              # Node.js API
+│   ├── config/          # Database & config
+│   ├── middleware/      # Auth middleware
+│   ├── routes/          # API endpoints
+│   └── server.js        # Express server
+│
+├── frontend/            # React app
+│   ├── src/
+│   │   ├── components/  # React components
+│   │   ├── context/     # State management
+│   │   ├── pages/       # Page components
+│   │   └── services/    # API & Socket
+│   └── public/
+│
+├── ml-service/          # Python MIR service
+│   ├── app.py          # Flask app
+│   └── requirements.txt
+│
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+
+### Tracks
+
+- `POST /api/tracks/upload` - Upload track
+- `GET /api/tracks` - Get all tracks (with filters)
+- `GET /api/tracks/user/my-tracks` - Get user's tracks
+- `DELETE /api/tracks/:id` - Delete track
+
+### Collaborations
+
+- `POST /api/collaborations/:trackId/request` - Request collaboration
+- `GET /api/collaborations` - Get user's collaborations
+
+### Submissions
+
+- `POST /api/submissions/:trackId/submit` - Submit completed version
+- `POST /api/submissions/:id/vote` - Vote on submission
+
+### Messages
+
+- `GET /api/messages/conversations` - Get conversations
+- `POST /api/messages/conversations` - Start conversation
+- `GET /api/messages/conversations/:id/messages` - Get messages
+- `POST /api/messages/conversations/:id/messages` - Send message
+
+---
+
+## WebSocket Events
+
+```javascript
+// Authentication
+socket.emit("authenticate", { token });
+
+// Messaging
+socket.emit("conversation:join", { conversationId });
+socket.emit("message:send", { conversationId, content });
+socket.on("message:new", (message) => {});
+
+// Online status
+socket.emit("user:online");
+socket.on("user:status", ({ userId, online }) => {});
+
+// Typing indicators
+socket.emit("user:typing", { conversationId, isTyping });
+socket.on("user:typing", ({ userId, isTyping }) => {});
+```
+
+---
+
+## Testing
+
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Frontend tests
+cd frontend
+npm test
+
+# ML service tests
+cd ml-service
+pytest
+```
+
+---
+
+## Project Objectives
+
+1. **Platform Infrastructure** - User authentication, file management, responsive UI
+2. **MIR Integration** - Automated BPM detection (≥80% accuracy), energy classification
+3. **Collaborative Workflow** - Complete submission/voting system
+4. **User Evaluation** - SUS score ≥70, 5+ completed collaborations
+
+---
+
+## License
+
+Academic project for BSc Software Engineering, University of Westminster.  
+All rights reserved.
+
+---
+
+## Contact
+
+**David Afful** (W1886235)  
+University of Westminster  
+Supervisor: Francesco Tusa
+
+---
+
+**TrackBackAI** - _Helping producers finish what they started_ 🎵

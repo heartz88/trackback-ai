@@ -1,0 +1,111 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: trackbackai-db
+    environment:
+      POSTGRES_DB: trackbackai
+      POSTGRES_USER: trackback_user
+      POSTGRES_PASSWORD: trackback_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trackback_user -d trackbackai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: trackbackai-backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      ML_SERVICE_URL: http://ml-service:5000
+      NODE_ENV: development
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3001}
+      SOCKET_PORT: 3001
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3001,http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    stdin_open: true
+    tty: true
+    # Add health check for backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  ml-service:
+    build: ./ml-service
+    container_name: trackbackai-ml
+    command: python app.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ml-service:/app
+    environment:
+      FLASK_ENV: development
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      BACKEND_API_URL: http://backend:3001
+      PYTHONUNBUFFERED: 1
+    # Add health check for ML service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    build: ./frontend
+    container_name: trackbackai-frontend
+    stdin_open: true
+    tty: true
+    ports:
+      - "3005:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WDS_SOCKET_PORT=0
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3001}
+      - REACT_APP_SOCKET_URL=${REACT_APP_SOCKET_URL:-http://localhost:3001}
+      - REACT_APP_VERSION=1.0.0
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/node_modules/.cache
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: npm start
+    # Add health check for frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:

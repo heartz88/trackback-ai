@@ -1,0 +1,870 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables for Light/Dark Mode - Clean Teal Theme */
+:root {
+  /* Dark Mode Colors (Default) */
+  --bg-primary-dark: #0f172a;
+  --bg-secondary-dark: #1e293b;
+  --bg-tertiary-dark: #334155;
+  --text-primary-dark: #f1f5f9;
+  --text-secondary-dark: #cbd5e1;
+  --text-tertiary-dark: #94a3b8;
+  --border-dark: #475569;
+  --accent-primary-dark: #14B8A6;
+  --accent-primary-light-dark: #2dd4bf;
+  --accent-primary-dark-dark: #0d9488;
+  
+  /* Light Mode Colors */
+  --bg-primary-light: #ffffff;
+  --bg-secondary-light: #f9fafb;
+  --bg-tertiary-light: #f1f5f9;
+  --text-primary-light: #111827;
+  --text-secondary-light: #4b5563;
+  --text-tertiary-light: #6b7280;
+  --border-light: #e5e7eb;
+  --accent-primary-light: #14B8A6;
+  --accent-primary-light-light: #2dd4bf;
+  --accent-primary-dark-light: #0d9488;
+  
+  /* Default to DARK Mode Variables */
+  --bg-primary: var(--bg-primary-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --bg-tertiary: var(--bg-tertiary-dark);
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --text-tertiary: var(--text-tertiary-dark);
+  --border-color: var(--border-dark);
+  --accent-primary: var(--accent-primary-dark);
+  --accent-primary-light: var(--accent-primary-light-dark);
+  --accent-primary-dark: var(--accent-primary-dark-dark);
+  
+  /* Glass Effects - Dark Mode Default */
+  --glass-bg: rgba(30, 41, 59, 0.6);
+  --glass-border: rgba(20, 184, 166, 0.1);
+  --glass-bg-strong: rgba(30, 41, 59, 0.8);
+  --glass-border-strong: rgba(20, 184, 166, 0.2);
+}
+
+/* Light Mode Override when .light class is present */
+.light {
+  --bg-primary: var(--bg-primary-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --bg-tertiary: var(--bg-tertiary-light);
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --text-tertiary: var(--text-tertiary-light);
+  --border-color: var(--border-light);
+  --accent-primary: var(--accent-primary-light);
+  --accent-primary-light: var(--accent-primary-light-light);
+  --accent-primary-dark: var(--accent-primary-dark-light);
+  
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(20, 184, 166, 0.1);
+  --glass-bg-strong: rgba(255, 255, 255, 0.9);
+  --glass-border-strong: rgba(20, 184, 166, 0.2);
+}
+
+/* CSS Reset and Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* ===== MUSIC-SPECIFIC ANIMATIONS ===== */
+
+/* Waveform pulse animation */
+@keyframes waveformPulse {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-waveform {
+  animation: waveformPulse 1.2s ease-in-out infinite;
+}
+
+.animate-waveform:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.animate-waveform:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.animate-waveform:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.animate-waveform:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+/* Vinyl spin animation */
+@keyframes vinylSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-vinyl-spin {
+  animation: vinylSpin 3s linear infinite;
+}
+
+/* BPM counter animation */
+@keyframes bpmBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-bpm {
+  animation: bpmBounce 0.5s ease-in-out infinite;
+}
+
+/* Audio visualizer bars */
+@keyframes visualizerBar {
+  0%, 100% {
+    height: 20%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+.visualizer-bar {
+  animation: visualizerBar 0.8s ease-in-out infinite;
+  background: linear-gradient(to top, var(--accent-primary-dark), var(--accent-primary-light));
+}
+
+.visualizer-bar:nth-child(1) { animation-delay: 0s; }
+.visualizer-bar:nth-child(2) { animation-delay: 0.1s; }
+.visualizer-bar:nth-child(3) { animation-delay: 0.2s; }
+.visualizer-bar:nth-child(4) { animation-delay: 0.15s; }
+.visualizer-bar:nth-child(5) { animation-delay: 0.05s; }
+.visualizer-bar:nth-child(6) { animation-delay: 0.3s; }
+.visualizer-bar:nth-child(7) { animation-delay: 0.25s; }
+.visualizer-bar:nth-child(8) { animation-delay: 0.2s; }
+
+/* ===== EXISTING ANIMATIONS (Enhanced) ===== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.6s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes bounceSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 2s ease-in-out infinite;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 40px color-mix(in srgb, var(--accent-primary) 60%, transparent);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-rotate {
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes gradient-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ===== GLASSMORPHISM EFFECTS ===== */
+
+.glass-panel {
+  background: color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== CUSTOM AUDIO PLAYER STYLING ===== */
+
+/* Modern audio player */
+audio {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  border: 1px solid var(--border-color);
+  padding: 4px;
+  transition: all 0.3s ease;
+  accent-color: var(--accent-primary);
+}
+
+audio:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent-primary) 15%, transparent);
+}
+
+/* Chrome/Safari/Edge */
+audio::-webkit-media-controls-panel {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  border-radius: 8px;
+}
+
+audio::-webkit-media-controls-play-button,
+audio::-webkit-media-controls-pause-button {
+  background-color: var(--accent-primary);
+  border-radius: 50%;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent-primary) 60%, transparent));
+  transition: all 0.3s ease;
+}
+
+audio::-webkit-media-controls-play-button:hover,
+audio::-webkit-media-controls-pause-button:hover {
+  background-color: color-mix(in srgb, var(--accent-primary) 80%, white 20%);
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent-primary) 80%, transparent));
+}
+
+audio::-webkit-media-controls-timeline {
+  background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+  border-radius: 4px;
+  margin: 0 8px;
+}
+
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+  color: var(--text-secondary);
+  text-shadow: 0 0 4px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+audio::-webkit-media-controls-volume-slider {
+  background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+  border-radius: 4px;
+}
+
+audio::-webkit-media-controls-mute-button {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent-primary) 30%, transparent));
+}
+
+/* Firefox audio controls */
+audio::-moz-range-track {
+  background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+  border-radius: 4px;
+  height: 6px;
+}
+
+audio::-moz-range-progress {
+  background: linear-gradient(90deg, var(--accent-primary-dark), var(--accent-primary-light));
+  border-radius: 4px;
+}
+
+audio::-moz-range-thumb {
+  background: var(--accent-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 60%, transparent);
+  width: 16px;
+  height: 16px;
+  border: none;
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary-light));
+  border-radius: 6px;
+  border: 2px solid var(--bg-tertiary);
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-light));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 50%, transparent);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary) var(--bg-tertiary);
+}
+
+/* ===== GLOW EFFECTS ===== */
+
+.neon-teal {
+  text-shadow:
+    0 0 10px color-mix(in srgb, var(--accent-primary) 80%, transparent),
+    0 0 20px color-mix(in srgb, var(--accent-primary) 60%, transparent),
+    0 0 30px color-mix(in srgb, var(--accent-primary) 40%, transparent);
+}
+
+.glow-teal {
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--accent-primary) 30%, transparent),
+    0 0 40px color-mix(in srgb, var(--accent-primary) 20%, transparent),
+    inset 0 0 20px color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+/* ===== MUSIC CARD EFFECTS ===== */
+
+.music-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.music-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent-primary) 10%, transparent),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.music-card:hover::before {
+  left: 100%;
+}
+
+.music-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+  box-shadow:
+    0 20px 60px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+/* ===== WAVEFORM BACKGROUND ===== */
+
+.waveform-bg {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-primary) 3%, transparent) 0px,
+      color-mix(in srgb, var(--accent-primary) 3%, transparent) 1px,
+      transparent 1px,
+      transparent 20px
+    );
+}
+
+/* ===== VINYL RECORD EFFECT ===== */
+
+.vinyl-record {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  background:
+    radial-gradient(circle at center, var(--bg-tertiary) 20%, var(--bg-secondary) 21%, var(--bg-secondary) 40%, var(--bg-tertiary) 41%),
+    conic-gradient(from 0deg, var(--text-tertiary) 0deg, var(--bg-tertiary) 10deg, var(--text-tertiary) 20deg);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.8),
+    0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.vinyl-record::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle, var(--accent-primary), color-mix(in srgb, var(--accent-primary) 100%, black 40%));
+  border-radius: 50%;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 50%, transparent);
+}
+
+/* ===== BPM BADGE ===== */
+
+.bpm-badge {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 100%, black 30%), var(--accent-primary));
+  border: 2px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  box-shadow:
+    0 4px 15px color-mix(in srgb, var(--accent-primary) 40%, transparent),
+    inset 0 1px 3px color-mix(in srgb, white 10%, transparent);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: white;
+}
+
+/* ===== GENRE TAG ===== */
+
+.genre-tag {
+  background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  color: var(--text-primary);
+}
+
+.genre-tag:hover {
+  background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
+  transform: translateY(-2px);
+}
+
+/* ===== SMOOTH TRANSITIONS ===== */
+
+button, a, input, textarea, select {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ===== FOCUS STATES ===== */
+
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent-primary);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent-primary) 10%, transparent),
+    0 0 20px color-mix(in srgb, var(--accent-primary) 20%, transparent);
+}
+
+/* ===== STAGGERED ANIMATIONS ===== */
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+.stagger-7 { animation-delay: 0.7s; }
+.stagger-8 { animation-delay: 0.8s; }
+
+/* ===== LOADING SPINNER ===== */
+
+.music-loader {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 40px;
+}
+
+.music-loader-bar {
+  width: 4px;
+  background: linear-gradient(to top, var(--accent-primary-dark), var(--accent-primary-light));
+  border-radius: 2px;
+  animation: musicLoad 1s ease-in-out infinite;
+}
+
+.music-loader-bar:nth-child(1) { animation-delay: 0s; height: 10px; }
+.music-loader-bar:nth-child(2) { animation-delay: 0.1s; height: 20px; }
+.music-loader-bar:nth-child(3) { animation-delay: 0.2s; height: 30px; }
+.music-loader-bar:nth-child(4) { animation-delay: 0.3s; height: 20px; }
+.music-loader-bar:nth-child(5) { animation-delay: 0.4s; height: 10px; }
+
+@keyframes musicLoad {
+  0%, 100% {
+    transform: scaleY(0.3);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ===== TEXT GRADIENT ANIMATION ===== */
+
+@keyframes textShine {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-text-shine {
+  background: linear-gradient(110deg, var(--accent-primary-dark) 45%, var(--text-primary) 50%, var(--accent-primary-light) 55%);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textShine 3s linear infinite;
+}
+
+/* ===== PARTICLE EFFECTS ===== */
+
+@keyframes float-particle {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(50px);
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, var(--accent-primary), transparent);
+  border-radius: 50%;
+  animation: float-particle 8s ease-in infinite;
+}
+
+/* ===== BEAT PULSE EFFECT ===== */
+
+@keyframes beatPulse {
+  0% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.1);
+  }
+  20% {
+    transform: scale(1);
+  }
+}
+
+.beat-pulse {
+  animation: beatPulse 0.6s ease-in-out infinite;
+}
+
+/* ===== MODE SWITCHER ===== */
+
+.mode-switch {
+  position: relative;
+  width: 60px;
+  height: 32px;
+  background: var(--bg-tertiary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-switch::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 28px;
+  height: 28px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.light .mode-switch::before {
+  transform: translateX(28px);
+}
+
+.mode-switch::after {
+  content: '🌙';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  transition: opacity 0.3s ease;
+}
+
+.light .mode-switch::after {
+  content: '☀️';
+  left: auto;
+  right: 8px;
+}
+
+/* ===== ACCESSIBILITY - REDUCED MOTION ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .music-card:hover {
+    transform: none;
+  }
+
+  .animate-waveform,
+  .animate-vinyl-spin,
+  .animate-bpm,
+  .visualizer-bar,
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-down,
+  .animate-shake,
+  .animate-bounce-slow,
+  .animate-scale-in,
+  .animate-pulse-glow,
+  .animate-gradient,
+  .animate-float,
+  .animate-rotate,
+  .music-loader-bar,
+  .animate-text-shine,
+  .particle,
+  .beat-pulse {
+    animation: none !important;
+  }
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+
+@media (max-width: 768px) {
+  .glass,
+  .glass-strong {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .vinyl-record {
+    width: 150px;
+    height: 150px;
+  }
+
+  audio {
+    height: 40px;
+  }
+
+  /* Reduce glow effects on mobile for better performance */
+  .glow-teal {
+    box-shadow: none;
+  }
+  
+  .mode-switch {
+    width: 50px;
+    height: 28px;
+  }
+  
+  .mode-switch::before {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .light .mode-switch::before {
+    transform: translateX(22px);
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .glass,
+  .glass-strong,
+  .glass-panel {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .music-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  audio {
+    display: none;
+  }
+  
+  .mode-switch {
+    display: none;
+  }
+}
