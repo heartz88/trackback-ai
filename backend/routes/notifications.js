@@ -10,9 +10,9 @@ try {
 const userId = req.user.id;
 
 const result = await db.query(
-    `SELECT * FROM notifications 
-    WHERE user_id = $1 
-    ORDER BY created_at DESC 
+    `SELECT * FROM notifications
+    WHERE user_id = $1
+    ORDER BY created_at DESC
     LIMIT 50`,
     [userId]
 );
