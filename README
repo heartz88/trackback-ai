@@ -82,8 +82,8 @@ TrackBackAI provides:
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/trackbackai.git
-cd trackbackai
+git clone https://github.com/heartz88/trackback-ai.git
+cd trackback-ai
 ```
 
 ### 2. Backend Setup
@@ -99,8 +99,8 @@ npm install
 # DB_PORT=5432
 # DB_NAME=trackbackai
 # DB_USER=postgres
-# DB_PASSWORD=your_password
-# JWT_SECRET=your_secret_key
+# DB_PASSWORD=db_password
+# JWT_SECRET=secretkey
 # ML_SERVICE_URL=http://localhost:8000
 # FRONTEND_URL=http://localhost:3000
 
@@ -278,14 +278,6 @@ pytest
 3. **Collaborative Workflow** - Complete submission/voting system
 4. **User Evaluation** - SUS score ≥70, 5+ completed collaborations
 
----
-
-## License
-
-Academic project for BSc Software Engineering, University of Westminster.  
-All rights reserved.
-
----
 
 ## Contact
 
