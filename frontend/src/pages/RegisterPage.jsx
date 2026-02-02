@@ -223,6 +223,32 @@ return (
         </Link>
         </p>
     </form>
+    {/* Tips */}
+    <div className="mt-6 glass-panel p-6 rounded-2xl">
+        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
+        Profile Tips
+        </h3>
+        <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
+        <li className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>Choose a unique username that represents your music identity</span>
+        </li>
+        <li className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>Write a bio that highlights your music style and what you're looking for</span>
+        </li>
+        <li className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span>List your skills to help others find you for collaborations</span>
+        </li>
+        </ul>
+    </div>
     </div>
 </div>
 );

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import Footer from './components/common/Footer';
 import Navigation from './components/common/Navigation';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
@@ -44,10 +45,11 @@ function App() {
               <Route path="/collaborations" element={<ProtectedRoute><CollaborationsPage /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
               <Route path="/messages/:conversationId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+              <Route path="/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
               <Route path = "/profile/:userid" element= {<ProtectedRoute><ProfilePage/></ProtectedRoute>}/>
-              <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
             </Routes>
           </div>
+          <Footer />
         </BrowserRouter>
       </SocketProvider>
     </AuthProvider>
