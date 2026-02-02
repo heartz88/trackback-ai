@@ -58,12 +58,14 @@ return (
         
         {user ? (
             <>
+            <Link to={`/profile/${user.id}`}>
             <div className="hidden md:flex items-center space-x-3 px-4 py-2 bg-[var(--bg-tertiary)] rounded-full border border-[var(--border-color)]">
                 <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-bold">{user.username[0].toUpperCase()}</span>
                 </div>
                 <span className="text-[var(--text-secondary)] text-sm font-medium">{user.username}</span>
             </div>
+            </Link>
             <button
                 onClick={handleLogout}
                 className="px-6 py-2.5 bg-[var(--bg-tertiary)] hover:opacity-80 text-[var(--text-primary)] rounded-full font-medium transition-all border border-[var(--border-color)]"
