@@ -7,16 +7,6 @@ const http = require('http');
 const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
 
-// Import routes
-const onlineRoutes = require('./routes/online');
-const authRoutes = require('./routes/auth');
-const trackRoutes = require('./routes/tracks');
-const collaborationRoutes = require('./routes/collaborations');
-const submissionRoutes = require('./routes/submissions');
-const userRoutes = require('./routes/users');
-const notificationRoutes = require('./routes/notifications');
-const messageRoutes = require('./routes/messages');
-
 // Import database pool
 const db = require('./config/database');
 
@@ -25,15 +15,33 @@ const server = http.createServer(app);
 
 // CORS configuration
 const corsOptions = {
-origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+origin: process.env.FRONTEND_URL || 'http://localhost:3005',
 credentials: true,
 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
-app.use(helmet());
+
+// Configure Helmet
+app.use(
+helmet({
+contentSecurityPolicy: {
+    directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    imgSrc: ["'self'", "data:", "https:"],
+    connectSrc: ["'self'"],
+    },
+},
+})
+);
+
 app.use(morgan('dev'));
+
+// Body parsers
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -96,54 +104,54 @@ console.log(`🔌 New socket connection: ${socket.id} for user: ${socket.usernam
 
 // Add user to online users
 onlineUsers.set(socket.userId, {
-    socketId: socket.id,
-    userId: socket.userId,
-    username: socket.username,
-    email: socket.email,
-    connectedAt: new Date()
+socketId: socket.id,
+userId: socket.userId,
+username: socket.username,
+email: socket.email,
+connectedAt: new Date()
 });
 
 // Update online users in database
 db.query(
-    `INSERT INTO online_users (user_id, socket_id, last_activity) 
+`INSERT INTO online_users (user_id, socket_id, last_activity) 
     VALUES ($1, $2, NOW()) 
     ON CONFLICT (user_id) 
     DO UPDATE SET socket_id = $2, last_activity = NOW()`,
-    [socket.userId, socket.id]
+[socket.userId, socket.id]
 ).catch(err => console.error('Error updating online users:', err));
 
 // Notify the user they're connected
 socket.emit('connection:established', {
-    message: 'Connected to real-time server',
-    userId: socket.userId,
-    username: socket.username,
-    socketId: socket.id,
-    timestamp: new Date().toISOString()
+message: 'Connected to real-time server',
+userId: socket.userId,
+username: socket.username,
+socketId: socket.id,
+timestamp: new Date().toISOString()
 });
 
 // Send list of online users to the connected user (EXCLUDING CURRENT USER)
 const onlineUsersList = Array.from(onlineUsers.entries())
-    .filter(([userId, _]) => userId !== socket.userId) // EXCLUDE CURRENT USER
-    .map(([_, user]) => ({
-        id: user.userId,
-        username: user.username,
-        email: user.email
-    }));
+.filter(([userId, _]) => userId !== socket.userId)
+.map(([_, user]) => ({
+    id: user.userId,
+    username: user.username,
+    email: user.email
+}));
 
 socket.emit('users:online', { 
-    onlineUsers: onlineUsersList,
-    timestamp: new Date().toISOString(),
-    total: onlineUsersList.length
+onlineUsers: onlineUsersList,
+timestamp: new Date().toISOString(),
+total: onlineUsersList.length
 });
 
 console.log(`👥 Sending ${onlineUsersList.length} online users to ${socket.username}`);
 
 // Notify all other users about this user coming online
 socket.broadcast.emit('user:online', {
-    userId: socket.userId,
-    username: socket.username,
-    email: socket.email,
-    timestamp: new Date().toISOString()
+userId: socket.userId,
+username: socket.username,
+email: socket.email,
+timestamp: new Date().toISOString()
 });
 
 // ============ MESSAGE HANDLING ============
@@ -157,7 +165,6 @@ try {
 
     console.log(`📨 New message from ${socket.username} in conversation ${conversationId}`);
 
-    // Verify conversation exists and user is a participant
     const convResult = await db.query(
     `SELECT cp.conversation_id 
         FROM conversation_participants cp 
@@ -169,7 +176,6 @@ try {
     return socket.emit('error', { message: 'Not a participant in this conversation' });
     }
 
-    // Save message to database
     const messageResult = await db.query(
     `INSERT INTO messages (conversation_id, sender_id, content, created_at) 
         VALUES ($1, $2, $3, NOW()) 
@@ -179,7 +185,6 @@ try {
 
     const message = messageResult.rows[0];
 
-    // Get all participants in the conversation
     const participantsResult = await db.query(
     `SELECT user_id FROM conversation_participants 
         WHERE conversation_id = $1`,
@@ -188,7 +193,6 @@ try {
 
     const participants = participantsResult.rows.map(row => row.user_id);
 
-    // Prepare message data for emission
     const messageData = {
     id: message.id,
     conversationId: message.conversation_id,
@@ -199,14 +203,12 @@ try {
     read: false
     };
 
-    // Emit to all participants who are online
     participants.forEach(userId => {
     if (onlineUsers.has(userId)) {
         const userSocketId = onlineUsers.get(userId).socketId;
         io.to(userSocketId).emit('message:new', messageData);
     }
     
-    // Create notification for offline users
     if (userId !== socket.userId) {
         db.query(
         `INSERT INTO notifications (user_id, type, content, related_id) 
@@ -216,13 +218,11 @@ try {
     }
     });
 
-    // Update conversation's updated_at timestamp
     await db.query(
     'UPDATE conversations SET updated_at = NOW() WHERE id = $1',
     [conversationId]
     );
 
-    // Send confirmation to sender
     socket.emit('message:sent', {
     messageId: message.id,
     conversationId: conversationId,
@@ -249,7 +249,6 @@ try {
 
     console.log(`🤝 Collaboration request from ${socket.username} for track ${trackId}`);
 
-    // Get track owner from database
     const trackResult = await db.query(
     'SELECT user_id, title FROM tracks WHERE id = $1',
     [trackId]
@@ -262,12 +261,10 @@ try {
     const trackOwnerId = trackResult.rows[0].user_id;
     const trackTitle = trackResult.rows[0].title;
 
-    // Check if user is requesting their own track
     if (trackOwnerId === socket.userId) {
     return socket.emit('error', { message: 'Cannot request collaboration on your own track' });
     }
 
-    // Check if request already exists
     const existingRequest = await db.query(
     'SELECT id FROM collaboration_requests WHERE track_id = $1 AND collaborator_id = $2',
     [trackId, socket.userId]
@@ -277,7 +274,6 @@ try {
     return socket.emit('error', { message: 'Collaboration request already sent' });
     }
 
-    // Create collaboration request
     const collabResult = await db.query(
     `INSERT INTO collaboration_requests 
         (track_id, collaborator_id, message, status, created_at) 
@@ -288,7 +284,6 @@ try {
 
     const request = collabResult.rows[0];
 
-    // Prepare request data for Socket.IO
     const requestData = {
     requestId: request.id,
     trackId: request.track_id,
@@ -300,20 +295,17 @@ try {
     status: request.status
     };
 
-    // Notify track owner if online
     if (onlineUsers.has(trackOwnerId)) {
     const ownerSocketId = onlineUsers.get(trackOwnerId).socketId;
     io.to(ownerSocketId).emit('collaboration:request', requestData);
     }
 
-    // Create notification for track owner
     await db.query(
     `INSERT INTO notifications (user_id, type, content, related_id) 
         VALUES ($1, 'collaboration_request', $2, $3)`,
     [trackOwnerId, `${socket.username} wants to collaborate on "${trackTitle}"`, request.id]
     );
 
-    // Confirm to requester
     socket.emit('collaboration:sent', {
     success: true,
     requestId: request.id,
@@ -330,7 +322,6 @@ try {
 }
 });
 
-// Handle collaboration response (from track owner)
 socket.on('collaboration:respond', async (data) => {
 try {
     const { requestId, status, message } = data;
@@ -341,7 +332,6 @@ try {
 
     console.log(`🤝 Collaboration response from ${socket.username} for request ${requestId}`);
 
-    // Get collaboration request details
     const requestResult = await db.query(
     `SELECT cr.*, t.title as track_title, cr.collaborator_id 
         FROM collaboration_requests cr
@@ -356,7 +346,6 @@ try {
 
     const request = requestResult.rows[0];
 
-    // Verify user owns the track
     const trackOwnerResult = await db.query(
     'SELECT user_id FROM tracks WHERE id = $1',
     [request.track_id]
@@ -366,13 +355,11 @@ try {
     return socket.emit('error', { message: 'Not authorized to respond to this request' });
     }
 
-    // Update request status
     await db.query(
     'UPDATE collaboration_requests SET status = $1, updated_at = NOW() WHERE id = $2',
     [status, requestId]
     );
 
-    // If approved, update track status
     if (status === 'approved') {
     await db.query(
         'UPDATE tracks SET status = $1 WHERE id = $2',
@@ -380,15 +367,6 @@ try {
     );
     }
 
-    // Get requester's username for notification
-    const requesterResult = await db.query(
-    'SELECT username FROM users WHERE id = $1',
-    [request.collaborator_id]
-    );
-
-    const requesterUsername = requesterResult.rows[0]?.username || 'Unknown';
-
-    // Create notification for requester
     await db.query(
     `INSERT INTO notifications (user_id, type, content, related_id) 
         VALUES ($1, 'collaboration_response', $2, $3)`,
@@ -399,7 +377,6 @@ try {
     ]
     );
 
-    // Prepare response data for Socket.IO
     const responseData = {
     requestId: requestId,
     trackId: request.track_id,
@@ -411,13 +388,11 @@ try {
     timestamp: new Date().toISOString()
     };
 
-    // Notify requester if online
     if (onlineUsers.has(request.collaborator_id)) {
     const requesterSocketId = onlineUsers.get(request.collaborator_id).socketId;
     io.to(requesterSocketId).emit('collaboration:response', responseData);
     }
 
-    // Confirm to respondent
     socket.emit('collaboration:responded', {
     success: true,
     requestId: requestId,
@@ -433,7 +408,6 @@ try {
 }
 });
 
-// ============ TYPING INDICATOR ============
 socket.on('user:typing', (data) => {
 try {
     const { conversationId, isTyping } = data;
@@ -442,7 +416,6 @@ try {
     return;
     }
 
-    // Get other participants in the conversation
     db.query(
     `SELECT user_id FROM conversation_participants 
         WHERE conversation_id = $1 AND user_id != $2`,
@@ -468,12 +441,10 @@ try {
 }
 });
 
-// ============ CONVERSATION ROOMS ============
 socket.on('join:conversation', (conversationId) => {
 socket.join(`conversation:${conversationId}`);
 console.log(`💬 User ${socket.username} joined conversation: ${conversationId}`);
 
-// Update last read timestamp
 db.query(
     `UPDATE conversation_participants 
     SET last_read_at = NOW() 
@@ -487,29 +458,23 @@ socket.leave(`conversation:${conversationId}`);
 console.log(`💬 User ${socket.username} left conversation: ${conversationId}`);
 });
 
-// ============ HEARTBEAT ============
 socket.on('heartbeat', () => {
-// Update last activity in database
 db.query(
     'UPDATE online_users SET last_activity = NOW() WHERE user_id = $1',
     [socket.userId]
 ).catch(err => console.error('Error updating heartbeat:', err));
 });
 
-// ============ DISCONNECT HANDLING ============
 socket.on('disconnect', () => {
 console.log(`🔌 Socket disconnected: ${socket.id} for user: ${socket.username} (${socket.userId})`);
 
-// Remove from online users
 onlineUsers.delete(socket.userId);
 
-// Remove from database
 db.query(
     'DELETE FROM online_users WHERE user_id = $1',
     [socket.userId]
 ).catch(err => console.error('Error removing online user:', err));
 
-// Notify other users
 socket.broadcast.emit('user:offline', {
     userId: socket.userId,
     username: socket.username,
@@ -520,7 +485,7 @@ console.log(`👥 Online users remaining: ${onlineUsers.size}`);
 });
 });
 
-// Health check endpoint
+// Health check endpoints
 app.get('/health', (req, res) => {
 res.json({
 status: 'ok',
@@ -534,7 +499,19 @@ services: {
 });
 });
 
-// Socket.IO status endpoint
+app.get('/api/health', (req, res) => {
+res.json({
+status: 'ok',
+timestamp: new Date().toISOString(),
+env: process.env.NODE_ENV,
+onlineUsers: onlineUsers.size,
+services: {
+    database: 'connected',
+    socketio: 'running'
+}
+});
+});
+
 app.get('/socket-status', (req, res) => {
 res.json({
 connectedUsers: onlineUsers.size,
@@ -557,7 +534,17 @@ process.exit(1);
 }
 };
 
-// Routes
+// Import routes
+const onlineRoutes = require('./routes/online.js');
+const authRoutes = require('./routes/auth.js');
+const trackRoutes = require('./routes/tracks.js');
+const collaborationRoutes = require('./routes/collaborations.js');
+const submissionRoutes = require('./routes/submissions.js');
+const userRoutes = require('./routes/users.js');
+const notificationRoutes = require('./routes/notifications.js');
+const messageRoutes = require('./routes/messages.js');
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tracks', trackRoutes);
 app.use('/api/collaborations', collaborationRoutes);
@@ -581,7 +568,7 @@ error: {
 });
 });
 
-// 404 handler
+// 404 handler - MUST be last!
 app.use((req, res) => {
 res.status(404).json({ 
 error: { 
@@ -592,20 +579,34 @@ error: {
 
 const PORT = process.env.PORT || 3001;
 
-server.listen(PORT, async () => {
-console.log(`🚀 TrackBackAI API running on port ${PORT}`);
-console.log(`🔌 Socket.IO server ready`);
-console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3005'}`);
-console.log(`📡 Socket.IO transport: websocket, polling`);
-
-// Clean up old online users on startup
-await db.query('DELETE FROM online_users').catch(() => {
-console.log('⚠️  online_users table might not exist yet');
-});
-
+// Start server
+const startServer = async () => {
+try {
+// Verify database connection
 await verifyDbConnection();
-});
 
-// Export for testing
+// Start the server
+server.listen(PORT, async () => {
+    console.log(`🚀 TrackBackAI API running on port ${PORT}`);
+    console.log(`🔌 Socket.IO server ready`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3005'}`);
+    console.log(`📡 Socket.IO transport: websocket, polling`);
+    console.log(`📊 Database Admin: http://localhost:8080`);
+    console.log(`   Login: postgres / Samdave12 / trackback-ai_DB`);
+
+    // Clear online users table
+    await db.query('DELETE FROM online_users').catch(() => {
+    console.log('⚠️  online_users table might not exist yet');
+    });
+});
+} catch (err) {
+console.error('❌ Failed to start server:', err);
+process.exit(1);
+}
+};
+
+// Start the server
+startServer();
+
 module.exports = { app, server, io, onlineUsers };

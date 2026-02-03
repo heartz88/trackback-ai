@@ -10,7 +10,9 @@ const router = express.Router();
 router.post('/register', [
     body('username').trim().isLength({ min: 3, max: 50 }),
     body('email').isEmail().normalizeEmail(),
-    body('password').isLength({ min: 6 })
+    body('password').isLength({ min: 6 }),
+    body('bio').optional().trim(),
+    body('skills').optional().isArray()
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -18,7 +20,7 @@ router.post('/register', [
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { username, email, password } = req.body;
+        const { username, email, password, bio, skills } = req.body;
 
         const existingUser = await db.query(
             'SELECT id FROM users WHERE email = $1 OR username = $2',
@@ -33,8 +35,8 @@ router.post('/register', [
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await db.query(
-            'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
-            [username, email, hashedPassword]
+            'INSERT INTO users (username, email, password_hash, bio, skills) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, bio, skills, created_at',
+            [username, email, hashedPassword, bio || null, skills || []]
         );
 
         const user = result.rows[0];
@@ -49,7 +51,13 @@ router.post('/register', [
         res.status(201).json({
             message: 'User created successfully',
             token,
-            user: { id: user.id, username: user.username, email: user.email }
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                bio: user.bio,
+                skills: user.skills
+            }
         });
     } catch (error) {
         console.error('Register error:', error);
@@ -72,7 +80,7 @@ router.post('/login', [
 
         // Fetch user from DB
         const result = await db.query(
-            'SELECT id, username, email, password_hash FROM users WHERE email = $1',
+            'SELECT id, username, email, password_hash, bio, skills FROM users WHERE email = $1',
             [email]
         );
 
@@ -104,7 +112,13 @@ router.post('/login', [
         res.json({
             message: 'Login successful',
             token,
-            user: { id: user.id, username: user.username, email: user.email }
+            user: { 
+                id: user.id, 
+                username: user.username, 
+                email: user.email,
+                bio: user.bio,
+                skills: user.skills
+            }
         });
     } catch (error) {
         console.error('Login error:', error);

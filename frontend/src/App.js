@@ -45,7 +45,7 @@ function App() {
               <Route path="/collaborations" element={<ProtectedRoute><CollaborationsPage /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
               <Route path="/messages/:conversationId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-              <Route path="/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+              <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
               <Route path = "/profile/:userid" element= {<ProtectedRoute><ProfilePage/></ProtectedRoute>}/>
             </Routes>
           </div>
