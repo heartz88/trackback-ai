@@ -1,5 +1,9 @@
+-- ============================================
+-- 1. CORE TABLES
+-- ============================================
+
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -11,14 +15,14 @@ CREATE TABLE users (
 );
 
 -- Conversations table (MUST BE CREATED BEFORE collaboration_requests)
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tracks table (updated with musical_key column)
-CREATE TABLE tracks (
+CREATE TABLE IF NOT EXISTS tracks (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
@@ -31,8 +35,8 @@ CREATE TABLE tracks (
     -- MIR extracted features
     bpm FLOAT,
     energy_level VARCHAR(20), -- 'low', 'medium', 'high'
-    genre VARCHAR(100), -- Increased from 50 to 100
-    musical_key VARCHAR(20), -- Changed from 'key' to 'musical_key' to avoid reserved word
+    genre VARCHAR(100),
+    musical_key VARCHAR(20), -- Changed from 'key' to avoid reserved word
     
     -- Status and metadata
     status VARCHAR(20) DEFAULT 'open', -- 'open', 'in_progress', 'completed'
@@ -46,8 +50,12 @@ CREATE TABLE tracks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ============================================
+-- 2. COLLABORATION TABLES
+-- ============================================
+
 -- Collaboration requests (with conversation_id)
-CREATE TABLE collaboration_requests (
+CREATE TABLE IF NOT EXISTS collaboration_requests (
     id SERIAL PRIMARY KEY,
     track_id INTEGER REFERENCES tracks(id) ON DELETE CASCADE,
     collaborator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -60,7 +68,7 @@ CREATE TABLE collaboration_requests (
 );
 
 -- Active collaborations
-CREATE TABLE active_collaborations (
+CREATE TABLE IF NOT EXISTS active_collaborations (
     id SERIAL PRIMARY KEY,
     track_id INTEGER REFERENCES tracks(id) ON DELETE CASCADE,
     owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -72,8 +80,12 @@ CREATE TABLE active_collaborations (
     UNIQUE(track_id, collaborator_id)
 );
 
+-- ============================================
+-- 3. SUBMISSION & VOTING TABLES
+-- ============================================
+
 -- Submissions (completed versions)
-CREATE TABLE submissions (
+CREATE TABLE IF NOT EXISTS submissions (
     id SERIAL PRIMARY KEY,
     track_id INTEGER REFERENCES tracks(id) ON DELETE CASCADE,
     collaborator_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -90,12 +102,12 @@ CREATE TABLE submissions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- Added constraint to prevent duplicate submissions from same collaborator
+    -- Prevent duplicate submissions from same collaborator
     UNIQUE(track_id, collaborator_id)
 );
 
 -- Votes on submissions
-CREATE TABLE votes (
+CREATE TABLE IF NOT EXISTS votes (
     id SERIAL PRIMARY KEY,
     submission_id INTEGER REFERENCES submissions(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -105,7 +117,7 @@ CREATE TABLE votes (
 );
 
 -- Comments
-CREATE TABLE comments (
+CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
     submission_id INTEGER REFERENCES submissions(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -114,8 +126,12 @@ CREATE TABLE comments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ============================================
+-- 4. MESSAGING TABLES
+-- ============================================
+
 -- Conversation participants
-CREATE TABLE conversation_participants (
+CREATE TABLE IF NOT EXISTS conversation_participants (
     id SERIAL PRIMARY KEY,
     conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -125,7 +141,7 @@ CREATE TABLE conversation_participants (
 );
 
 -- Messages table
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
     conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
     sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -135,8 +151,12 @@ CREATE TABLE messages (
     read_by INTEGER[] DEFAULT ARRAY[]::INTEGER[] -- Array of user IDs who have read the message
 );
 
+-- ============================================
+-- 5. NOTIFICATION & TRACKING TABLES
+-- ============================================
+
 -- Notifications
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     type VARCHAR(50),
@@ -146,21 +166,29 @@ CREATE TABLE notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Add constraint for valid notification types
-ALTER TABLE notifications 
-ADD CONSTRAINT valid_notification_types
-CHECK (type IN (
-    'collaboration_request',
-    'submission',
-    'vote',
-    'comment',
-    'message',
-    'collaboration_response',
-    'track_completed'
-));
+-- Add constraint for valid notification types (only if not exists)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'valid_notification_types'
+    ) THEN
+        ALTER TABLE notifications 
+        ADD CONSTRAINT valid_notification_types
+        CHECK (type IN (
+            'collaboration_request',
+            'submission',
+            'vote',
+            'comment',
+            'message',
+            'collaboration_response',
+            'track_completed'
+        ));
+    END IF;
+END $$;
 
 -- Online users tracking
-CREATE TABLE online_users (
+CREATE TABLE IF NOT EXISTS online_users (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     socket_id VARCHAR(255) NOT NULL,
@@ -169,64 +197,93 @@ CREATE TABLE online_users (
 );
 
 -- Track genres for better filtering
-CREATE TABLE track_genres (
+CREATE TABLE IF NOT EXISTS track_genres (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT
 );
 
--- Pre-populate common genres
-INSERT INTO track_genres (name, description) VALUES
-('Hip Hop', 'Rap and hip hop beats'),
-('Electronic', 'EDM, house, techno, etc.'),
-('Rock', 'Rock and alternative'),
-('Pop', 'Popular music'),
-('R&B', 'Rhythm and blues'),
-('Jazz', 'Jazz and blues'),
-('Classical', 'Classical music'),
-('Ambient', 'Ambient and chill'),
-('Metal', 'Heavy metal'),
-('Reggae', 'Reggae and dancehall'),
-('Country', 'Country music'),
-('Folk', 'Folk and acoustic');
+-- ============================================
+-- 6. INITIAL DATA
+-- ============================================
 
--- Indexes for performance
-CREATE INDEX idx_tracks_user_id ON tracks(user_id);
-CREATE INDEX idx_tracks_status ON tracks(status);
-CREATE INDEX idx_tracks_bpm ON tracks(bpm);
-CREATE INDEX idx_tracks_energy ON tracks(energy_level);
-CREATE INDEX idx_tracks_analysis_status ON tracks(analysis_status);
-CREATE INDEX idx_tracks_genre ON tracks(genre);
-CREATE INDEX idx_collaboration_requests_track ON collaboration_requests(track_id);
-CREATE INDEX idx_collaboration_requests_collaborator ON collaboration_requests(collaborator_id);
-CREATE INDEX idx_collaboration_requests_status ON collaboration_requests(status);
-CREATE INDEX idx_active_collaborations_track ON active_collaborations(track_id);
-CREATE INDEX idx_active_collaborations_user ON active_collaborations(collaborator_id);
-CREATE INDEX idx_submissions_track ON submissions(track_id);
-CREATE INDEX idx_submissions_collaborator ON submissions(collaborator_id);
-CREATE INDEX idx_submissions_status ON submissions(status);
-CREATE INDEX idx_votes_submission ON votes(submission_id);
-CREATE INDEX idx_votes_user ON votes(user_id);
-CREATE INDEX idx_comments_submission ON comments(submission_id);
-CREATE INDEX idx_comments_user ON comments(user_id);
-CREATE INDEX idx_notifications_user ON notifications(user_id, is_read);
-CREATE INDEX idx_notifications_type ON notifications(type);
-CREATE INDEX idx_conversation_participants_conversation ON conversation_participants(conversation_id);
-CREATE INDEX idx_conversation_participants_user ON conversation_participants(user_id);
-CREATE INDEX idx_messages_conversation ON messages(conversation_id, created_at);
-CREATE INDEX idx_messages_sender ON messages(sender_id);
-CREATE INDEX idx_online_users_user ON online_users(user_id);
-CREATE INDEX idx_online_users_activity ON online_users(last_activity);
+-- Pre-populate common genres (only if empty)
+INSERT INTO track_genres (name, description) 
+SELECT * FROM (VALUES
+    ('Hip Hop', 'Rap and hip hop beats'),
+    ('Electronic', 'EDM, house, techno, etc.'),
+    ('Rock', 'Rock and alternative'),
+    ('Pop', 'Popular music'),
+    ('R&B', 'Rhythm and blues'),
+    ('Jazz', 'Jazz and blues'),
+    ('Classical', 'Classical music'),
+    ('Ambient', 'Ambient and chill'),
+    ('Metal', 'Heavy metal'),
+    ('Reggae', 'Reggae and dancehall'),
+    ('Country', 'Country music'),
+    ('Folk', 'Folk and acoustic')
+) AS v(name, description)
+WHERE NOT EXISTS (SELECT 1 FROM track_genres LIMIT 1);
 
--- Insert admin user
+-- Insert admin user (only if not exists)
 INSERT INTO users (username, email, password_hash, bio, skills)
-VALUES (
+SELECT 
     'admin_user',
     'admin@trackback.ai',
     '$2a$12$OgN7GTxwFbO4.MsrhqSyaeExTbN3AWOcv4IODuPkQy5xlpTg.cpI2',
     'System Administrator for TrackBackAI',
     ARRAY['administration', 'management']
+WHERE NOT EXISTS (
+    SELECT 1 FROM users WHERE username = 'admin_user' OR email = 'admin@trackback.ai'
 );
+
+-- ============================================
+-- 7. INDEXES FOR PERFORMANCE
+-- ============================================
+
+-- Tracks indexes
+CREATE INDEX IF NOT EXISTS idx_tracks_user_id ON tracks(user_id);
+CREATE INDEX IF NOT EXISTS idx_tracks_status ON tracks(status);
+CREATE INDEX IF NOT EXISTS idx_tracks_bpm ON tracks(bpm);
+CREATE INDEX IF NOT EXISTS idx_tracks_energy ON tracks(energy_level);
+CREATE INDEX IF NOT EXISTS idx_tracks_analysis_status ON tracks(analysis_status);
+CREATE INDEX IF NOT EXISTS idx_tracks_genre ON tracks(genre);
+
+-- Collaboration indexes
+CREATE INDEX IF NOT EXISTS idx_collaboration_requests_track ON collaboration_requests(track_id);
+CREATE INDEX IF NOT EXISTS idx_collaboration_requests_collaborator ON collaboration_requests(collaborator_id);
+CREATE INDEX IF NOT EXISTS idx_collaboration_requests_status ON collaboration_requests(status);
+CREATE INDEX IF NOT EXISTS idx_active_collaborations_track ON active_collaborations(track_id);
+CREATE INDEX IF NOT EXISTS idx_active_collaborations_user ON active_collaborations(collaborator_id);
+
+-- Submission indexes
+CREATE INDEX IF NOT EXISTS idx_submissions_track ON submissions(track_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_collaborator ON submissions(collaborator_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+CREATE INDEX IF NOT EXISTS idx_votes_submission ON votes(submission_id);
+CREATE INDEX IF NOT EXISTS idx_votes_user ON votes(user_id);
+
+-- Comment indexes
+CREATE INDEX IF NOT EXISTS idx_comments_submission ON comments(submission_id);
+CREATE INDEX IF NOT EXISTS idx_comments_user ON comments(user_id);
+
+-- Notification indexes
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
+
+-- Messaging indexes
+CREATE INDEX IF NOT EXISTS idx_conversation_participants_conversation ON conversation_participants(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_participants_user ON conversation_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
+
+-- Online users indexes
+CREATE INDEX IF NOT EXISTS idx_online_users_user ON online_users(user_id);
+CREATE INDEX IF NOT EXISTS idx_online_users_activity ON online_users(last_activity);
+
+-- ============================================
+-- 8. FUNCTIONS & TRIGGERS
+-- ============================================
 
 -- Function to update track's updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -235,29 +292,49 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
--- Triggers for automatic updated_at updates
-CREATE TRIGGER update_tracks_updated_at BEFORE UPDATE ON tracks
+-- Drop existing triggers if they exist (to avoid errors on re-run)
+DROP TRIGGER IF EXISTS update_tracks_updated_at ON tracks;
+DROP TRIGGER IF EXISTS update_submissions_updated_at ON submissions;
+DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
+DROP TRIGGER IF EXISTS update_messages_updated_at ON messages;
+DROP TRIGGER IF EXISTS update_comments_updated_at ON comments;
+DROP TRIGGER IF EXISTS update_collaboration_requests_updated_at ON collaboration_requests;
+DROP TRIGGER IF EXISTS update_active_collaborations_updated_at ON active_collaborations;
+
+-- Create triggers for automatic updated_at updates
+CREATE TRIGGER update_tracks_updated_at 
+BEFORE UPDATE ON tracks
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_submissions_updated_at BEFORE UPDATE ON submissions
+CREATE TRIGGER update_submissions_updated_at 
+BEFORE UPDATE ON submissions
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON conversations
+CREATE TRIGGER update_conversations_updated_at 
+BEFORE UPDATE ON conversations
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_messages_updated_at BEFORE UPDATE ON messages
+CREATE TRIGGER update_messages_updated_at 
+BEFORE UPDATE ON messages
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_comments_updated_at BEFORE UPDATE ON comments
+CREATE TRIGGER update_comments_updated_at 
+BEFORE UPDATE ON comments
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_collaboration_requests_updated_at BEFORE UPDATE ON collaboration_requests
+CREATE TRIGGER update_collaboration_requests_updated_at 
+BEFORE UPDATE ON collaboration_requests
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_active_collaborations_updated_at BEFORE UPDATE ON active_collaborations
+CREATE TRIGGER update_active_collaborations_updated_at 
+BEFORE UPDATE ON active_collaborations
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- 9. ADVANCED FUNCTIONS
+-- ============================================
 
 -- Function to get track recommendations based on user preferences
 CREATE OR REPLACE FUNCTION get_track_recommendations(
@@ -356,8 +433,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ============================================
+-- 10. VIEWS
+-- ============================================
+
+-- Drop views if they exist
+DROP VIEW IF EXISTS user_conversations_view;
+DROP VIEW IF EXISTS track_discovery_view;
+
 -- View for user conversations with last message info
-CREATE OR REPLACE VIEW user_conversations_view AS
+CREATE VIEW user_conversations_view AS
 SELECT 
     c.id as conversation_id,
     c.created_at,
@@ -380,7 +465,7 @@ JOIN users u2 ON cp.user_id = u2.id
 GROUP BY c.id, cp.user_id;
 
 -- View for track discovery with MIR features
-CREATE OR REPLACE VIEW track_discovery_view AS
+CREATE VIEW track_discovery_view AS
 SELECT 
     t.id,
     t.title,
@@ -402,3 +487,20 @@ JOIN users u ON t.user_id = u.id
 WHERE t.analysis_status = 'completed'
 AND t.status = 'open'
 ORDER BY t.created_at DESC;
+
+-- ============================================
+-- SCHEMA INITIALIZATION COMPLETE
+-- ============================================
+
+-- Verify tables were created
+DO $$ 
+DECLARE 
+    table_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO table_count
+    FROM information_schema.tables 
+    WHERE table_schema = 'public' 
+    AND table_type = 'BASE TABLE';
+    
+    RAISE NOTICE '✅ Database initialization complete. Created % tables.', table_count;
+END $$;
