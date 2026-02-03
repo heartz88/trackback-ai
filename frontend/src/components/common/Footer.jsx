@@ -101,10 +101,10 @@ return (
         © {currentYear} TrackBackAI. Final Year Project by David Afful (W1886235)
         </div>
         <div className="flex gap-6 text-sm">
-        <a href="/privacy" className="text-[var(--text-tertiary)] hover:text-primary-400 transition-colors">
+        <a href="#" className="text-[var(--text-tertiary)] hover:text-primary-400 transition-colors">
             Privacy
         </a>
-        <a href="/terms" className="text-[var(--text-tertiary)] hover:text-primary-400 transition-colors">
+        <a href="#" className="text-[var(--text-tertiary)] hover:text-primary-400 transition-colors">
             Terms
         </a>
         <a href="https://www.westminster.ac.uk/" className="text-[var(--text-tertiary)] hover:text-primary-400 transition-colors">

@@ -45,7 +45,7 @@ TrackBackAI provides:
 ### Frontend
 
 - React 18
-- Tailwind CSS (custom teal theme)
+- Tailwind CSS
 - Socket.io Client
 - React Router
 
