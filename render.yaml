@@ -1,0 +1,105 @@
+services:
+  # 1. ML SERVICE (Python Flask)
+  - type: web
+    name: ml-service
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r ml-service/requirements.txt
+    startCommand: cd ml-service && python app.py
+    envVars:
+      - key: BACKEND_API_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: eu-north-1
+      - key: S3_BUCKET
+        value: ai-bucket
+
+  # 2. BACKEND SERVICE (Node.js + Socket.IO)
+  - type: web
+    name: backend-service
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgres-db
+          property: connectionString
+      - key: DB_HOST
+        fromDatabase:
+          name: trackback-postgres
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: trackback-postgres
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: trackback-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: trackback-postgres
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: trackback-postgres
+          property: database
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: SOCKET_PORT
+        value: 3001
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: ML_SERVICE_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: eu-north-1
+      - key: S3_BUCKET
+        value: trackback-ai
+      - key: ADMIN_EMAIL
+        value: admin@trackbackai.com
+      - key: ADMIN_PASSWORD
+        sync: false
+
+  # 3. FRONTEND SERVICE (React Static Site)
+  - type: cron
+    name: frontend-service
+    runtime: static
+    region: frankfurt
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    schedule: "@daily"
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false
+      - key: REACT_APP_SOCKET_URL
+        sync: false
+      - key: REACT_APP_VERSION
+        value: 1.0.0
+
+databases:
+  - name: postgres-db
+    databaseName: ai_db
+    user: ai_user
+    region: frankfurt
+    plan: free
