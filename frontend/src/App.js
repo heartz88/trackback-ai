@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Footer from './components/common/Footer';
 import Navigation from './components/common/Navigation';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import ScrollToTop from './components/common/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import CollaborationsPage from './pages/CollaborationsPage';
@@ -33,6 +34,7 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
             <Navigation />
             <Routes>
