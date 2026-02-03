@@ -15,17 +15,12 @@ return (
     
     {/* Hero Section */}
     <section className="relative overflow-hidden">
-    {/* Subtle Background Gradient */}
     <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-primary-600/5"></div>
-    
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 lg:pt-32 lg:pb-32">
         <div className="text-center max-w-4xl mx-auto">
-        {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-full mb-8">
             <span className="text-sm font-medium text-primary-400">AI-Powered Music Collaboration</span>
         </div>
-
-        {/* Main Headline */}
         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] mb-6 leading-tight">
             Turn Your Loops Into
             <br />
@@ -33,13 +28,9 @@ return (
             Finished Tracks
             </span>
         </h1>
-
-        {/* Subtitle */}
         <p className="text-xl lg:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto leading-relaxed">
             Connect with producers who have the skills you need to complete your unfinished music
         </p>
-
-        {/* CTA Buttons */}
         {!user && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link
@@ -56,8 +47,6 @@ return (
             </Link>
             </div>
         )}
-
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-8 border-t border-[var(--border-color)]">
             <div>
             <div className="text-3xl font-bold text-primary-400 mb-1">98%</div>
@@ -75,8 +64,6 @@ return (
         </div>
     </div>
     </section>
-
-    {/* How It Works */}
     <section className="py-24 bg-[var(--bg-secondary)]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
@@ -87,9 +74,7 @@ return (
             Simple workflow to transform your unfinished ideas into complete tracks
         </p>
         </div>
-
         <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-        {/* Step 1 */}
         <div className="relative">
             <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center mb-6 border border-primary-500/20">
@@ -104,8 +89,6 @@ return (
             </p>
             </div>
         </div>
-
-        {/* Step 2 */}
         <div className="relative">
             <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center mb-6 border border-primary-500/20">
@@ -120,8 +103,6 @@ return (
             </p>
             </div>
         </div>
-
-        {/* Step 3 */}
         <div className="relative">
             <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-primary-500/10 rounded-2xl flex items-center justify-center mb-6 border border-primary-500/20">
@@ -138,8 +119,6 @@ return (
         </div>
     </div>
     </section>
-
-    {/* Features */}
     <section className="py-24">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
@@ -150,9 +129,7 @@ return (
             Everything you need to collaborate and complete your music
         </p>
         </div>
-
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* Feature 1 */}
         <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-all">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,8 +141,6 @@ return (
             Automated BPM detection and energy level classification using advanced MIR technology
             </p>
         </div>
-
-        {/* Feature 2 */}
         <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-all">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,8 +152,6 @@ return (
             Filter tracks by BPM range, genre, and energy level to find perfect matches
             </p>
         </div>
-
-        {/* Feature 3 */}
         <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-all">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,8 +163,6 @@ return (
             Chat with collaborators instantly using WebSocket-powered messaging
             </p>
         </div>
-
-        {/* Feature 4 */}
         <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-all">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,8 +174,6 @@ return (
             Submit multiple versions and let the community vote on the best one
             </p>
         </div>
-
-        {/* Feature 5 */}
         <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-all">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,8 +185,6 @@ return (
             Visual audio playback with synchronized waveform display
             </p>
         </div>
-
-        {/* Feature 6 */}
         <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-all">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,8 +199,6 @@ return (
         </div>
     </div>
     </section>
-
-    {/* Tech Stack */}
     <section className="py-24 bg-[var(--bg-secondary)]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
@@ -273,8 +238,6 @@ return (
         </div>
     </div>
     </section>
-
-    {/* Final CTA */}
     {!user && (
     <section className="py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
