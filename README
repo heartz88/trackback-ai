@@ -2,9 +2,9 @@
 
 > A Cooperative Music Creation Platform for Completing Unfinished Tracks
 
-**Final Year Project - 6COSC023W**
-**Student:** David Afful (W1886235)
-**Supervisor:** Francesco Tusa
+**Final Year Project - 6COSC023W**  
+**Student:** David Afful (W1886235)  
+**Supervisor:** Francesco Tusa  
 **University of Westminster**
 
 ---
@@ -15,7 +15,7 @@ TrackBackAI is a web platform that helps music producers complete their unfinish
 
 ### The Problem
 
-Music producers often create short loops or ideas that never become finished tracks - a phenomenon known as "Loop Land." Current platforms focus on sharing completed music, but there's no dedicated solution for collaborative track completion.
+Music producers often create short loops or ideas that never become finished tracks—a phenomenon known as "Loop Land." Existing platforms focus on sharing completed music, but there's no dedicated solution for collaborative track completion.
 
 ### The Solution
 
@@ -30,13 +30,13 @@ TrackBackAI provides:
 
 ## Features
 
-- 🎵 **Audio Upload & Analysis** - Automatic BPM and energy detection
-- 🔍 **Track Discovery** - Filter by BPM, key, and energy level
-- 🤝 **Collaboration System** - Request to work on tracks, submit versions
-- 💬 **Real-time Messaging** - Chat with collaborators
-- 🔔 **Notifications** - Stay updated on collaboration activity
-- 🎨 **Light/Dark Mode** - Adaptive teal-themed interface
-- 📊 **Waveform Visualization** - Visual audio playback
+- 🎵 **Audio Upload & Analysis** — Automatic BPM, key, and energy detection
+- 🔍 **Track Discovery** — Filter by BPM, key, and energy level
+- 🤝 **Collaboration System** — Request to work on tracks, submit versions
+- 💬 **Real-time Messaging** — Chat with collaborators
+- 🔔 **Notifications** — Stay updated on collaboration activity
+- 🎨 **Light/Dark Mode** — Adaptive teal-themed interface
+- 📊 **Waveform Visualization** — Visual audio playback
 
 ---
 
@@ -132,7 +132,7 @@ pip install -r requirements.txt
 
 ## Running the Application
 
-### Using Docker (Recommended)
+### Using Docker
 
 ```bash
 docker-compose up --build
@@ -140,27 +140,27 @@ docker-compose up --build
 
 Access the app:
 
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3005
 - Backend: http://localhost:5000
 - ML Service: http://localhost:8000
 
 ### Manual Start
 
-**Terminal 1 - Backend:**
+**Terminal 1 — Backend:**
 
 ```bash
 cd backend
 npm run dev
 ```
 
-**Terminal 2 - Frontend:**
+**Terminal 2 — Frontend:**
 
 ```bash
 cd frontend
 npm start
 ```
 
-**Terminal 3 - ML Service:**
+**Terminal 3 — ML Service:**
 
 ```bash
 cd ml-service
@@ -173,27 +173,40 @@ python app.py
 ## Project Structure
 
 ```
-trackbackai/
-├── backend/              # Node.js API
-│   ├── config/          # Database & config
-│   ├── middleware/      # Auth middleware
-│   ├── routes/          # API endpoints
-│   └── server.js        # Express server
-│
-├── frontend/            # React app
+trackback-ai/
+├── backend/
+│   ├── config/
+│   ├── middleware/
+│   ├── routes/
+│   ├── .env
+│   ├── Dockerfile
+│   ├── init.sql
+│   ├── package.json
+│   └── server.js
+├── frontend/
+│   ├── public/
 │   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── context/     # State management
-│   │   ├── pages/       # Page components
-│   │   └── services/    # API & Socket
-│   └── public/
-│
-├── ml-service/          # Python MIR service
-│   ├── app.py          # Flask app
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── App.js
+│   │   ├── index.css
+│   │   └── index.js
+│   ├── .env
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tailwind.config.js
+├── ml-service/
+│   ├── app.py
+│   ├── Dockerfile
 │   └── requirements.txt
-│
+├── .env
+├── .gitignore
 ├── docker-compose.yml
-└── README.md
+├── package.json
+└── README
 ```
 
 ---
@@ -202,32 +215,32 @@ trackbackai/
 
 ### Authentication
 
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
+- `POST /api/auth/register` — Register new user
+- `POST /api/auth/login` — Login user
 
 ### Tracks
 
-- `POST /api/tracks/upload` - Upload track
-- `GET /api/tracks` - Get all tracks (with filters)
-- `GET /api/tracks/user/my-tracks` - Get user's tracks
-- `DELETE /api/tracks/:id` - Delete track
+- `POST /api/tracks/upload` — Upload track
+- `GET /api/tracks` — Get all tracks (with filters)
+- `GET /api/tracks/user/my-tracks` — Get user's tracks
+- `DELETE /api/tracks/:id` — Delete track
 
 ### Collaborations
 
-- `POST /api/collaborations/:trackId/request` - Request collaboration
-- `GET /api/collaborations` - Get user's collaborations
+- `POST /api/collaborations/:trackId/request` — Request collaboration
+- `GET /api/collaborations` — Get user's collaborations
 
 ### Submissions
 
-- `POST /api/submissions/:trackId/submit` - Submit completed version
-- `POST /api/submissions/:id/vote` - Vote on submission
+- `POST /api/submissions/:trackId/submit` — Submit completed version
+- `POST /api/submissions/:id/vote` — Vote on submission
 
 ### Messages
 
-- `GET /api/messages/conversations` - Get conversations
-- `POST /api/messages/conversations` - Start conversation
-- `GET /api/messages/conversations/:id/messages` - Get messages
-- `POST /api/messages/conversations/:id/messages` - Send message
+- `GET /api/messages/conversations` — Get conversations
+- `POST /api/messages/conversations` — Start conversation
+- `GET /api/messages/conversations/:id/messages` — Get messages
+- `POST /api/messages/conversations/:id/messages` — Send message
 
 ---
 
@@ -273,11 +286,10 @@ pytest
 
 ## Project Objectives
 
-1. **Platform Infrastructure** - User authentication, file management, responsive UI
-2. **MIR Integration** - Automated BPM detection (≥80% accuracy), energy classification
-3. **Collaborative Workflow** - Complete submission/voting system
-4. **User Evaluation** - SUS score ≥70, 5+ completed collaborations
-
+1. **Platform Infrastructure** — User authentication, file management, responsive UI
+2. **MIR Integration** — Automated BPM detection (≥80% accuracy), energy classification
+3. **Collaborative Workflow** — Complete submission/voting system
+4. **User Evaluation** — SUS score ≥70, 5+ completed collaborations
 
 ## Contact
 
@@ -287,4 +299,4 @@ Supervisor: Francesco Tusa
 
 ---
 
-**TrackBackAI** - _Helping producers finish what they started_ 🎵
+**TrackBackAI** — _Helping producers finish what they started_ 🎵

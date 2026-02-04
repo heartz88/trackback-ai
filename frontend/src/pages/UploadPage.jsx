@@ -4,11 +4,11 @@ import api from '../services/api';
 
 function UploadPage() {
 const [file, setFile] = useState(null);
-const [formData, setFormData] = useState({ 
-title: '', 
-description: '', 
+const [formData, setFormData] = useState({
+title: '',
+description: '',
 genre: '',
-desired_skills: '' 
+desired_skills: ''
 });
 const [uploading, setUploading] = useState(false);
 const [success, setSuccess] = useState('');

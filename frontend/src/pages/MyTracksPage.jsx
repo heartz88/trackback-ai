@@ -70,7 +70,7 @@ return (
                 </div>
             </div>
 
-            <button 
+            <button
                 onClick={() => handleDelete(track.id)}
                 className="p-2 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
                 title="Delete Track"

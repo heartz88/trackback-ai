@@ -14,13 +14,13 @@ const [connectionError, setConnectionError] = useState(null);
 
 // Connect socket when user is authenticated
 useEffect(() => {
-if (user && token) { // ✅ CHANGED FROM user?.token TO user && token
+if (user && token) { 
     console.log('🔄 Connecting socket with token for user:', user.username);
     
     const connectSocket = async () => {
     try {
         setConnectionError(null);
-        await socketService.connect(token); // ✅ USE TOKEN FROM AUTH CONTEXT
+        await socketService.connect(token); 
     } catch (error) {
         console.error('❌ Failed to connect socket:', error.message);
         setConnectionError(error.message);
@@ -165,7 +165,7 @@ if (user && token) { // ✅ CHANGED FROM user?.token TO user && token
     setOnlineUsers(new Set());
     setConnectionError(null);
 }
-}, [user, token]); // ✅ CHANGED DEPENDENCY FROM [user] TO [user, token]
+}, [user, token]); 
 
 const markAsRead = (notificationId) => {
 setNotifications(prev =>
@@ -244,7 +244,7 @@ return socketService.leaveConversation(conversationId);
 }, [isConnected]);
 
 const reconnect = useCallback(async () => {
-if (token) { // ✅ CHANGED FROM user?.token TO token
+if (token) {
     try {
     setConnectionError(null);
     await socketService.connect(token);
@@ -255,7 +255,7 @@ if (token) { // ✅ CHANGED FROM user?.token TO token
     }
 }
 return false;
-}, [token]); // ✅ CHANGED DEPENDENCY FROM [user] TO [token]
+}, [token]);
 
 const value = {
 isConnected,
