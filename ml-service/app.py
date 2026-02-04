@@ -1,3 +1,4 @@
+import gc
 import os
 import tempfile
 import librosa
@@ -54,9 +55,13 @@ def analyze_audio(file_path):
         else:
             final_bpm = tempo
 
+        del onset_env  # Free memory
         # 3. KEY DETECTION (Krumhansl-Kessler Profile)
         chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
         chroma_avg = np.mean(chroma, axis=1)
+
+        del y
+        gc.collect()
         
         # Templates
         major = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
