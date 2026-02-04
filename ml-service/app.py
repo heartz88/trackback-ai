@@ -41,8 +41,7 @@ def analyze_audio(file_path):
         
         # Refine with Dynamic Programming Beat Tracking
         # Tightness=100 makes it very sensitive to grid-aligned beats
-        tempo, beats = librosa.beat.beat_track(onset_envelope=onset_env, sr=sr,
-                                               hop_length=hop_length, tightness=100)
+        tempo, beats = librosa.beat.beat_track(onset_envelope=onset_env, sr=sr,hop_length=hop_length, tightness=100)
         
         # Calculate BPM from actual beat intervals (more precise than global estimate)
         if len(beats) > 1:
