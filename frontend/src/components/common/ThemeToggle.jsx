@@ -11,7 +11,7 @@ return false;
 });
 
 useEffect(() => {
-// Apply theme to document
+// Apply theme to frontend and save preference to localStorage
 if (isLightMode) {
     document.documentElement.classList.add('light');
     document.documentElement.classList.remove('dark');

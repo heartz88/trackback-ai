@@ -172,7 +172,7 @@ return (
     {/* Mobile Menu Overlay */}
     <div className={`md:hidden fixed inset-0 z-40 transition-all duration-300 ${isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
     {/* Backdrop */}
-    <div 
+    <div
         className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`}
         onClick={closeMenu}
     />
