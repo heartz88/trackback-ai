@@ -187,45 +187,6 @@ try {
 }
 );
 
-
-// Get tracks by user ID (for ProfilePage)
-router.get('/user/:userId', async (req, res) => {
-try {
-    const { userId } = req.params;
-    
-    console.log(`📋 Fetching tracks for user ${userId}`);
-
-    const result = await db.query(
-        `SELECT 
-            t.*,
-            u.username
-            FROM tracks t
-            JOIN users u ON t.user_id = u.id
-            WHERE t.user_id = $1
-            ORDER BY t.created_at DESC`,
-        [userId]
-    );
-
-    const tracks = result.rows.map(track => ({
-        ...track,
-        audio_url: getSignedUrl(track.s3_key)
-    }));
-
-    console.log(`✅ Found ${tracks.length} tracks for user ${userId}`);
-
-    res.json({ tracks });
-} catch (error) {
-    console.error('Get user tracks error:', error);
-    res.status(500).json({ 
-        error: { 
-            message: 'Failed to fetch user tracks',
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        } 
-    });
-}
-});
-
-
 // Get all tracks with filters (FR4)
 router.get('/', async (req, res) => {
 try {
@@ -585,11 +546,51 @@ res.status(500).json({
 }
 });
 
-// Get track recommendations (NEW ENDPOINT)
-router.get('/recommendations', authMiddleware, async (req, res) => {
-try {
-const userId = req.user.id;
-const { limit = 10 } = req.query;
+
+// Get tracks by user ID (for ProfilePage)
+router.get('/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        console.log(`📋 Fetching tracks for user ${userId}`);
+
+        const result = await db.query(
+            `SELECT 
+                t.*,
+                u.username
+             FROM tracks t
+             JOIN users u ON t.user_id = u.id
+             WHERE t.user_id = $1
+             ORDER BY t.created_at DESC`,
+            [userId]
+        );
+
+        const tracks = result.rows.map(track => ({
+            ...track,
+            audio_url: getSignedUrl(track.s3_key)
+        }));
+
+        console.log(`✅ Found ${tracks.length} tracks for user ${userId}`);
+
+        res.json({ tracks });
+    } catch (error) {
+        console.error('Get user tracks error:', error);
+        res.status(500).json({ 
+            error: { 
+                message: 'Failed to fetch user tracks',
+                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            } 
+        });
+    }
+});
+
+
+// Get track recommendations
+// router.get('/recommendations', authMiddleware, async (req, res) => {
+// try {
+// const userId = req.user.id;
+// const { limit = 10 } = req.query;
+
 
 const result = await db.query(
     `SELECT 
