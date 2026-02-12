@@ -546,107 +546,67 @@ res.status(500).json({
 }
 });
 
+// Get track recommendations (NEW ENDPOINT)
+router.get('/recommendations', authMiddleware, async (req, res) => {
+try {
+const userId = req.user.id;
+const { limit = 10 } = req.query;
 
-// Get tracks by user ID (for ProfilePage)
-router.get('/user/:userId', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        
-        console.log(`📋 Fetching tracks for user ${userId}`);
+const result = await db.query(
+    `SELECT 
+    t.id,
+    t.title,
+    t.description,
+    t.bpm,
+    t.energy_level,
+    t.genre,
+    t.musical_key,
+    u.username as owner_username,
+    -- Match score calculation
+    CASE 
+        WHEN t.genre = ANY(SELECT genre FROM tracks WHERE user_id = $1 AND genre IS NOT NULL) THEN 0.3
+        ELSE 0.1
+    END +
+    CASE 
+        WHEN ABS(t.bpm - COALESCE(
+        (SELECT AVG(bpm) FROM tracks WHERE user_id = $1 AND bpm IS NOT NULL), 
+        120
+        )) < 20 THEN 0.3
+        ELSE 0.1
+    END +
+    CASE 
+        WHEN t.energy_level = COALESCE(
+        (SELECT energy_level FROM tracks WHERE user_id = $1 AND energy_level IS NOT NULL ORDER BY created_at DESC LIMIT 1), 
+        'medium'
+        ) THEN 0.4
+        ELSE 0.2
+    END as match_score
+    FROM tracks t
+    JOIN users u ON t.user_id = u.id
+    WHERE t.status = 'open'
+    AND t.analysis_status = 'completed'
+    AND t.user_id != $1
+    ORDER BY match_score DESC
+    LIMIT $2`,
+    [userId, parseInt(limit)]
+);
 
-        const result = await db.query(
-            `SELECT 
-                t.*,
-                u.username
-             FROM tracks t
-             JOIN users u ON t.user_id = u.id
-             WHERE t.user_id = $1
-             ORDER BY t.created_at DESC`,
-            [userId]
-        );
+const recommendations = result.rows.map(track => ({
+    ...track,
+    audio_url: getSignedUrl(track.s3_key),
+    match_score: parseFloat(track.match_score).toFixed(2)
+}));
 
-        const tracks = result.rows.map(track => ({
-            ...track,
-            audio_url: getSignedUrl(track.s3_key)
-        }));
-
-        console.log(`✅ Found ${tracks.length} tracks for user ${userId}`);
-
-        res.json({ tracks });
-    } catch (error) {
-        console.error('Get user tracks error:', error);
-        res.status(500).json({ 
-            error: { 
-                message: 'Failed to fetch user tracks',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined
-            } 
-        });
-    }
+res.json({ recommendations });
+} catch (error) {
+console.error('❌ Get recommendations error:', error);
+res.status(500).json({ 
+    error: { 
+    message: 'Failed to fetch recommendations',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    } 
 });
-
-
-// // Get track recommendations
-// router.get('/recommendations', authMiddleware, async (req, res) => {
-//     try {
-//         const userId = req.user.id;
-//         const { limit = 10 } = req.query;
-
-
-// const result = await db.query(
-//     `SELECT 
-//     t.id,
-//     t.title,
-//     t.description,
-//     t.bpm,
-//     t.energy_level,
-//     t.genre,
-//     t.musical_key,
-//     u.username as owner_username,
-//     -- Match score calculation
-//     CASE 
-//         WHEN t.genre = ANY(SELECT genre FROM tracks WHERE user_id = $1 AND genre IS NOT NULL) THEN 0.3
-//         ELSE 0.1
-//     END +
-//     CASE 
-//         WHEN ABS(t.bpm - COALESCE(
-//         (SELECT AVG(bpm) FROM tracks WHERE user_id = $1 AND bpm IS NOT NULL), 
-//         120
-//         )) < 20 THEN 0.3
-//         ELSE 0.1
-//     END +
-//     CASE 
-//         WHEN t.energy_level = COALESCE(
-//         (SELECT energy_level FROM tracks WHERE user_id = $1 AND energy_level IS NOT NULL ORDER BY created_at DESC LIMIT 1), 
-//         'medium'
-//         ) THEN 0.4
-//         ELSE 0.2
-//     END as match_score
-//     FROM tracks t
-//     JOIN users u ON t.user_id = u.id
-//     WHERE t.status = 'open'
-//     AND t.analysis_status = 'completed'
-//     AND t.user_id != $1
-//     ORDER BY match_score DESC
-//     LIMIT $2`,
-//     [userId, parseInt(limit)]
-// );
-
-// const recommendations = result.rows.map(track => ({
-//     ...track,
-//     audio_url: getSignedUrl(track.s3_key),
-//     match_score: parseFloat(track.match_score).toFixed(2)
-// }));
-
-// res.json({ recommendations });
-// } catch (error) {
-// console.error('❌ Get recommendations error:', error);
-// res.status(500).json({ 
-//     error: { 
-//     message: 'Failed to fetch recommendations',
-//     details: process.env.NODE_ENV === 'development' ? error.message : undefined
-//     } 
-// });
-// }
-// });
+}
+});
 
 module.exports = router;
