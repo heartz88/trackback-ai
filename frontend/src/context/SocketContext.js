@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
-const { user, token } = useAuth(); // ✅ GET TOKEN FROM AUTH CONTEXT
+const { user, token } = useAuth(); 
 const [isConnected, setIsConnected] = useState(false);
 const [notifications, setNotifications] = useState([]);
 const [unreadCount, setUnreadCount] = useState(0);

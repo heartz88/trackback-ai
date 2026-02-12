@@ -176,22 +176,21 @@ try {
     return socket.emit('error', { message: 'Not a participant in this conversation' });
     }
 
+    // Save message to DB with read_by array so history persists on refresh
     const messageResult = await db.query(
-    `INSERT INTO messages (conversation_id, sender_id, content, created_at) 
-        VALUES ($1, $2, $3, NOW()) 
+    `INSERT INTO messages (conversation_id, sender_id, content, created_at, read_by) 
+        VALUES ($1, $2, $3, NOW(), ARRAY[]::INTEGER[]) 
         RETURNING id, conversation_id, sender_id, content, created_at`,
     [conversationId, socket.userId, content.trim()]
     );
 
     const message = messageResult.rows[0];
 
-    const participantsResult = await db.query(
-    `SELECT user_id FROM conversation_participants 
-        WHERE conversation_id = $1`,
+    // Update conversation timestamp so it floats to top of sidebar
+    await db.query(
+    'UPDATE conversations SET updated_at = NOW() WHERE id = $1',
     [conversationId]
     );
-
-    const participants = participantsResult.rows.map(row => row.user_id);
 
     const messageData = {
     id: message.id,
@@ -203,13 +202,27 @@ try {
     read: false
     };
 
-    participants.forEach(userId => {
-    if (onlineUsers.has(userId)) {
+    // ✅ KEY FIX: Broadcast to the room so BOTH users receive message:new.
+    // Previously this only sent to individual socket IDs, so the sender
+    // never got their own message back — the chat panel stayed blank.
+    io.to(`conversation:${conversationId}`).emit('message:new', messageData);
+
+    // For participants who are online but haven't joined the room yet
+    // (e.g. browsing a different page), notify them directly too.
+    const participantsResult = await db.query(
+    `SELECT user_id FROM conversation_participants WHERE conversation_id = $1`,
+    [conversationId]
+    );
+
+    participantsResult.rows.forEach(({ user_id: userId }) => {
+    if (userId !== socket.userId && onlineUsers.has(userId)) {
         const userSocketId = onlineUsers.get(userId).socketId;
+        const targetSocket = io.sockets.sockets.get(userSocketId);
+        const alreadyInRoom = targetSocket?.rooms?.has(`conversation:${conversationId}`);
+        if (!alreadyInRoom) {
         io.to(userSocketId).emit('message:new', messageData);
-    }
-    
-    if (userId !== socket.userId) {
+        }
+
         db.query(
         `INSERT INTO notifications (user_id, type, content, related_id) 
             VALUES ($1, 'message', $2, $3)`,
@@ -217,11 +230,6 @@ try {
         ).catch(err => console.error('Error creating notification:', err));
     }
     });
-
-    await db.query(
-    'UPDATE conversations SET updated_at = NOW() WHERE id = $1',
-    [conversationId]
-    );
 
     socket.emit('message:sent', {
     messageId: message.id,
@@ -543,6 +551,9 @@ const submissionRoutes = require('./routes/submissions.js');
 const userRoutes = require('./routes/users.js');
 const notificationRoutes = require('./routes/notifications.js');
 const messageRoutes = require('./routes/messages.js');
+const votesRoutes = require('./routes/votes.js');
+const commentsRoutes = require('./routes/comments.js');
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -553,6 +564,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/online', onlineRoutes);
+app.use('/api/votes',votesRoutes);
+app.use('/api/comments',commentsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -570,10 +583,10 @@ error: {
 
 // 404 handler - MUST be last!
 app.use((req, res) => {
-res.status(404).json({ 
-error: { 
+res.status(404).json({
+error: {
     message: `Route [${req.method}] ${req.url} not found` 
-} 
+}
 });
 });
 

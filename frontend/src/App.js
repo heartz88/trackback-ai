@@ -15,6 +15,8 @@ import MessagesPage from './pages/MessagesPage';
 import MyTracksPage from './pages/MyTracksPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
+import SubmissionsPage from './pages/SubmissionsPage';
+import TrackDetailPage from './pages/TrackDetailPage';
 import UploadPage from './pages/UploadPage';
 
 function App() {
@@ -49,6 +51,8 @@ function App() {
               <Route path="/messages/:conversationId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
               <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
               <Route path = "/profile/:userid" element= {<ProtectedRoute><ProfilePage/></ProtectedRoute>}/>
+              <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
+              <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
             </Routes>
           </div>
           <Footer />

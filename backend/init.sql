@@ -121,7 +121,9 @@ CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
     submission_id INTEGER REFERENCES submissions(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
+    likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -280,6 +282,13 @@ CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
 -- Online users indexes
 CREATE INDEX IF NOT EXISTS idx_online_users_user ON online_users(user_id);
 CREATE INDEX IF NOT EXISTS idx_online_users_activity ON online_users(last_activity);
+
+-- Votes and comments indexes
+CREATE INDEX IF NOT EXISTS idx_votes_submission ON votes(submission_id);
+CREATE INDEX IF NOT EXISTS idx_votes_user ON votes(user_id);
+CREATE INDEX IF NOT EXISTS idx_comments_submission ON comments(submission_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id);
+
 
 -- ============================================
 -- 8. FUNCTIONS & TRIGGERS
