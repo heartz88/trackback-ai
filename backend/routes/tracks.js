@@ -128,7 +128,7 @@ try {
     // Generate signed URL for the uploaded file
     const audioUrl = getSignedUrl(s3Key);
 
-    // Call ML service for analysis
+    // Call ML service for analysis (async, don't wait for response)
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5000';
     
     setTimeout(async () => {
@@ -508,7 +508,6 @@ res.status(500).json({
 });
 }
 });
-
 
 // Delete track
 router.delete('/:id', authMiddleware, async (req, res) => {
