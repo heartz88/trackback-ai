@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tracks table (updated with musical_key column)
+-- Tracks table 
 CREATE TABLE IF NOT EXISTS tracks (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,

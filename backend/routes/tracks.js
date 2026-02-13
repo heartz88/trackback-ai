@@ -128,7 +128,7 @@ try {
     // Generate signed URL for the uploaded file
     const audioUrl = getSignedUrl(s3Key);
 
-    // Call ML service for analysis (async, don't wait for response)
+    // Call ML service for analysis
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5000';
     
     setTimeout(async () => {

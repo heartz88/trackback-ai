@@ -3,11 +3,6 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 
-// ============================================================
-// HELPER: Save a message to the database and return it fully
-// formatted. Used by BOTH the REST endpoint and the socket
-// handler so there is one source of truth.
-// ============================================================
 async function persistMessage(conversationId, senderId, content) {
     // Insert the message
     const messageResult = await db.query(
