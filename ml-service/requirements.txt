@@ -1,12 +1,21 @@
-setuptools==82.0.0
-wheel
+# Build tools - pin to stable versions
+setuptools==75.6.0
+wheel==0.44.0
 pip>=23.0
+# Core web framework
 Flask==3.0.0
-librosa==0.10.1
+python-dotenv==1.0.0
+gunicorn==21.2.0
+requests==2.31.0
+# AWS SDK
+boto3==1.34.14
 numpy==1.24.3
 scipy==1.11.4
-boto3==1.34.14
-requests==2.31.0
-python-dotenv==1.0.0
+numba==0.58.1
+# Audio processing
 soundfile==0.12.1
-gunicorn==21.2.0
+audioread==3.0.1
+librosa==0.10.1
+joblib==1.3.2
+scikit-learn==1.3.2
+decorator==5.1.1

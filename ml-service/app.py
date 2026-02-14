@@ -1,6 +1,14 @@
 import gc
 import os
 import tempfile
+import pkg_resources
+
+try:
+    import pkg_resources
+except ImportError:
+    # Fallback for newer setuptools
+    from importlib import metadata as pkg_resources
+
 import librosa
 import numpy as np
 import boto3
@@ -27,7 +35,7 @@ def analyze_audio(file_path):
     """
     try:
         # 1. LOAD AUDIO
-        # We load the full file for duration/BPM, but sr=22050 keeps it manageable.
+        # Load the full file for duration/BPM, but sr=22050 keeps it manageable.
         y, sr = librosa.load(file_path, sr=22050, mono=True)
         duration = librosa.get_duration(y=y, sr=sr)
 
@@ -41,9 +49,9 @@ def analyze_audio(file_path):
         onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop_length)
         
         tempo, beats = librosa.beat.beat_track(
-            onset_envelope=onset_env, 
-            sr=sr, 
-            hop_length=hop_length, 
+            onset_envelope=onset_env,
+            sr=sr,
+            hop_length=hop_length,
             tightness=100
         )
         
@@ -61,7 +69,7 @@ def analyze_audio(file_path):
         del onset_env
 
         # 4. KEY DETECTION (The Memory Hog)
-        # Optimization: Only use the first 90 seconds for Key analysis. 
+        # Optimization: Only use the first 90 seconds for Key analysis.
         # This prevents RAM spikes on long tracks like your 3:10 example.
         y_for_key = y[:sr*90] if len(y) > sr*90 else y
         chroma = librosa.feature.chroma_cqt(y=y_for_key, sr=sr)
@@ -101,33 +109,63 @@ def analyze_audio(file_path):
 
 # --- API Endpoints ---
 
+@app.route('/health', methods=['GET'])
+def health():
+    """Health check endpoint"""
+    return jsonify({'status': 'healthy', 'service': 'ml-analysis'}), 200
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.json
     temp_path = None
     try:
+        print(f"📊 Analyzing track {data.get('track_id')}...")
+        
+        # Validate required fields
+        if not all(k in data for k in ['s3_bucket', 's3_key', 'track_id']):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
         # Create a temp file to store the S3 download
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
         temp_path = temp_file.name
         
+        print(f"⬇️ Downloading from S3: {data['s3_key']}")
         # Download from S3
         s3_client.download_file(data['s3_bucket'], data['s3_key'], temp_path)
         
+        print(f"🎵 Running audio analysis...")
         # Run Analysis
         results = analyze_audio(temp_path)
         
+        print(f"✅ Analysis complete: BPM={results['bpm']}, Key={results['musical_key']}")
+        
         # Update your main Backend
-        requests.put(f"{BACKEND_API_URL}/api/tracks/{data['track_id']}/analysis", json=results)
+        backend_url = f"{BACKEND_API_URL}/api/tracks/{data['track_id']}/analysis"
+        print(f"📤 Sending results to backend: {backend_url}")
+        
+        response = requests.put(backend_url, json=results, timeout=10)
+        response.raise_for_status()
+        
+        print(f"✅ Backend updated successfully")
         
         return jsonify(results), 200
     except Exception as e:
-        print(f"Error processing track {data.get('track_id')}: {e}")
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        print(f"❌ Error processing track {data.get('track_id')}: {error_msg}")
+        
+        # Return detailed error for debugging
+        return jsonify({
+            'error': error_msg,
+            'track_id': data.get('track_id'),
+            's3_key': data.get('s3_key')
+        }), 500
     finally:
         # Always remove the temp file to save disk space
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
+            print(f"🗑️ Cleaned up temp file")
 
 if __name__ == '__main__':
-    # Threaded=True helps, but for Render/Production, use Gunicorn with 1 worker
+    print("🚀 Starting ML Analysis Service...")
+    print(f"📍 Backend URL: {BACKEND_API_URL}")
     app.run(host='0.0.0.0', port=5000, threaded=True)
