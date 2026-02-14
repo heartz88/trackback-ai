@@ -131,41 +131,48 @@ try {
     // Call ML service for analysis (async, don't wait for response)
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5000';
     
-    setTimeout(async () => {
-    try {
-        console.log(`🤖 Calling ML service for track ${track.id}`);
-        await axios.post(`${mlServiceUrl}/analyze`, {
+    console.log(`🤖 Triggering ML analysis for track ${track.id}`);
+    
+    // Fire and forget - don't await, longer timeout
+    axios.post(`${mlServiceUrl}/analyze`, {
         track_id: track.id,
         s3_key: s3Key,
         s3_bucket: process.env.S3_BUCKET
-        }, {
+    }, {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 10000 // 10 second timeout
-        });
-        console.log(`✅ ML analysis triggered for track ${track.id}`);
-    } catch (mlError) {
-        console.error('❌ ML service error:', mlError.message);
-        // Update track status to failed
-        await db.query(
-        'UPDATE tracks SET analysis_status = $1 WHERE id = $2',
-        ['failed', track.id]
-        );
-    }
-    }, 1000); // Delay 1 second to ensure track is saved
-
-    res.status(201).json({
-    message: 'Track uploaded successfully. Analysis in progress.',
-    track: {
-        id: track.id,
-        title: track.title,
-        description: track.description,
-        genre: track.genre,
-        created_at: track.created_at,
-        audio_url: audioUrl,
-        analysis_status: track.analysis_status
-    }
+        timeout: 120000 // 120 second timeout (2 minutes - plenty of time)
+    })
+    .then(() => {
+        console.log(`✅ ML analysis request sent for track ${track.id}`);
+    })
+    .catch((mlError) => {
+        console.error(`❌ ML service request error for track ${track.id}:`, mlError.message);
+        
+        // Only mark as failed if it's NOT a timeout error
+        // If timeout, ML service might still be processing
+        if (mlError.code !== 'ECONNABORTED' && mlError.message !== 'timeout of 120000ms exceeded') {
+            db.query(
+                'UPDATE tracks SET analysis_status = $1 WHERE id = $2',
+                ['failed', track.id]
+            ).catch(err => console.error('Error updating track status:', err));
+        } else {
+            console.log(`⏳ Request timeout - ML service may still be processing track ${track.id}`);
+        }
     });
 
+    // Immediately return success to user - don't wait for ML analysis
+    res.status(201).json({
+        message: 'Track uploaded successfully. Analysis in progress.',
+        track: {
+            id: track.id,
+            title: track.title,
+            description: track.description,
+            genre: track.genre,
+            created_at: track.created_at,
+            audio_url: audioUrl,
+            analysis_status: track.analysis_status
+        }
+    });
 } catch (error) {
     console.error('❌ Upload error:', error);
     console.error('Error stack:', error.stack);
