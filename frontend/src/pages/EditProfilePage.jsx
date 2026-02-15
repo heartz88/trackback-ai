@@ -104,7 +104,7 @@ return (
 }
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] py-12 px-4 transition-colors duration-300">
+<div className="min-h-screen bg-[var(--bg-primary)] px-4 transition-colors duration-300">
     <div className="max-w-3xl mx-auto">
     
     {/* Header */}

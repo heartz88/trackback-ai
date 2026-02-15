@@ -71,7 +71,6 @@ return (
 
 return (
 <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
-    {/* Header with gradient background */}
     <div className="relative h-64 bg-gradient-to-br from-primary-600 via-primary-500 to-primary-700 overflow-hidden">
     {/* Animated waveform pattern background */}
     <div className="absolute inset-0 opacity-20">

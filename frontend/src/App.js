@@ -37,26 +37,29 @@ function App() {
       <SocketProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
+          <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
             <Navigation />
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
-              <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
-              <Route path="/my-tracks" element={<ProtectedRoute><MyTracksPage /></ProtectedRoute>} />
-              <Route path="/collaborations" element={<ProtectedRoute><CollaborationsPage /></ProtectedRoute>} />
-              <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-              <Route path="/messages/:conversationId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-              <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
-              <Route path = "/profile/:userid" element= {<ProtectedRoute><ProfilePage/></ProtectedRoute>}/>
-              <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
-              <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
-              <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
-            </Routes>
+            {/* Main content with padding-top to account for fixed navbar */}
+            <main className="flex-grow pt-20">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/discover" element={<ProtectedRoute><DiscoverPage /></ProtectedRoute>} />
+                <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
+                <Route path="/my-tracks" element={<ProtectedRoute><MyTracksPage /></ProtectedRoute>} />
+                <Route path="/collaborations" element={<ProtectedRoute><CollaborationsPage /></ProtectedRoute>} />
+                <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+                <Route path="/messages/:conversationId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+                <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+                <Route path="/profile/:userid" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}/>
+                <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
+                <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+                <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+              </Routes>
+            </main>
+            <Footer />
           </div>
-          <Footer />
         </BrowserRouter>
       </SocketProvider>
     </AuthProvider>

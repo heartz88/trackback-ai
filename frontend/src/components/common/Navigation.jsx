@@ -98,9 +98,9 @@ const HamburgerIcon = () => (
 return (
 <>
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-    scrolled 
-        ? 'bg-[var(--bg-primary)]/90 backdrop-blur-xl border-b border-[var(--border-color)]/50 shadow-lg' 
-        : 'bg-transparent'
+    scrolled
+    ? 'bg-[var(--bg-primary)]/95 backdrop-blur-xl border-b border-[var(--border-color)]/50 shadow-lg' 
+    : 'bg-[var(--bg-primary)] border-b border-[var(--border-color)]/10'
     }`}>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
@@ -113,21 +113,12 @@ return (
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                 </svg>
                 </div>
-                {/* Animated waveform effect */}
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 flex items-end space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span className="w-0.5 h-1 bg-[var(--accent-primary)] rounded-full animate-waveform" />
-                <span className="w-0.5 h-1.5 bg-[var(--accent-primary-light)] rounded-full animate-waveform" />
-                <span className="w-0.5 h-2 bg-[var(--accent-primary)] rounded-full animate-waveform" />
-                </div>
             </div>
             <div>
                 <span className="text-xl font-bold tracking-tight">
                 <span className="text-[var(--text-primary)]">Track</span>
                 <span className="text-[var(--accent-primary)]">Back</span>
                 <span className="text-[var(--text-secondary)]">AI</span>
-                </span>
-                <span className="hidden lg:inline-block ml-2 text-xs text-[var(--text-tertiary)] font-medium">
-                Music Collaboration
                 </span>
             </div>
             </Link>
@@ -232,7 +223,7 @@ return (
                 to="/register" 
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary-light)] text-white font-medium transition-all duration-300 shadow-lg shadow-[var(--accent-primary)]/20 hover:shadow-[var(--accent-primary)]/30"
                 >
-                Join Now
+                Get Started
                 </Link>
             </>
             )}

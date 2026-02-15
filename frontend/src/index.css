@@ -1575,3 +1575,23 @@ background: var(--accent-primary-light);
   transform: translateX(0);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
+/* Add to your index.css */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+.fixed-nav-offset {
+  scroll-margin-top: 80px;
+}

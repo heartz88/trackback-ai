@@ -32,7 +32,7 @@ try {
 };
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] py-12 px-4 transition-colors duration-300">
+<div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
     <div className="max-w-7xl mx-auto">
     <div className="mb-12">
         <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-3">Collaborations</h1>
