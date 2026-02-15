@@ -53,6 +53,7 @@ function App() {
               <Route path = "/profile/:userid" element= {<ProtectedRoute><ProfilePage/></ProtectedRoute>}/>
               <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
               <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+              <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
             </Routes>
           </div>
           <Footer />

@@ -50,34 +50,20 @@ const onlineUsersSet = useCallback(() => {
 
 const currentOnlineUsers = onlineUsersSet();
 
-// ✅ FIXED: Fetch conversations with proper dependency
 const fetchConversations = useCallback(async () => {
     try {
         setLoadingConversations(true);
-        console.log('📨 Fetching conversations...');
-
         const response = await api.get('/messages/conversations');
         const conversationsData = response.data.conversations || [];
-
-        console.log('✅ Conversations fetched:', conversationsData.length);
         setConversations(conversationsData);
-
-
-        if (conversationId && conversationsData.length > 0) {
-            const conv = conversationsData.find(c => c.id.toString() === conversationId);
-            if (conv) {
-                console.log('🔍 Auto-selecting conversation from URL:', conv.id);
-                setSelectedConversation(conv);
-            } else {
-                console.warn(`⚠️ Conversation ${conversationId} not found`);
-            }
-        }
+        return conversationsData;
     } catch (err) {
         console.error('❌ Failed to fetch conversations:', err);
+        return [];
     } finally {
         setLoadingConversations(false);
     }
-}, [conversationId]);
+}, []);
 
 
 const fetchUsers = useCallback(async () => {
@@ -94,21 +80,26 @@ useEffect(() => {
     fetchUsers();
 }, [fetchConversations, fetchUsers]);
 
+// Auto-select conversation from URL param when conversations load or URL changes.
+// Guarded so it won't fire if this conversation is already selected —
+// prevents the double-set that caused fetchMessages to race with itself.
 useEffect(() => {
-    if (selectedConversation && isConnected && !hasJoinedConversation.current) {
-        console.log(`💬 Joining conversation: ${selectedConversation.id}`);
-        joinConversation(selectedConversation.id);
-        hasJoinedConversation.current = true;
-    }
+    if (!conversationId || conversations.length === 0) return;
+    if (selectedConversation?.id?.toString() === conversationId) return;
+    const conv = conversations.find(c => c.id.toString() === conversationId);
+    if (conv) setSelectedConversation(conv);
+}, [conversationId, conversations]);
 
+useEffect(() => {
+    if (!selectedConversation) return;
+    // Don't gate on isConnected — joinConversation calls waitForConnection()
+    // internally, so it handles the timing even if socket isn't ready yet.
+    joinConversation(selectedConversation.id);
     return () => {
-        if (selectedConversation && hasJoinedConversation.current) {
-            console.log(`👋 Leaving conversation ${selectedConversation.id}`);
-            leaveConversation(selectedConversation.id);
-            hasJoinedConversation.current = false;
-        }
+        leaveConversation(selectedConversation.id);
+        hasJoinedConversation.current = false;
     };
-}, [selectedConversation, isConnected, joinConversation, leaveConversation]);
+}, [selectedConversation, joinConversation, leaveConversation]);
 
 
 useEffect(() => {
@@ -145,7 +136,10 @@ useEffect(() => {
     };
 
     fetchMessages();
-}, [selectedConversation, navigate]);
+// Depend on selectedConversation.id (stable primitive) not the whole object.
+// The object reference changes whenever handleNewMessage updates lastMessage,
+// which was re-triggering fetchMessages and wiping the panel.
+}, [selectedConversation?.id, navigate]);
 
 
 useEffect(() => {
@@ -292,10 +286,9 @@ const startConversation = async (otherUser) => {
 
 // Select a conversation
 const selectConversation = (conv) => {
-    console.log('🔍 Selecting conversation:', conv);
+    if (selectedConversation?.id === conv.id) return; // already selected
     setSelectedConversation(conv);
     navigate(`/messages/${conv.id}`);
-    hasJoinedConversation.current = false; // Reset flag
 };
 
 // Get the other participant

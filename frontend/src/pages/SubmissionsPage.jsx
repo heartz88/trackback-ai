@@ -244,5 +244,4 @@ const SubmissionsPage = () => {
         </div>
     );
 };
-
 export default SubmissionsPage;

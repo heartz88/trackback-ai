@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
+import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 
 function Navigation() {
@@ -69,7 +70,7 @@ return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
         {/* Logo/Brand */}
-        <div className="flex items-center space-x-12">
+        <div className="flex items-center space-x-10">
             <Link to="/" className="flex items-center space-x-3" onClick={closeMenu}>
             <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -83,42 +84,26 @@ return (
 
             {/* Desktop Navigation Links */}
             {user && (
-            <div className="hidden md:flex items-center space-x-8">
-                <Link to="/discover" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium relative group">
-                Discover
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-                <Link to="/upload" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium relative group">
-                Upload
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-                <Link to="/my-tracks" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium relative group">
-                My Tracks
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-                <Link to="/collaborations" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium relative group">
-                Collaborations
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-                <Link to="/messages" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium relative group">
-                Messages
-                {unreadCount > 0 && (
-                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg shadow-red-500/20">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                )}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
+            <div className="hidden md:flex items-center space-x-6">
+                <NavLink to="/discover">Discover</NavLink>
+                <NavLink to="/upload">Upload</NavLink>
+                <NavLink to="/my-tracks">My Tracks</NavLink>
+                <NavLink to="/collaborations">Collaborations</NavLink>
+                <NavLink to="/submissions">Submissions</NavLink>
+                <NavLink to="/messages" badge={unreadCount}>Messages</NavLink>
             </div>
             )}
         </div>
 
         {/* Desktop Right Side */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-3">
             <ThemeToggle />
-            
+
             {user ? (
             <>
+                {/* ✅ NotificationBell added here */}
+                <NotificationBell />
+
                 <Link to={`/profile/${user.id}`}>
                 <div className="flex items-center space-x-3 px-4 py-2 bg-[var(--bg-tertiary)] rounded-full border border-[var(--border-color)] hover:border-primary-500/30 transition-all duration-300 group">
                     <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center shadow-lg shadow-primary-500/20">
@@ -149,19 +134,8 @@ return (
         </div>
 
         {/* Mobile Controls */}
-        <div className="flex md:hidden items-center space-x-4">
-            {user && unreadCount > 0 && (
-            <Link to="/messages" className="relative">
-                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500/10 to-primary-600/10">
-                <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                </svg>
-                </div>
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
-                {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-            </Link>
-            )}
+        <div className="flex md:hidden items-center space-x-3">
+            {user && <NotificationBell />}
             <ThemeToggle />
             <HamburgerIcon />
         </div>
@@ -228,27 +202,14 @@ return (
         <div className="p-4 space-y-1 max-h-[calc(100vh-250px)] overflow-y-auto">
         {user ? (
             <>
-            <MenuItem to="/discover" icon="🎵" onClick={closeMenu}>
-                Discover
-            </MenuItem>
-            <MenuItem to="/upload" icon="📤" onClick={closeMenu}>
-                Upload Track
-            </MenuItem>
-            <MenuItem to="/my-tracks" icon="🎧" onClick={closeMenu}>
-                My Tracks
-            </MenuItem>
-            <MenuItem to="/collaborations" icon="🤝" onClick={closeMenu}>
-                Collaborations
-            </MenuItem>
-            <MenuItem to="/messages" icon="💬" badge={unreadCount} onClick={closeMenu}>
-                Messages
-            </MenuItem>
-            <MenuItem to={`/profile/${user.id}`} icon="👤" onClick={closeMenu}>
-                Profile
-            </MenuItem>
-            <MenuItem to="/edit-profile" icon="⚙️" onClick={closeMenu}>
-                Settings
-            </MenuItem>
+            <MenuItem to="/discover" icon="🎵" onClick={closeMenu}>Discover</MenuItem>
+            <MenuItem to="/upload" icon="📤" onClick={closeMenu}>Upload Track</MenuItem>
+            <MenuItem to="/my-tracks" icon="🎧" onClick={closeMenu}>My Tracks</MenuItem>
+            <MenuItem to="/collaborations" icon="🤝" onClick={closeMenu}>Collaborations</MenuItem>
+            <MenuItem to="/submissions" icon="🏆" onClick={closeMenu}>Submissions</MenuItem>
+            <MenuItem to="/messages" icon="💬" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
+            <MenuItem to={`/profile/${user.id}`} icon="👤" onClick={closeMenu}>Profile</MenuItem>
+            <MenuItem to="/edit-profile" icon="⚙️" onClick={closeMenu}>Settings</MenuItem>
             
             {/* Divider */}
             <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
@@ -263,15 +224,9 @@ return (
             </>
         ) : (
             <>
-            <MenuItem to="/discover" icon="🎵" onClick={closeMenu}>
-                Discover
-            </MenuItem>
-            <MenuItem to="/login" icon="🔐" onClick={closeMenu}>
-                Login
-            </MenuItem>
-            <MenuItem to="/register" icon="🚀" onClick={closeMenu}>
-                Get Started
-            </MenuItem>
+            <MenuItem to="/discover" icon="🎵" onClick={closeMenu}>Discover</MenuItem>
+            <MenuItem to="/login" icon="🔐" onClick={closeMenu}>Login</MenuItem>
+            <MenuItem to="/register" icon="🚀" onClick={closeMenu}>Get Started</MenuItem>
             </>
         )}
         </div>
@@ -280,6 +235,22 @@ return (
 </>
 );
 }
+
+// Reusable desktop nav link with underline hover + optional badge
+const NavLink = ({ to, children, badge }) => (
+<Link
+    to={to}
+    className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium relative group"
+>
+    {children}
+    {badge > 0 && (
+    <span className="absolute -top-2 -right-3 w-5 h-5 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg shadow-red-500/20">
+        {badge > 9 ? '9+' : badge}
+    </span>
+    )}
+    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-300 group-hover:w-full"></span>
+</Link>
+);
 
 // Mobile Menu Item Component
 const MenuItem = ({ to, icon, children, badge, onClick }) => (
