@@ -3,10 +3,8 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 
-// ✅ FIX: Drop the bad trigger that crashes UPDATE messages.
-// init.sql created update_messages_updated_at which tries to set
-// NEW.updated_at — but messages has no updated_at column.
-// This drops it safely on every server start (idempotent).
+
+
 db.query('DROP TRIGGER IF EXISTS update_messages_updated_at ON messages')
 .then(() => console.log('✅ Dropped bad messages trigger'))
 .catch(err => console.warn('⚠️ Could not drop messages trigger:', err.message));
