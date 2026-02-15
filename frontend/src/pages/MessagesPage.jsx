@@ -233,30 +233,10 @@ const handleSendMessage = async (e) => {
     }
     setTypingStatus(selectedConversation.id, false);
 
-    try {
-        // Optimistically add message
-        const tempMessage = {
-            id: `temp-${Date.now()}`,
-            conversationId: selectedConversation.id,
-            senderId: user.id,
-            senderName: user.username,
-            content: messageContent,
-            timestamp: new Date().toISOString(),
-            read: false,
-            is_own: true
-        };
-
-        setMessages(prev => [...prev, tempMessage]);
-
-        // Send via socket
-        const success = sendMessage(selectedConversation.id, messageContent);
-        
-        if (!success) {
-            console.warn('⚠️ Message may not have been sent');
-        }
-    } catch (err) {
-        console.error('❌ Error sending message:', err);
-    }
+    // No optimistic message — the server saves to DB first, then broadcasts
+    // message:new with the real DB id. handleNewMessage appends it cleanly.
+    // Adding a temp message here caused duplicates (temp id !== real DB id).
+    sendMessage(selectedConversation.id, messageContent);
 };
 
 const handleTyping = (e) => {
