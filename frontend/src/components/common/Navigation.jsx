@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import logo from '../../assets/logo.png';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import NotificationBell from './NotificationBell';
@@ -15,7 +16,9 @@ const [scrolled, setScrolled] = useState(false);
 const profileMenuRef = useRef(null);
 
 // Handle scroll effect for navbar
-useEffect(() => {
+useEffect(() => {<div className="w-11 h-11 bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 group-hover:scale-110 transition-transform duration-300">
+    <img src={logo} className="w-8 h-8 object-contain" alt="Trackback AI" />
+</div>
 const handleScroll = () => {
     setScrolled(window.scrollY > 20);
 };
@@ -104,14 +107,12 @@ return (
     }`}>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-        {/* Logo/Brand */}
+        {/*Brand */}
         <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center space-x-3 group" onClick={closeMenu}>
             <div className="relative">
-                <div className="w-11 h-11 bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                </svg>
+            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <img src={logo} className="w-full h-full object-cover rounded-xl" alt="Trackback AI"/>
                 </div>
             </div>
             <div>

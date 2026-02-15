@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import logo from '../../assets/logo.png';
 
 function Footer() {
 const currentYear = new Date().getFullYear();
@@ -12,10 +13,8 @@ return (
         <div className="lg:col-span-5 space-y-6">
         <Link to="/" className="inline-flex items-center gap-3 group">
             <div className="relative">
-            <div className="w-12 h-12 bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                </svg>
+            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <img src={logo} className="w-full h-full object-cover rounded-xl" alt="TrackBack AI" />
             </div>
             </div>
             <div>
