@@ -1245,6 +1245,47 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
+.music-loader {
+display: flex;
+gap: 6px;
+align-items: flex-end;
+height: 40px;
+}
+.music-loader::before,
+.music-loader::after {
+content: '';
+width: 6px;
+background: linear-gradient(to top, var(--accent-primary), var(--accent-primary-light));
+border-radius: 3px;
+animation: musicLoad 1s ease-in-out infinite;
+}
+.music-loader::before {
+animation-delay: 0s;
+height: 20px;
+}
+.music-loader::after {
+animation-delay: 0.3s;
+height: 35px;
+}
+@keyframes musicLoad {
+0%, 100% { transform: scaleY(0.3); opacity: 0.3; }
+50% { transform: scaleY(1); opacity: 1; }
+}
+.custom-scrollbar::-webkit-scrollbar {
+width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+background: var(--bg-tertiary);
+border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-light));
+border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+background: var(--accent-primary-light);
+}
+
 /* ===== REDUCED DATA MODE ===== */
 @media (prefers-reduced-data: reduce) {
   .waveform-bg,

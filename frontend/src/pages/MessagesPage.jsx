@@ -6,555 +6,528 @@ import api from '../services/api';
 import socketService from '../services/socket';
 
 function MessagesPage() {
-    const { conversationId } = useParams();
-    const navigate = useNavigate();
-    const { user } = useAuth();
-    const {
-        isConnected,
-        sendMessage,
-        setTypingStatus,
-        onlineUsers,
-        joinConversation,
-        leaveConversation,
-        notifications,
-        connectionError,
-        reconnect
-    } = useSocket();
+const { conversationId } = useParams();
+const navigate = useNavigate();
+const { user } = useAuth();
+const {
+    isConnected,
+    sendMessage,
+    setTypingStatus,
+    onlineUsers,
+    joinConversation,
+    leaveConversation,
+} = useSocket();
 
-    const [conversations, setConversations] = useState([]);
-    const [selectedConversation, setSelectedConversation] = useState(null);
-    const [messages, setMessages] = useState([]);
-    const [newMessage, setNewMessage] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [loadingConversations, setLoadingConversations] = useState(true);
-    const [users, setUsers] = useState([]);
-    const [typingUsers, setTypingUsers] = useState({});
-    const [searchQuery, setSearchQuery] = useState('');
-    const [showUserSearch, setShowUserSearch] = useState(false);
-    const messagesEndRef = useRef(null);
-    const typingTimeoutRef = useRef(null);
-    const [startingConversation, setStartingConversation] = useState(false);
+const [conversations, setConversations] = useState([]);
+const [selectedConversation, setSelectedConversation] = useState(null);
+const [messages, setMessages] = useState([]);
+const [newMessage, setNewMessage] = useState('');
+const [loading, setLoading] = useState(true);
+const [loadingConversations, setLoadingConversations] = useState(true);
+const [users, setUsers] = useState([]);
+const [typingUsers, setTypingUsers] = useState({});
+const [searchQuery, setSearchQuery] = useState('');
+const [showUserSearch, setShowUserSearch] = useState(false);
+const messagesEndRef = useRef(null);
+const typingTimeoutRef = useRef(null);
+const [startingConversation, setStartingConversation] = useState(false);
+const hasJoinedConversation = useRef(false);
 
-    const hasJoinedConversation = useRef(false);
+const onlineUsersSet = useCallback(() => {
+    if (onlineUsers instanceof Set) return onlineUsers;
+    if (Array.isArray(onlineUsers)) return new Set(onlineUsers.map(u => u.id || u));
+    if (typeof onlineUsers === 'object' && onlineUsers !== null)
+        return new Set(Object.keys(onlineUsers).map(k => parseInt(k)));
+    return new Set();
+}, [onlineUsers]);
 
-    const onlineUsersSet = useCallback(() => {
-        if (onlineUsers instanceof Set) return onlineUsers;
-        if (Array.isArray(onlineUsers)) return new Set(onlineUsers.map(u => u.id || u));
-        if (typeof onlineUsers === 'object' && onlineUsers !== null)
-            return new Set(Object.keys(onlineUsers).map(k => parseInt(k)));
-        return new Set();
-    }, [onlineUsers]);
+const currentOnlineUsers = onlineUsersSet();
+const onlineCount = currentOnlineUsers.size;
 
-    const currentOnlineUsers = onlineUsersSet();
+const fetchConversations = useCallback(async () => {
+    try {
+        setLoadingConversations(true);
+        const response = await api.get('/messages/conversations');
+        const conversationsData = response.data.conversations || [];
+        setConversations(conversationsData);
 
-    // Unread notification count from socket context
-    const unreadCount = notifications ? notifications.filter(n => !n.read).length : 0;
+        if (conversationId && conversationsData.length > 0) {
+            const conv = conversationsData.find(c => c.id.toString() === conversationId);
+            if (conv) setSelectedConversation(conv);
+        }
+    } catch (err) {
+        console.error('Failed to fetch conversations:', err);
+    } finally {
+        setLoadingConversations(false);
+    }
+}, [conversationId]);
 
-    // ── Fetch conversations ─────────────────────────────────
-    const fetchConversations = useCallback(async () => {
+const fetchUsers = useCallback(async () => {
+    try {
+        const response = await api.get('/messages/users/search', { params: { search: '' } });
+        setUsers(response.data.users || []);
+    } catch (err) {
+        console.error('Failed to fetch users:', err);
+    }
+}, []);
+
+useEffect(() => {
+    fetchConversations();
+    fetchUsers();
+}, [fetchConversations, fetchUsers]);
+
+useEffect(() => {
+    if (selectedConversation && isConnected && !hasJoinedConversation.current) {
+        joinConversation(selectedConversation.id);
+        hasJoinedConversation.current = true;
+    }
+    return () => {
+        if (selectedConversation && hasJoinedConversation.current) {
+            leaveConversation(selectedConversation.id);
+            hasJoinedConversation.current = false;
+        }
+    };
+}, [selectedConversation, isConnected, joinConversation, leaveConversation]);
+
+useEffect(() => {
+    if (!selectedConversation) {
+        setMessages([]);
+        setLoading(false);
+        return;
+    }
+
+    const fetchMessages = async () => {
+        setLoading(true);
         try {
-            setLoadingConversations(true);
-            const response = await api.get('/messages/conversations');
-            const conversationsData = response.data.conversations || [];
-            setConversations(conversationsData);
-
-            if (conversationId && conversationsData.length > 0) {
-                const conv = conversationsData.find(c => c.id.toString() === conversationId);
-                if (conv) setSelectedConversation(conv);
-            }
+            const response = await api.get(`/messages/conversations/${selectedConversation.id}/messages`);
+            setMessages(response.data.messages || []);
+            api.post(`/messages/conversations/${selectedConversation.id}/read`).catch(() => {});
         } catch (err) {
-            console.error('Failed to fetch conversations:', err);
+            console.error('Failed to fetch messages:', err);
         } finally {
-            setLoadingConversations(false);
-        }
-    }, [conversationId]);
-
-    const fetchUsers = useCallback(async () => {
-        try {
-            const response = await api.get('/messages/users/search', { params: { search: '' } });
-            setUsers(response.data.users || []);
-        } catch (err) {
-            console.error('Failed to fetch users:', err);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchConversations();
-        fetchUsers();
-    }, [fetchConversations, fetchUsers]);
-
-    // ── Join / leave socket room ────────────────────────────
-    useEffect(() => {
-        if (selectedConversation && isConnected && !hasJoinedConversation.current) {
-            joinConversation(selectedConversation.id);
-            hasJoinedConversation.current = true;
-        }
-        return () => {
-            if (selectedConversation && hasJoinedConversation.current) {
-                leaveConversation(selectedConversation.id);
-                hasJoinedConversation.current = false;
-            }
-        };
-    }, [selectedConversation, isConnected, joinConversation, leaveConversation]);
-
-    // ── Fetch persisted messages on conversation select ─────
-    // This runs on every page load / refresh and loads all
-    // messages saved in PostgreSQL — that is what persists history.
-    useEffect(() => {
-        if (!selectedConversation) {
-            setMessages([]);
             setLoading(false);
-            return;
-        }
-
-        const fetchMessages = async () => {
-            setLoading(true);
-            try {
-                const response = await api.get(
-                    `/messages/conversations/${selectedConversation.id}/messages`
-                );
-                setMessages(response.data.messages || []);
-                api.post(`/messages/conversations/${selectedConversation.id}/read`).catch(() => {});
-            } catch (err) {
-                console.error('Failed to fetch messages:', err);
-                if (err.response?.status === 403) {
-                    setSelectedConversation(null);
-                    navigate('/messages');
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchMessages();
-    }, [selectedConversation, navigate]);
-
-    // ── Real-time incoming messages ─────────────────────────
-    // The backend now saves BEFORE broadcasting, so every
-    // message:new event carries a real DB id. We just append
-    // it (deduplicating) — no more temp ids that vanish on refresh.
-    useEffect(() => {
-        const handleNewMessage = (message) => {
-            if (
-                selectedConversation &&
-                message.conversationId?.toString() === selectedConversation.id.toString()
-            ) {
-                setMessages(prev => {
-                    if (prev.some(m => m.id === message.id)) return prev;
-                    return [...prev, message];
-                });
-            }
-
-            setConversations(prev =>
-                prev.map(conv => {
-                    if (conv.id === message.conversationId) {
-                        return {
-                            ...conv,
-                            lastMessage: message,
-                            unreadCount:
-                                selectedConversation?.id === conv.id
-                                    ? 0
-                                    : (conv.unreadCount || 0) + 1
-                        };
-                    }
-                    return conv;
-                })
-            );
-        };
-
-        const handleTypingStatus = (data) => {
-            if (
-                selectedConversation &&
-                data.conversationId?.toString() === selectedConversation.id.toString()
-            ) {
-                setTypingUsers(prev => ({ ...prev, [data.userId]: data.isTyping }));
-                if (data.isTyping) {
-                    setTimeout(
-                        () => setTypingUsers(prev => ({ ...prev, [data.userId]: false })),
-                        3000
-                    );
-                }
-            }
-        };
-
-        const unsubscribeMessage = socketService.on('message:new', handleNewMessage);
-        const unsubscribeTyping = socketService.on('user:typing', handleTypingStatus);
-        return () => {
-            unsubscribeMessage();
-            unsubscribeTyping();
-        };
-    }, [selectedConversation]);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    // ── Send message ────────────────────────────────────────
-    // NO optimistic temp message — the backend saves to the DB
-    // first, then broadcasts message:new with the real DB id,
-    // which handleNewMessage above appends to state.
-    const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !selectedConversation || !isConnected) return;
-
-        const messageContent = newMessage.trim();
-        setNewMessage('');
-
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-        setTypingStatus(selectedConversation.id, false);
-
-        const success = sendMessage(selectedConversation.id, messageContent);
-        if (!success) {
-            console.warn('Socket send failed');
         }
     };
 
-    const handleTyping = (e) => {
-        setNewMessage(e.target.value);
-        if (!selectedConversation || !isConnected) return;
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-        setTypingStatus(selectedConversation.id, true);
-        typingTimeoutRef.current = setTimeout(() => {
-            setTypingStatus(selectedConversation.id, false);
-        }, 1000);
-    };
+    fetchMessages();
+}, [selectedConversation]);
 
-    const startConversation = async (otherUser) => {
-        setStartingConversation(true);
-        try {
-            const response = await api.post('/messages/conversations', { participantId: otherUser.id });
-            const conversation = response.data.conversation;
-            setConversations(prev => {
-                const exists = prev.some(c => c.id === conversation.id);
-                return exists ? prev : [conversation, ...prev];
+useEffect(() => {
+    const handleNewMessage = (message) => {
+        if (selectedConversation && message.conversationId?.toString() === selectedConversation.id.toString()) {
+            setMessages(prev => {
+                if (prev.some(m => m.id === message.id)) return prev;
+                return [...prev, message];
             });
-            setSelectedConversation(conversation);
-            setShowUserSearch(false);
-            navigate(`/messages/${conversation.id}`);
-        } catch (err) {
-            console.error('Failed to start conversation:', err);
-            alert('Failed to start conversation: ' + (err.response?.data?.error?.message || 'Unknown error'));
-        } finally {
-            setStartingConversation(false);
+        }
+
+        setConversations(prev =>
+            prev.map(conv => {
+                if (conv.id === message.conversationId) {
+                    return { ...conv, lastMessage: message, unreadCount: selectedConversation?.id === conv.id ? 0 : (conv.unreadCount || 0) + 1 };
+                }
+                return conv;
+            })
+        );
+    };
+
+    const handleTypingStatus = (data) => {
+        if (selectedConversation && data.conversationId?.toString() === selectedConversation.id.toString()) {
+            setTypingUsers(prev => ({ ...prev, [data.userId]: data.isTyping }));
+            if (data.isTyping) {
+                setTimeout(() => setTypingUsers(prev => ({ ...prev, [data.userId]: false })), 3000);
+            }
         }
     };
 
-    const selectConversation = (conv) => {
-        setSelectedConversation(conv);
-        navigate(`/messages/${conv.id}`);
-        hasJoinedConversation.current = false;
+    const unsubscribeMessage = socketService.on('message:new', handleNewMessage);
+    const unsubscribeTyping = socketService.on('user:typing', handleTypingStatus);
+    return () => {
+        unsubscribeMessage();
+        unsubscribeTyping();
     };
+}, [selectedConversation]);
 
-    const getOtherParticipant = (conv) => {
-        if (!conv?.participants) return null;
-        return conv.participants.find(p => p.id !== user.id);
-    };
+useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+}, [messages]);
 
-    const formatTime = (timestamp) => {
-        const date = new Date(timestamp);
-        const diffInHours = (Date.now() - date) / (1000 * 60 * 60);
-        if (diffInHours < 24)
-            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        if (diffInHours < 48) return 'Yesterday';
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    };
+const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedConversation || !isConnected) return;
 
-    const filteredUsers = users.filter(
-        u =>
-            u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            u.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const messageContent = newMessage.trim();
+    setNewMessage('');
 
-    const onlineCount = currentOnlineUsers.size;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    setTypingStatus(selectedConversation.id, false);
 
-    return (
-        <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-3">Messages</h1>
-                            <p className="text-[var(--text-secondary)]">Connect with other artists and collaborate</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {unreadCount > 0 && (
-                                <div className="px-4 py-2 bg-primary-500/10 border border-primary-500/30 rounded-xl flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                    </svg>
-                                    <span className="text-sm font-semibold text-primary-400">{unreadCount} new</span>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-3 px-4 py-2 bg-[var(--bg-tertiary)] rounded-xl border border-[var(--border-color)]">
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                                <span className="text-[var(--text-secondary)] text-sm font-medium">
-                                    {onlineCount} {onlineCount === 1 ? 'user' : 'users'} online
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+    sendMessage(selectedConversation.id, messageContent);
+};
 
-                    {!isConnected && (
-                        <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                                <span className="text-amber-300 text-sm">
-                                    {connectionError ? `Connection error: ${connectionError}` : 'Connecting to server...'}
-                                </span>
-                            </div>
-                            {connectionError && (
-                                <button onClick={reconnect} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold rounded-lg transition-all">
-                                    Retry Connection
-                                </button>
-                            )}
-                        </div>
-                    )}
+const handleTyping = (e) => {
+    setNewMessage(e.target.value);
+    if (!selectedConversation || !isConnected) return;
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    setTypingStatus(selectedConversation.id, true);
+    typingTimeoutRef.current = setTimeout(() => setTypingStatus(selectedConversation.id, false), 1000);
+};
+
+const startConversation = async (otherUser) => {
+    setStartingConversation(true);
+    try {
+        const response = await api.post('/messages/conversations', { participantId: otherUser.id });
+        const conversation = response.data.conversation;
+        setConversations(prev => {
+            const exists = prev.some(c => c.id === conversation.id);
+            if (exists) return prev;
+            return [conversation, ...prev];
+        });
+        setSelectedConversation(conversation);
+        setShowUserSearch(false);
+        navigate(`/messages/${conversation.id}`);
+    } catch (err) {
+        console.error('Failed to start conversation:', err);
+    } finally {
+        setStartingConversation(false);
+    }
+};
+
+const selectConversation = (conv) => {
+    setSelectedConversation(conv);
+    navigate(`/messages/${conv.id}`);
+    hasJoinedConversation.current = false;
+};
+
+const getOtherParticipant = (conv) => {
+    if (!conv || !conv.participants) return null;
+    return conv.participants.find(p => p.id !== user.id);
+};
+
+const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now - date) / (1000 * 60 * 60);
+
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    if (diffInHours < 48) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const filteredUsers = users.filter(u =>
+    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+);
+
+return (
+    <div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4">
+        {/* Header */}
+        <div className="max-w-7xl mx-auto mb-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2 animate-text-shine">Messages</h1>
+                    <p className="text-[var(--text-secondary)]">Connect and collaborate with artists</p>
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-250px)]">
-                    {/* Sidebar */}
-                    <div className="lg:col-span-1">
-                        <div className="glass-panel rounded-2xl p-4 h-full flex flex-col">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold text-[var(--text-primary)]">Chats</h2>
-                                <button
-                                    onClick={() => setShowUserSearch(!showUserSearch)}
-                                    className="p-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-all"
-                                    disabled={!isConnected}
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            {showUserSearch && (
-                                <div className="mb-4 p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Start New Chat</h3>
-                                        <button onClick={() => setShowUserSearch(false)} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={searchQuery}
-                                        onChange={e => setSearchQuery(e.target.value)}
-                                        placeholder="Search users..."
-                                        className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-sm placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 mb-3"
-                                    />
-                                    <div className="max-h-60 overflow-y-auto space-y-2">
-                                        {filteredUsers.map(u => (
-                                            <button key={u.id} onClick={() => startConversation(u)} disabled={startingConversation}
-                                                className="w-full flex items-center gap-3 p-2 hover:bg-[var(--bg-tertiary)] rounded-lg transition-all text-left disabled:opacity-50">
-                                                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
-                                                    {u.username[0].toUpperCase()}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{u.username}</p>
-                                                    <p className="text-xs text-[var(--text-tertiary)] truncate">{u.email}</p>
-                                                </div>
-                                                {currentOnlineUsers.has(u.id) && <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>}
-                                            </button>
-                                        ))}
-                                        {filteredUsers.length === 0 && <p className="text-center text-sm text-[var(--text-tertiary)] py-4">No users found</p>}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex-1 overflow-y-auto space-y-2">
-                                {loadingConversations ? (
-                                    <div className="text-center py-8">
-                                        <div className="animate-spin w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
-                                        <p className="text-sm text-[var(--text-tertiary)] mt-3">Loading chats...</p>
-                                    </div>
-                                ) : conversations.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-[var(--text-tertiary)] text-sm">No conversations yet</p>
-                                        <p className="text-[var(--text-tertiary)] text-xs mt-2">Start a new chat to get started</p>
-                                    </div>
-                                ) : (
-                                    conversations.map(conv => {
-                                        const otherParticipant = getOtherParticipant(conv);
-                                        if (!otherParticipant) return null;
-                                        const isSelected = selectedConversation?.id === conv.id;
-                                        const isOnline = currentOnlineUsers.has(otherParticipant.id);
-                                        return (
-                                            <button key={conv.id} onClick={() => selectConversation(conv)}
-                                                className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left ${isSelected ? 'bg-primary-500/20 border border-primary-500/40' : 'hover:bg-[var(--bg-tertiary)] border border-transparent'}`}>
-                                                <div className="relative flex-shrink-0">
-                                                    <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold">
-                                                        {otherParticipant.username[0].toUpperCase()}
-                                                    </div>
-                                                    {isOnline && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--bg-secondary)] rounded-full"></div>}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <p className="font-semibold text-[var(--text-primary)] truncate">{otherParticipant.username}</p>
-                                                        {conv.lastMessage && <span className="text-xs text-[var(--text-tertiary)] flex-shrink-0 ml-2">{formatTime(conv.lastMessage.timestamp)}</span>}
-                                                    </div>
-                                                    {conv.lastMessage ? (
-                                                        <div className="flex items-center justify-between">
-                                                            <p className="text-sm text-[var(--text-secondary)] truncate">
-                                                                {conv.lastMessage.senderId === user.id ? 'You: ' : ''}{conv.lastMessage.content}
-                                                            </p>
-                                                            {conv.unreadCount > 0 && conv.lastMessage.senderId !== user.id && (
-                                                                <span className="flex-shrink-0 ml-2 px-2 py-0.5 bg-primary-500 text-white text-xs font-bold rounded-full">{conv.unreadCount}</span>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-sm text-[var(--text-tertiary)]">No messages yet</p>
-                                                    )}
-                                                </div>
-                                            </button>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Messages panel */}
-                    <div className="lg:col-span-2">
-                        <div className="glass-panel rounded-2xl h-full flex flex-col">
-                            {selectedConversation ? (
-                                <>
-                                    <div className="p-4 border-b border-[var(--border-color)]">
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative">
-                                                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold">
-                                                    {getOtherParticipant(selectedConversation)?.username?.[0]?.toUpperCase() || '?'}
-                                                </div>
-                                                {currentOnlineUsers.has(getOtherParticipant(selectedConversation)?.id) && (
-                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--bg-secondary)] rounded-full"></div>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-[var(--text-primary)]">
-                                                    {getOtherParticipant(selectedConversation)?.username || 'Unknown User'}
-                                                </h3>
-                                                <p className="text-xs text-[var(--text-tertiary)]">
-                                                    {currentOnlineUsers.has(getOtherParticipant(selectedConversation)?.id) ? 'Online' : 'Offline'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                                        {loading ? (
-                                            <div className="text-center py-12">
-                                                <div className="animate-spin w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full mx-auto"></div>
-                                                <p className="text-sm text-[var(--text-tertiary)] mt-4">Loading messages...</p>
-                                            </div>
-                                        ) : messages.length === 0 ? (
-                                            <div className="text-center py-12">
-                                                <div className="w-16 h-16 bg-primary-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                                    </svg>
-                                                </div>
-                                                <p className="text-[var(--text-secondary)]">No messages yet</p>
-                                                <p className="text-sm text-[var(--text-tertiary)] mt-1">Send a message to start the conversation</p>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                {messages.map((message, index) => {
-                                                    const isOwn = message.senderId === user.id;
-                                                    const showTime =
-                                                        index === messages.length - 1 ||
-                                                        messages[index + 1].senderId !== message.senderId ||
-                                                        new Date(messages[index + 1].timestamp) - new Date(message.timestamp) > 5 * 60 * 1000;
-                                                    return (
-                                                        <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-1`}>
-                                                            <div className={`flex max-w-[80%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                                {!isOwn && (
-                                                                    <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1 mr-2 flex-shrink-0">
-                                                                        {message.senderName?.[0]?.toUpperCase() || '?'}
-                                                                    </div>
-                                                                )}
-                                                                <div>
-                                                                    <div className={`rounded-2xl px-4 py-2.5 ${isOwn ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-br-none' : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-bl-none'}`}>
-                                                                        <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                                                                    </div>
-                                                                    {showTime && (
-                                                                        <div className={`text-xs text-[var(--text-tertiary)] mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                                                                            {formatTime(message.timestamp)}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-
-                                                {Object.entries(typingUsers).some(([uid, isTyping]) =>
-                                                    isTyping &&
-                                                    parseInt(uid) !== user.id &&
-                                                    parseInt(uid) === getOtherParticipant(selectedConversation)?.id
-                                                ) && (
-                                                    <div className="flex justify-start mb-2">
-                                                        <div className="flex">
-                                                            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1 mr-2 flex-shrink-0">
-                                                                {getOtherParticipant(selectedConversation)?.username?.[0]?.toUpperCase() || '?'}
-                                                            </div>
-                                                            <div className="bg-[var(--bg-tertiary)] rounded-2xl rounded-bl-none px-4 py-2.5">
-                                                                <div className="flex gap-1">
-                                                                    <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce"></div>
-                                                                    <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                                                    <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <div ref={messagesEndRef} />
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <form onSubmit={handleSendMessage} className="p-4 border-t border-[var(--border-color)]">
-                                        <div className="flex gap-3">
-                                            <input
-                                                type="text"
-                                                value={newMessage}
-                                                onChange={handleTyping}
-                                                placeholder={isConnected ? 'Type your message...' : 'Connecting to server...'}
-                                                className="flex-1 px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
-                                                disabled={!isConnected}
-                                            />
-                                            <button type="submit" disabled={!newMessage.trim() || !isConnected}
-                                                className={`px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg ${!newMessage.trim() || !isConnected ? 'bg-gray-700 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-500/20'}`}>
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </form>
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                                    <div className="w-24 h-24 bg-gradient-to-br from-primary-500/10 to-primary-600/10 rounded-full flex items-center justify-center mb-6">
-                                        <svg className="w-12 h-12 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-3">Select a conversation</h3>
-                                    <p className="text-[var(--text-secondary)] max-w-md mb-6">Choose an existing conversation from the sidebar or start a new one</p>
-                                    <button onClick={() => setShowUserSearch(true)} disabled={!isConnected}
-                                        className={`px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg ${!isConnected ? 'bg-gray-600 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-500/20'}`}>
-                                        Start New Chat
-                                    </button>
-                                    {!isConnected && <p className="mt-3 text-sm text-amber-500">⚠️ Please wait for connection to start new chats</p>}
-                                </div>
-                            )}
-                        </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 px-4 py-2 glass rounded-full">
+                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                        <span className="text-sm text-[var(--text-secondary)] font-medium">{onlineCount} online</span>
                     </div>
                 </div>
             </div>
         </div>
-    );
+
+        {/* Main Container */}
+        <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-220px)]">
+                
+                {/* Sidebar */}
+                <div className="lg:col-span-1">
+                    <div className="glass-strong rounded-2xl p-4 h-full flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold text-[var(--text-primary)]">Chats</h2>
+                            <button
+                                onClick={() => setShowUserSearch(!showUserSearch)}
+                                className="p-2.5 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-light)] text-white rounded-xl hover:scale-105 transition-transform shadow-lg shadow-[var(--accent-primary)]/20"
+                                disabled={!isConnected}
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* User Search */}
+                        {showUserSearch && (
+                            <div className="mb-4 p-4 glass rounded-xl border border-[var(--border-color)] animate-slide-down">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">New Chat</h3>
+                                    <button
+                                        onClick={() => setShowUserSearch(false)}
+                                        className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search users..."
+                                    className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition-all"
+                                />
+                                <div className="mt-3 max-h-60 overflow-y-auto space-y-2">
+                                    {filteredUsers.map(u => (
+                                        <button
+                                            key={u.id}
+                                            onClick={() => startConversation(u)}
+                                            disabled={startingConversation}
+                                            className="w-full flex items-center gap-3 p-3 hover:bg-[var(--bg-tertiary)] rounded-xl transition-all group"
+                                        >
+                                            <div className="relative">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-light)] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                                                    {u.username[0].toUpperCase()}
+                                                </div>
+                                                {currentOnlineUsers.has(u.id) && (
+                                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--bg-secondary)] rounded-full"></div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 text-left">
+                                                <p className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">{u.username}</p>
+                                                <p className="text-xs text-[var(--text-tertiary)] truncate">{u.email}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Conversations List */}
+                        <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+                            {loadingConversations ? (
+                                <div className="text-center py-12">
+                                    <div className="music-loader mx-auto mb-4"></div>
+                                    <p className="text-sm text-[var(--text-tertiary)]">Loading chats...</p>
+                                </div>
+                            ) : conversations.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <div className="text-6xl mb-4">💬</div>
+                                    <p className="text-[var(--text-secondary)] mb-2">No conversations yet</p>
+                                    <p className="text-sm text-[var(--text-tertiary)]">Start chatting with other artists!</p>
+                                </div>
+                            ) : (
+                                conversations.map((conv) => {
+                                    const otherParticipant = getOtherParticipant(conv);
+                                    if (!otherParticipant) return null;
+
+                                    const isSelected = selectedConversation?.id === conv.id;
+                                    const isOnline = currentOnlineUsers.has(otherParticipant.id);
+
+                                    return (
+                                        <button
+                                            key={conv.id}
+                                            onClick={() => selectConversation(conv)}
+                                            className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all group ${
+                                                isSelected
+                                                    ? 'bg-gradient-to-r from-[var(--accent-primary)]/20 to-[var(--accent-primary-light)]/20 border-2 border-[var(--accent-primary)]/40'
+                                                    : 'hover:bg-[var(--bg-tertiary)] border-2 border-transparent'
+                                            }`}
+                                        >
+                                            <div className="relative flex-shrink-0">
+                                                <div className="w-14 h-14 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-light)] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                                    {otherParticipant.username[0].toUpperCase()}
+                                                </div>
+                                                {isOnline && (
+                                                    <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-[var(--bg-secondary)] rounded-full animate-pulse"></div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <p className="font-semibold text-[var(--text-primary)] truncate">{otherParticipant.username}</p>
+                                                    {conv.lastMessage && (
+                                                        <span className="text-xs text-[var(--text-tertiary)] flex-shrink-0 ml-2">{formatTime(conv.lastMessage.timestamp)}</span>
+                                                    )}
+                                                </div>
+                                                {conv.lastMessage && (
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className="text-sm text-[var(--text-secondary)] truncate">
+                                                            {conv.lastMessage.senderId === user.id && 'You: '}
+                                                            {conv.lastMessage.content}
+                                                        </p>
+                                                        {conv.unreadCount > 0 && conv.lastMessage.senderId !== user.id && (
+                                                            <span className="flex-shrink-0 px-2 py-0.5 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-light)] text-white text-xs font-bold rounded-full">
+                                                                {conv.unreadCount}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chat Panel */}
+                <div className="lg:col-span-2">
+                    <div className="glass-strong rounded-2xl h-full flex flex-col overflow-hidden">
+                        {selectedConversation ? (
+                            <>
+                                {/* Chat Header */}
+                                <div className="p-6 border-b border-[var(--border-color)] bg-gradient-to-r from-[var(--bg-secondary)] to-[var(--bg-tertiary)]">
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                            <div className="w-14 h-14 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-light)] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                                {getOtherParticipant(selectedConversation)?.username?.[0]?.toUpperCase() || '?'}
+                                            </div>
+                                            {currentOnlineUsers.has(getOtherParticipant(selectedConversation)?.id) && (
+                                                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-[var(--bg-secondary)] rounded-full animate-pulse"></div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-[var(--text-primary)]">
+                                                {getOtherParticipant(selectedConversation)?.username || 'Unknown'}
+                                            </h3>
+                                            <p className="text-sm text-[var(--text-secondary)]">
+                                                {currentOnlineUsers.has(getOtherParticipant(selectedConversation)?.id) ? (
+                                                    <span className="flex items-center gap-2">
+                                                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                                        Online
+                                                    </span>
+                                                ) : 'Offline'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Messages Area */}
+                                <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                                    {loading ? (
+                                        <div className="flex flex-col items-center justify-center h-full">
+                                            <div className="music-loader mb-4"></div>
+                                            <p className="text-sm text-[var(--text-tertiary)]">Loading messages...</p>
+                                        </div>
+                                    ) : messages.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full">
+                                            <div className="text-6xl mb-4">🎵</div>
+                                            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No messages yet</h3>
+                                            <p className="text-[var(--text-secondary)]">Start the conversation!</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {messages.map((message) => {
+                                                const isOwn = message.senderId === user.id;
+                                                return (
+                                                    <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-slide-up`}>
+                                                        <div className={`flex max-w-[75%] gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                                                            {!isOwn && (
+                                                                <div className="w-10 h-10 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-light)] rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg">
+                                                                    {message.senderName?.[0]?.toUpperCase() || '?'}
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <div
+                                                                    className={`px-6 py-3 rounded-2xl shadow-lg ${
+                                                                        isOwn
+                                                                            ? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-light)] text-white rounded-br-sm'
+                                                                            : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-bl-sm border border-[var(--border-color)]'
+                                                                    }`}
+                                                                >
+                                                                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                                                                </div>
+                                                                <div className={`text-xs text-[var(--text-tertiary)] mt-1 px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
+                                                                    {formatTime(message.timestamp)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Typing Indicator */}
+                                            {Object.entries(typingUsers).some(([userId, isTyping]) =>
+                                                isTyping && parseInt(userId) !== user.id && parseInt(userId) === getOtherParticipant(selectedConversation)?.id
+                                            ) && (
+                                                <div className="flex justify-start animate-slide-up">
+                                                    <div className="flex gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-light)] rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                                            {getOtherParticipant(selectedConversation)?.username?.[0]?.toUpperCase() || '?'}
+                                                        </div>
+                                                        <div className="bg-[var(--bg-tertiary)] px-6 py-3 rounded-2xl rounded-bl-sm border border-[var(--border-color)] shadow-lg">
+                                                            <div className="flex gap-1.5">
+                                                                <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce"></div>
+                                                                <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                                                <div className="w-2 h-2 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div ref={messagesEndRef} />
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Input Area */}
+                                <form onSubmit={handleSendMessage} className="p-6 border-t border-[var(--border-color)] bg-gradient-to-r from-[var(--bg-secondary)] to-[var(--bg-tertiary)]">
+                                    <div className="flex gap-3">
+                                        <input
+                                            type="text"
+                                            value={newMessage}
+                                            onChange={handleTyping}
+                                            placeholder={isConnected ? "Type your message..." : "Connecting..."}
+                                            className="flex-1 px-6 py-4 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-2xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent transition-all shadow-inner"
+                                            disabled={!isConnected}
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!newMessage.trim() || !isConnected}
+                                            className={`px-8 py-4 rounded-2xl font-semibold transition-all shadow-lg ${
+                                                !newMessage.trim() || !isConnected
+                                                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                                    : 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-light)] text-white hover:scale-105 hover:shadow-xl shadow-[var(--accent-primary)]/30'
+                                            }`}
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </form>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full p-8">
+                                <div className="text-8xl mb-6 animate-float">💬</div>
+                                <h3 className="text-3xl font-bold text-[var(--text-primary)] mb-3 animate-text-shine">Select a conversation</h3>
+                                <p className="text-[var(--text-secondary)] text-center max-w-md mb-8">
+                                    Choose a chat from the sidebar or start a new conversation
+                                </p>
+                                <button
+                                    onClick={() => setShowUserSearch(true)}
+                                    className={`px-8 py-4 rounded-2xl font-semibold transition-all shadow-lg ${
+                                        !isConnected
+                                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                            : 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-light)] text-white hover:scale-105 hover:shadow-xl shadow-[var(--accent-primary)]/30'
+                                    }`}
+                                    disabled={!isConnected}
+                                >
+                                    Start New Chat
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
 }
 
 export default MessagesPage;

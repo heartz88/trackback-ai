@@ -36,7 +36,7 @@ def analyze_audio(file_path):
     try:
         # 1. LOAD AUDIO
         # Load the full file for duration/BPM, but sr=22050 keeps it manageable.
-        y, sr = librosa.load(file_path, sr=22050, mono=True)
+        y, sr = librosa.load(file_path, sr=22050, mono=True, duration=60.0)
         duration = librosa.get_duration(y=y, sr=sr)
 
         # 2. ENERGY CALCULATION (Do this first while 'y' is in memory)
