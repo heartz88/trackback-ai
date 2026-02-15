@@ -131,7 +131,7 @@ return (
                 <NavLink to="/upload">Upload</NavLink>
                 <NavLink to="/my-tracks">My Tracks</NavLink>
                 <NavLink to="/collaborations">Collabs</NavLink>
-                <NavLink to="/submissions">Submissions</NavLink>
+                {/*<NavLink to="/submissions">Submissions</NavLink>*/}
                 <NavLink to="/messages" badge={unreadCount}>Messages</NavLink>
             </div>
             )}
