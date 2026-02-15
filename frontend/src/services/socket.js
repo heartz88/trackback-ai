@@ -15,14 +15,18 @@ this.connectionPromise = null;
 }
 
 connect(token) {
-if (this.isConnecting) {
-    console.log('🔄 Already connecting, skipping...');
-    return;
-}
-
+// Always return a Promise so callers can safely await/then.
+// Previously returning undefined when already connecting/connected caused
+// waitForConnection() to crash silently — preventing room joins for users
+// who load the page while the socket is still establishing.
 if (this.socket?.connected) {
     console.log('✅ Already connected');
-    return;
+    return Promise.resolve(this.socket);
+}
+
+if (this.isConnecting && this.connectionPromise) {
+    console.log('🔄 Already connecting, returning existing promise...');
+    return this.connectionPromise;
 }
 
 this.token = token;
@@ -83,23 +87,30 @@ this.socket.onAny((eventName, ...args) => {
     }
 });
 
-return new Promise((resolve, reject) => {
+this.connectionPromise = new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
     if (!this.connected) {
+        this.isConnecting = false;
+        this.connectionPromise = null;
         reject(new Error('Connection timeout'));
     }
     }, 10000);
 
     this.socket.once('connect', () => {
     clearTimeout(timeout);
+    this.connectionPromise = null;
     resolve(this.socket);
     });
 
     this.socket.once('connect_error', (error) => {
     clearTimeout(timeout);
+    this.isConnecting = false;
+    this.connectionPromise = null;
     reject(error);
     });
 });
+
+return this.connectionPromise;
 }
 
 disconnect() {
