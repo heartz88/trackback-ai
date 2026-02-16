@@ -131,7 +131,7 @@ return (
                 />
             </div>
 
-            {/* Apply Button - refreshes for new instances when as the filters will already show the othe */}
+            {/* Apply Button - refreshes for new instances when as the filters will already show the current tracks and loops */}
             <div className="space-y-2">
                 <button
                 onClick={fetchTracks}
