@@ -106,30 +106,6 @@ return (
             </div>
         )}
         </div>
-
-        {/* Album Art Placeholder with Play Button */}
-        <div className="relative flex-shrink-0">
-        <div className="w-16 h-16 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl flex items-center justify-center border-2 border-primary-500/30 group-hover:border-primary-500/50 transition-all">
-            <svg className="w-8 h-8 text-primary-400 group-hover:text-primary-300 transition-colors" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-            </svg>
-        </div>
-        {/* Mini play button overlay */}
-        <button
-            onClick={handlePlayPause}
-            className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center shadow-lg hover:bg-primary-400 transition-all transform hover:scale-110"
-        >
-            {isPlaying ? (
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            ) : (
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-            </svg>
-            )}
-        </button>
-        </div>
     </div>
 
     {/* MIR Tags with Animations */}
