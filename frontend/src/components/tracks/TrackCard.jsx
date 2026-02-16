@@ -204,8 +204,8 @@ return (
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-primary-400 rounded-full transform scale-x-0 group-hover/audio:scale-x-100 transition-transform origin-left"></div>
     </div>
 
-    {/* Action Button */}
-    {isOwner ? (
+    
+    {/*{isOwner ? (
         <div className="relative group/owner">
         <Link 
             to={`/tracks/${track.id}`}
@@ -218,7 +218,7 @@ return (
             View Track Details
         </Link>
         
-        {/* Owner tooltip */}
+        {/* Owner tooltip 
         <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-[var(--bg-tertiary)] text-xs text-[var(--text-secondary)] py-1 px-3 rounded-full opacity-0 group-hover/owner:opacity-100 transition-opacity whitespace-nowrap border border-[var(--border-color)]">
             You own this track
         </div>
@@ -263,9 +263,9 @@ return (
             </>
         )}
         </button>
-    )}
+    )}*/}
 
-    {/* Collaboration stats (optional) */}
+    {/* Collaboration stats */}
     {track.collaboration_count > 0 && !isOwner && (
         <div className="mt-3 text-xs text-[var(--text-tertiary)] flex items-center justify-center gap-1">
         <span>👥</span>
