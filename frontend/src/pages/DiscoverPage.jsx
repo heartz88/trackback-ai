@@ -131,9 +131,8 @@ return (
                 />
             </div>
 
-            {/* Apply Button */}
+            {/* Apply Button - refreshes for new instances when as the filters will already show the othe */}
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-transparent">Action</label>
                 <button
                 onClick={fetchTracks}
                 className="w-full px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-lg transition-all shadow-lg shadow-primary-500/20"
