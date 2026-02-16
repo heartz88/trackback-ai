@@ -137,7 +137,6 @@ return (
         {track.bpm && (
         <div className="px-3 py-1.5 bg-primary-500/10 border border-primary-500/30 rounded-full text-xs text-primary-300 font-medium animate-float stagger-1">
             <span className="flex items-center gap-1">
-            <span className="text-primary-400">🎵</span>
             {Math.round(track.bpm)} BPM
             </span>
         </div>
@@ -146,7 +145,6 @@ return (
         {track.energy_level && (
         <div className={`px-3 py-1.5 border rounded-full text-xs font-medium capitalize animate-float stagger-2 ${getEnergyColor(track.energy_level)}`}>
             <span className="flex items-center gap-1">
-            <span>⚡</span>
             {track.energy_level} Energy
             </span>
         </div>
@@ -155,7 +153,6 @@ return (
         {track.musical_key && (
         <div className="px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full text-xs text-green-300 font-medium animate-float stagger-3">
             <span className="flex items-center gap-1">
-            <span>🎹</span>
             {track.musical_key}
             </span>
         </div>
@@ -164,7 +161,6 @@ return (
         {track.genre && (
         <div className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-xs text-[var(--text-secondary)] font-medium animate-float stagger-4">
             <span className="flex items-center gap-1">
-            <span>🎸</span>
             {track.genre}
             </span>
         </div>
@@ -173,7 +169,6 @@ return (
         {track.duration && (
         <div className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-xs text-[var(--text-secondary)] font-medium animate-float stagger-5">
             <span className="flex items-center gap-1">
-            <span>⏱️</span>
             {formatDuration(track.duration)}
             </span>
         </div>
@@ -184,8 +179,7 @@ return (
     {track.desired_skills && track.desired_skills.length > 0 && (
         <div className="mb-4 p-3 bg-[var(--bg-tertiary)]/30 rounded-xl border border-[var(--border-color)]">
         <p className="text-xs text-[var(--text-tertiary)] mb-2 flex items-center gap-1">
-            <span className="text-primary-400">🎯</span>
-            Looking for collaborators with:
+            Looking for collaborators that can contribute with:
         </p>
         <div className="flex flex-wrap gap-1.5">
             {track.desired_skills.slice(0, 3).map((skill, index) => (
