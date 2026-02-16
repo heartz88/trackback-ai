@@ -9,12 +9,14 @@ import { SocketProvider } from './context/SocketContext';
 import CollaborationsPage from './pages/CollaborationsPage';
 import DiscoverPage from './pages/DiscoverPage';
 import EditProfilePage from './pages/EditProfilePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import MessagesPage from './pages/MessagesPage';
 import MyTracksPage from './pages/MyTracksPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import SubmissionsPage from './pages/SubmissionsPage';
 import TrackDetailPage from './pages/TrackDetailPage';
 import UploadPage from './pages/UploadPage';
@@ -39,7 +41,6 @@ function App() {
           <ScrollToTop />
           <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
             <Navigation />
-            {/* Main content with padding-top to account for fixed navbar */}
             <main className="flex-grow pt-20">
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -56,6 +57,8 @@ function App() {
                 <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
                 <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
                 <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
               </Routes>
             </main>
             <Footer />

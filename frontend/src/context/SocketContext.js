@@ -56,7 +56,6 @@ if (user && token) {
     // Message handlers
     const handleNewMessage = (message) => {
     console.log('📩 New message in context:', message);
-    // ✅ FIX: Skip notifications for messages YOU sent.
     // The room broadcast means you receive your own message:new event too,
     // which was incorrectly adding a notification for the sender.
     if (message.senderId === user?.id) return;

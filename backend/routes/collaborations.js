@@ -29,7 +29,7 @@ if (allowedTypes.includes(file.mimetype)) {
 }
 });
 
-// Request collaboration (FR5)
+// Request collaboration
 router.post('/request', authMiddleware, async (req, res) => {
 try {
 const { track_id, message } = req.body;
@@ -524,9 +524,9 @@ if (existingVote.rows.length > 0) {
     ]
     );
 
-    res.json({ 
+    res.json({
     message: 'Vote recorded',
-    vote: vote_type 
+    vote: vote_type
     });
 }
 } catch (error) {
@@ -578,8 +578,8 @@ const winningSubmission = winningSubResult.rows[0];
 
 // Update track status
 await db.query(
-    `UPDATE tracks 
-    SET status = 'completed', 
+    `UPDATE tracks
+    SET status = 'completed',
         completed_submission_id = $1,
         updated_at = NOW()
     WHERE id = $2`,
@@ -609,6 +609,43 @@ res.json({
 } catch (error) {
 console.error('Complete track error:', error);
 res.status(500).json({ error: { message: 'Failed to complete track' } });
+}
+});
+
+router.get('/user/:userId', async (req, res) => {
+try {
+const { userId } = req.params;
+
+// Validate user ID
+if (isNaN(parseInt(userId))) {
+    return res.status(400).json({ error: { message: 'Invalid user ID' } });
+}
+
+// Get active collaborations where user is either owner or collaborator
+const result = await db.query(
+    `SELECT ac.*,
+            t.title as track_title,
+            u.username as collaborator_name,
+            owner.username as owner_name
+    FROM active_collaborations ac
+    JOIN tracks t ON ac.track_id = t.id
+    JOIN users u ON ac.collaborator_id = u.id
+    JOIN users owner ON ac.owner_id = owner.id
+    WHERE ac.owner_id = $1 OR ac.collaborator_id = $1
+    ORDER BY ac.created_at DESC`,
+    [userId]
+);
+
+res.json({ collaborations: result.rows });
+} catch (error) {
+console.error('❌ Get user collaborations error:', error);
+// If table doesn't exist yet, return empty array
+if (error.code === '42P01') {
+    return res.json({ collaborations: [] });
+}
+res.status(500).json({
+    error: { message: 'Failed to fetch collaborations' }
+});
 }
 });
 

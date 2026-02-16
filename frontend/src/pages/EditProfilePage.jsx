@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -16,6 +16,13 @@ username: '',
 email: '',
 bio: '',
 skills: '',
+looking_for_collab: true
+});
+
+const [passwordData, setPasswordData] = useState({
+current_password: '',
+new_password: '',
+confirm_password: ''
 });
 
 useEffect(() => {
@@ -29,6 +36,7 @@ const fetchProfile = async () => {
         email: profile.email || '',
         bio: profile.bio || '',
         skills: profile.skills ? profile.skills.join(', ') : '',
+        looking_for_collab: profile.looking_for_collab !== false
     });
     } catch (err) {
     console.error('Failed to fetch profile:', err);
@@ -51,7 +59,15 @@ setFormData(prev => ({
 }));
 };
 
-const handleSubmit = async (e) => {
+const handlePasswordChange = (e) => {
+const { name, value } = e.target;
+setPasswordData(prev => ({
+    ...prev,
+    [name]: value
+}));
+};
+
+const handleSubmitProfile = async (e) => {
 e.preventDefault();
 setError('');
 setSuccess('');
@@ -69,16 +85,14 @@ try {
     email: formData.email,
     bio: formData.bio,
     skills: skillsArray,
+    looking_for_collab: formData.looking_for_collab
     };
 
     const response = await api.put(`/users/${user.id}`, updateData);
     
-    // Update auth context with new user data
     login(localStorage.getItem('token'), response.data.user);
-    
     setSuccess('Profile updated successfully!');
     
-    // Redirect to profile after 1.5 seconds
     setTimeout(() => {
     navigate(`/profile/${user.id}`);
     }, 1500);
@@ -91,49 +105,84 @@ try {
 }
 };
 
-const handleCancel = () => {
-navigate(`/profile/${user.id}`);
+const handleSubmitPassword = async (e) => {
+e.preventDefault();
+setError('');
+setSuccess('');
+
+if (passwordData.new_password !== passwordData.confirm_password) {
+    setError('New passwords do not match');
+    return;
+}
+
+if (passwordData.new_password.length < 6) {
+    setError('Password must be at least 6 characters');
+    return;
+}
+
+setSaving(true);
+
+try {
+    await api.put(`/users/${user.id}/password`, {
+    current_password: passwordData.current_password,
+    new_password: passwordData.new_password
+    });
+
+    setSuccess('Password updated successfully!');
+    setPasswordData({
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
+    });
+    
+} catch (err) {
+    console.error('Failed to update password:', err);
+    setError(err.response?.data?.error?.message || 'Failed to update password');
+} finally {
+    setSaving(false);
+}
 };
 
 if (loading) {
 return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
-    <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+    <div className="music-loader">
+        <span className="music-loader-bar"></span>
+        <span className="music-loader-bar"></span>
+        <span className="music-loader-bar"></span>
+        <span className="music-loader-bar"></span>
+        <span className="music-loader-bar"></span>
+    </div>
     </div>
 );
 }
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] px-4 transition-colors duration-300">
-    <div className="max-w-3xl mx-auto">
-    
-    {/* Header */}
+<div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4">
+    <div className="max-w-2xl mx-auto">
     <div className="mb-8">
         <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Edit Profile</h1>
         <p className="text-[var(--text-secondary)]">Update your profile information</p>
     </div>
 
-    {/* Error Message */}
     {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl mb-6">
         {error}
         </div>
     )}
 
-    {/* Success Message */}
     {success && (
         <div className="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-3 rounded-xl mb-6">
         {success}
         </div>
     )}
 
-    {/* Edit Form */}
-    <form onSubmit={handleSubmit} className="glass-panel rounded-3xl p-8">
-        <div className="space-y-6">
-        
-        {/* Username */}
+    {/* Profile Info Form */}
+    <form onSubmit={handleSubmitProfile} className="glass-panel rounded-3xl p-6 mb-6">
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Profile Information</h2>
+        <div className="space-y-4">
         <div>
-            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">
             Username
             </label>
             <input
@@ -141,15 +190,13 @@ return (
             name="username"
             value={formData.username}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-            placeholder="Your username"
+            className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
             required
             />
         </div>
 
-        {/* Email */}
         <div>
-            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">
             Email
             </label>
             <input
@@ -157,33 +204,27 @@ return (
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-            placeholder="your@email.com"
+            className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
             required
             />
         </div>
 
-        {/* Bio */}
         <div>
-            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">
             Bio
             </label>
             <textarea
             name="bio"
             value={formData.bio}
             onChange={handleChange}
-            rows="4"
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all resize-none"
-            placeholder="Tell others about yourself, your music style, what you're working on..."
+            rows="3"
+            className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            placeholder="Tell others about yourself..."
             />
-            <p className="text-xs text-[var(--text-tertiary)] mt-2">
-            A brief description about yourself and your music
-            </p>
         </div>
 
-        {/* Skills */}
         <div>
-            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">
             Skills
             </label>
             <input
@@ -191,72 +232,99 @@ return (
             name="skills"
             value={formData.skills}
             onChange={handleChange}
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-            placeholder="e.g., mixing, mastering, vocals, guitar, production"
+            className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="mixing, mastering, vocals, guitar"
             />
-            <p className="text-xs text-[var(--text-tertiary)] mt-2">
-            Separate multiple skills with commas
-            </p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-1">Separate with commas</p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4 pt-4">
-            <button
+        <div className="flex items-center gap-3">
+            <input
+            type="checkbox"
+            name="looking_for_collab"
+            id="looking_for_collab"
+            checked={formData.looking_for_collab}
+            onChange={(e) => setFormData(prev => ({ ...prev, looking_for_collab: e.target.checked }))}
+            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-tertiary)] text-primary-600 focus:ring-primary-500"
+            />
+            <label htmlFor="looking_for_collab" className="text-[var(--text-primary)] text-sm">
+            Available for collaborations
+            </label>
+        </div>
+
+        <button
             type="submit"
             disabled={saving}
-            className="flex-1 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20 disabled:shadow-none"
-            >
-            {saving ? (
-                <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-                </span>
-            ) : (
-                'Save Changes'
-            )}
-            </button>
-            
-            <button
-            type="button"
-            onClick={handleCancel}
-            disabled={saving}
-            className="px-8 py-3 bg-[var(--bg-tertiary)] hover:opacity-80 text-[var(--text-primary)] font-semibold rounded-xl transition-all border border-[var(--border-color)] disabled:opacity-50"
-            >
-            Cancel
-            </button>
-        </div>
+            className="w-full py-2.5 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-lg transition-all"
+        >
+            {saving ? 'Saving...' : 'Save Changes'}
+        </button>
         </div>
     </form>
 
-    {/* Tips */}
-    <div className="mt-6 glass-panel p-6 rounded-2xl">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
-        Profile Tips
-        </h3>
-        <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
-        <li className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>Choose a unique username that represents your music identity</span>
-        </li>
-        <li className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>Write a bio that highlights your music style and what you're looking for</span>
-        </li>
-        <li className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>List your skills to help others find you for collaborations</span>
-        </li>
-        </ul>
-    </div>
+    {/* Password Change Form */}
+    <form onSubmit={handleSubmitPassword} className="glass-panel rounded-3xl p-6">
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Change Password</h2>
+        <div className="space-y-4">
+        <div>
+            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">
+            Current Password
+            </label>
+            <input
+            type="password"
+            name="current_password"
+            value={passwordData.current_password}
+            onChange={handlePasswordChange}
+            className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
+            required
+            />
+        </div>
+
+        <div>
+            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">
+            New Password
+            </label>
+            <input
+            type="password"
+            name="new_password"
+            value={passwordData.new_password}
+            onChange={handlePasswordChange}
+            className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
+            required
+            minLength={6}
+            />
+        </div>
+
+        <div>
+            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">
+            Confirm New Password
+            </label>
+            <input
+            type="password"
+            name="confirm_password"
+            value={passwordData.confirm_password}
+            onChange={handlePasswordChange}
+            className="w-full px-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
+            required
+            />
+        </div>
+
+        <Link
+            to="/forgot-password"
+            className="text-sm text-primary-400 hover:text-primary-300 transition-colors block text-center"
+        >
+            Forgot your password?
+        </Link>
+
+        <button
+            type="submit"
+            disabled={saving}
+            className="w-full py-2.5 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-lg transition-all"
+        >
+            {saving ? 'Updating...' : 'Update Password'}
+        </button>
+        </div>
+    </form>
     </div>
 </div>
 );

@@ -20,7 +20,7 @@ if (allowedTypes.includes(file.mimetype)) {
 }
 });
 
-// Submit completed version (FR5)
+// Submit completed version
 router.post('/', authMiddleware, upload.single('audio'), async (req, res) => {
 try {
 const { track_id, title, description } = req.body;
@@ -115,7 +115,7 @@ res.status(500).json({ error: { message: 'Failed to fetch submissions' } });
 }
 });
 
-// Vote on submission (FR5)
+// Vote on submission 
 router.post('/:id/vote', authMiddleware, async (req, res) => {
 try {
 const { id } = req.params;
@@ -182,7 +182,7 @@ res.status(500).json({ error: { message: 'Failed to record vote' } });
 }
 });
 
-// Add comment to submission (FR5)
+// Add comment to submission
 router.post('/:id/comments', authMiddleware, async (req, res) => {
 try {
 const { id } = req.params;

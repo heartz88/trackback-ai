@@ -15,10 +15,16 @@ const SubmissionsPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
+    const [votingStats, setVotingStats] = useState({
+        totalVotes: 0,
+        activeSubmissions: 0,
+        featured: 0
+    });
 
     useEffect(() => {
         fetchTrack();
         fetchCollaboration();
+        fetchVotingStats();
     }, [trackId]);
 
     const fetchTrack = async () => {
@@ -34,8 +40,9 @@ const SubmissionsPage = () => {
     };
 
     const fetchCollaboration = async () => {
+        if (!user) return;
+        
         try {
-            // Get user's collaboration for this track
             const response = await api.get(`/collaborations/track/${trackId}`);
             if (response.data.collaboration) {
                 setCollaboration(response.data.collaboration);
@@ -45,62 +52,149 @@ const SubmissionsPage = () => {
         }
     };
 
+    const fetchVotingStats = async () => {
+        try {
+            const response = await api.get(`/submissions/track/${trackId}/stats`);
+            setVotingStats(response.data.stats || {
+                totalVotes: 0,
+                activeSubmissions: 0,
+                featured: 0
+            });
+        } catch (error) {
+            console.error('Error fetching voting stats:', error);
+        }
+    };
+
     const handleSubmissionSuccess = (newSubmission) => {
         setShowSubmitForm(false);
-        setRefreshKey(prev => prev + 1); // Trigger re-fetch
+        setRefreshKey(prev => prev + 1);
+        fetchVotingStats();
     };
 
     const canSubmit = collaboration && collaboration.status === 'approved';
 
     if (isLoading) {
         return (
-            <div className="page-loading">
-                <div className="spinner"></div>
-                <p>Loading track...</p>
+            <div className="submissions-page">
+                <div className="page-loading">
+                    <div className="music-loader">
+                        <div className="music-loader-bar"></div>
+                        <div className="music-loader-bar"></div>
+                        <div className="music-loader-bar"></div>
+                        <div className="music-loader-bar"></div>
+                        <div className="music-loader-bar"></div>
+                    </div>
+                    <p className="mt-4 text-secondary animate-pulse">Loading submissions...</p>
+                </div>
             </div>
         );
     }
 
     if (error || !track) {
         return (
-            <div className="page-error">
-                <h2>Track Not Found</h2>
-                <p>{error || 'This track does not exist'}</p>
-                <Link to="/discover" className="btn-primary">
-                    Browse Tracks
-                </Link>
+            <div className="submissions-page">
+                <div className="page-error animate-fade-in">
+                    <h2>Track Not Found</h2>
+                    <p>{error || 'This track does not exist'}</p>
+                    <Link to="/discover" className="btn-primary">
+                        Browse Tracks
+                    </Link>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="submissions-page">
+        <div className="submissions-page animate-fade-in">
             {/* Header */}
             <div className="page-header">
-                <Link to={`/tracks/${trackId}`} className="back-btn">
-                    ← Back to Track
+                <Link to={`/tracks/${trackId}`} className="back-link">
+                    <svg className="back-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                    </svg>
+                    Back to Track
                 </Link>
-                <h1>Submissions for "{track.title}"</h1>
-                <p className="track-info">
-                    {track.bpm} BPM • {track.musical_key} • {track.genre}
-                </p>
+                
+                <div className="header-content">
+                    <div>
+                        <h1 className="animate-slide-up">Submissions</h1>
+                        <p className="track-title animate-slide-up stagger-1">
+                            for "{track.title}"
+                        </p>
+                    </div>
+                    
+                    <div className="track-info animate-slide-up stagger-2">
+                        <span className="info-item">
+                            <span className="info-label">BPM</span>
+                            <span className="info-value">{track.bpm ? Math.round(track.bpm) : '—'}</span>
+                        </span>
+                        <span className="info-item">
+                            <span className="info-label">Key</span>
+                            <span className="info-value">{track.musical_key || '—'}</span>
+                        </span>
+                        <span className="info-item">
+                            <span className="info-label">Energy</span>
+                            <span className="info-value">{track.energy_level || '—'}</span>
+                        </span>
+                        <span className="info-item">
+                            <span className="info-label">Genre</span>
+                            <span className="info-value">{track.genre || '—'}</span>
+                        </span>
+                    </div>
+                </div>
             </div>
+
+            {/* Voting Summary */}
+            <div className="voting-summary glass animate-slide-up stagger-3">
+                <h3>🏆 Community Voting</h3>
+                <div className="summary-stats">
+                    <div className="summary-item">
+                        <span className="summary-label">Total Votes</span>
+                        <span className="summary-value">{votingStats.totalVotes}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Active Submissions</span>
+                        <span className="summary-value">{votingStats.activeSubmissions}</span>
+                    </div>
+                    <div className="summary-item">
+                        <span className="summary-label">Featured</span>
+                        <span className="summary-value">{votingStats.featured}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Submission Guidelines */}
+            {canSubmit && !showSubmitForm && (
+                <div className="guidelines-card animate-slide-up stagger-4">
+                    <h3>📋 Submission Guidelines</h3>
+                    <ul className="guidelines-list">
+                        <li>✅ Submit only your own work</li>
+                        <li>✅ Include a clear description of what you added</li>
+                        <li>✅ Max file size: 50MB</li>
+                        <li>✅ Supported formats: MP3, WAV, FLAC</li>
+                        <li>⭐ Top voted submissions get featured</li>
+                    </ul>
+                </div>
+            )}
 
             {/* Submit Button */}
             {canSubmit && !showSubmitForm && (
-                <div className="submit-section">
+                <div className="submit-section animate-slide-up stagger-5">
                     <button 
                         onClick={() => setShowSubmitForm(true)}
                         className="btn-submit"
                     >
-                        ➕ Submit Your Version
+                        <svg className="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        Submit Your Version
                     </button>
                 </div>
             )}
 
             {/* Submission Form */}
             {showSubmitForm && (
-                <div className="form-container">
+                <div className="form-container animate-slide-up">
                     <SubmissionForm
                         trackId={trackId}
                         collaborationId={collaboration?.id}
@@ -111,137 +205,15 @@ const SubmissionsPage = () => {
             )}
 
             {/* Submissions List */}
-            <SubmissionList 
-                trackId={trackId}
-                collaborationId={collaboration?.id}
-                key={refreshKey}
-            />
-
-            <style jsx>{`
-                .submissions-page {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 24px;
-                }
-
-                .page-loading,
-                .page-error {
-                    text-align: center;
-                    padding: 64px 24px;
-                }
-
-                .spinner {
-                    width: 48px;
-                    height: 48px;
-                    border: 4px solid rgba(255, 255, 255, 0.1);
-                    border-top-color: #9b59b6;
-                    border-radius: 50%;
-                    animation: spin 0.8s linear infinite;
-                    margin: 0 auto 16px;
-                }
-
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-
-                .page-error h2 {
-                    color: #ffffff;
-                    margin-bottom: 16px;
-                }
-
-                .page-error p {
-                    color: #b4b4b4;
-                    margin-bottom: 24px;
-                }
-
-                .btn-primary {
-                    display: inline-block;
-                    padding: 12px 24px;
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 8px;
-                    font-weight: 600;
-                    transition: transform 0.2s;
-                }
-
-                .btn-primary:hover {
-                    transform: translateY(-2px);
-                }
-
-                .page-header {
-                    margin-bottom: 32px;
-                }
-
-                .back-btn {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    color: #9b59b6;
-                    text-decoration: none;
-                    font-size: 14px;
-                    margin-bottom: 16px;
-                    transition: color 0.2s;
-                }
-
-                .back-btn:hover {
-                    color: #e94560;
-                }
-
-                .page-header h1 {
-                    color: #ffffff;
-                    font-size: 32px;
-                    font-weight: 700;
-                    margin: 0 0 8px 0;
-                }
-
-                .track-info {
-                    color: #b4b4b4;
-                    font-size: 16px;
-                    margin: 0;
-                }
-
-                .submit-section {
-                    margin-bottom: 32px;
-                    text-align: center;
-                    padding: 24px;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-radius: 12px;
-                    border: 2px dashed rgba(155, 89, 182, 0.3);
-                }
-
-                .btn-submit {
-                    padding: 14px 32px;
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 16px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-
-                .btn-submit:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 16px rgba(155, 89, 182, 0.4);
-                }
-
-                .form-container {
-                    margin-bottom: 32px;
-                }
-
-                @media (max-width: 768px) {
-                    .submissions-page {
-                        padding: 16px;
-                    }
-
-                    .page-header h1 {
-                        font-size: 24px;
-                    }
-                }
-            `}</style>
+            <div className="submissions-container animate-slide-up stagger-6">
+                <SubmissionList 
+                    trackId={trackId}
+                    collaborationId={collaboration?.id}
+                    key={refreshKey}
+                />
+            </div>
         </div>
     );
 };
+
 export default SubmissionsPage;

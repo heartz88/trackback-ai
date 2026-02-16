@@ -45,7 +45,7 @@ return res.status(400).json({ error: { message: err.message } });
 next();
 };
 
-// Upload track (FR2)
+// Upload track 
 router.post('/upload', 
 authMiddleware,
 upload.single('audio'),
@@ -194,7 +194,7 @@ try {
 }
 );
 
-// Get all tracks with filters (FR4)
+// Get all tracks with filters
 router.get('/', async (req, res) => {
 try {
 const {
