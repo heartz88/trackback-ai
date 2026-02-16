@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import CommentSection from '../components/comments/CommentSection';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +16,7 @@ const TrackDetailPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [requestingCollab, setRequestingCollab] = useState(false);
+    const [collaborators, setCollaborators] = useState([]);
 
     useEffect(() => {
         fetchTrackDetails();
@@ -32,6 +34,15 @@ const TrackDetailPage = () => {
             // Fetch owner
             const ownerResponse = await api.get(`/users/${trackResponse.data.track.user_id}`);
             setOwner(ownerResponse.data.user);
+
+            // Fetch active collaborators
+            try {
+                const collabResponse = await api.get(`/collaborations/track/${trackId}/active`);
+                setCollaborators(collabResponse.data.collaborators || []);
+            } catch (error) {
+                // No active collaborators
+                setCollaborators([]);
+            }
 
             // Check if user has existing collaboration
             if (user) {
@@ -60,12 +71,12 @@ const TrackDetailPage = () => {
         setRequestingCollab(true);
 
         try {
-            const response = await api.post('/collaborations', {
+            const response = await api.post('/collaborations/request', {
                 track_id: trackId,
                 message: `I'd like to collaborate on "${track.title}"`
             });
 
-            setCollaboration(response.data.collaboration);
+            setCollaboration(response.data.request);
             alert('Collaboration request sent!');
         } catch (error) {
             console.error('Error requesting collaboration:', error);
@@ -82,15 +93,21 @@ const TrackDetailPage = () => {
     if (isLoading) {
         return (
             <div className="page-loading">
-                <div className="spinner"></div>
-                <p>Loading track...</p>
+                <div className="music-loader">
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                </div>
+                <p className="mt-4 text-secondary animate-pulse">Loading track...</p>
             </div>
         );
     }
 
     if (error || !track) {
         return (
-            <div className="page-error">
+            <div className="page-error animate-fade-in">
                 <h2>Track Not Found</h2>
                 <p>{error || 'This track does not exist'}</p>
                 <Link to="/discover" className="btn-primary">
@@ -101,11 +118,11 @@ const TrackDetailPage = () => {
     }
 
     return (
-        <div className="track-detail-page">
+        <div className="track-detail-page animate-fade-in">
             {/* Hero Section */}
-            <div className="track-hero">
+            <div className="track-hero glass-strong">
                 <div className="hero-content">
-                    <div className="waveform-container">
+                    <div className="waveform-container glass">
                         <WaveformPlayer 
                             audioUrl={track.audio_url}
                             height={200}
@@ -113,14 +130,15 @@ const TrackDetailPage = () => {
                     </div>
 
                     <div className="track-meta">
-                        <h1>{track.title}</h1>
-                        <div className="owner-info">
-                            <div className="avatar">
+                        <h1 className="animate-slide-up">{track.title}</h1>
+                        
+                        <div className="owner-info animate-slide-up stagger-1">
+                            <div className="avatar bpm-badge">
                                 {owner?.username?.charAt(0).toUpperCase()}
                             </div>
                             <div>
                                 <Link to={`/profile/${owner?.id}`} className="owner-link">
-                                    {owner?.username}
+                                    @{owner?.username}
                                 </Link>
                                 <span className="upload-date">
                                     • {new Date(track.created_at).toLocaleDateString()}
@@ -128,41 +146,86 @@ const TrackDetailPage = () => {
                             </div>
                         </div>
 
-                        <div className="music-chips">
-                            <span className="chip">🎵 {track.bpm} BPM</span>
-                            <span className="chip">🎹 {track.musical_key}</span>
-                            <span className="chip">⚡ {track.energy_level}</span>
-                            <span className="chip">🎸 {track.genre}</span>
+                        {/* Track Stats */}
+                        <div className="track-stats animate-slide-up stagger-2">
+                            <div className="stat-item">
+                                <span className="stat-label">Plays</span>
+                                <span className="stat-value">{track.plays || 0}</span>
+                            </div>
+                            <div className="stat-item">
+                                <span className="stat-label">Submissions</span>
+                                <span className="stat-value">{track.submissions_count || 0}</span>
+                            </div>
+                            <div className="stat-item">
+                                <span className="stat-label">Collaborators</span>
+                                <span className="stat-value">{collaborators.length || 0}</span>
+                            </div>
+                        </div>
+
+                        {/* MIR Tags */}
+                        <div className="music-chips animate-slide-up stagger-3">
+                            {track.bpm && (
+                                <span className="chip bpm-badge">
+                                    🎵 {Math.round(track.bpm)} BPM
+                                </span>
+                            )}
+                            {track.musical_key && (
+                                <span className="chip genre-tag">
+                                    🎹 {track.musical_key}
+                                </span>
+                            )}
+                            {track.energy_level && (
+                                <span className="chip" style={{
+                                    background: track.energy_level === 'high' ? 'rgba(239, 68, 68, 0.2)' :
+                                                track.energy_level === 'medium' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                                    borderColor: track.energy_level === 'high' ? '#ef4444' :
+                                                track.energy_level === 'medium' ? '#f59e0b' : '#10b981'
+                                }}>
+                                    ⚡ {track.energy_level}
+                                </span>
+                            )}
+                            {track.genre && (
+                                <span className="chip genre-tag">
+                                    🎸 {track.genre}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="track-actions">
+                <div className="track-actions animate-slide-up stagger-4">
                     {canRequestCollab && (
                         <button 
                             onClick={handleRequestCollaboration}
-                            className="btn-primary btn-large"
+                            className="btn-primary"
                             disabled={requestingCollab}
                         >
-                            🤝 Request Collaboration
+                            {requestingCollab ? (
+                                <>
+                                    <span className="music-loader-small"></span>
+                                    Sending...
+                                </>
+                            ) : (
+                                '🤝 Request Collaboration'
+                            )}
                         </button>
                     )}
 
                     {collaboration && (
                         <div className="collab-status">
                             {collaboration.status === 'pending' && (
-                                <span className="status-badge pending">
+                                <span className="status-badge pending glass">
                                     ⏳ Collaboration Pending
                                 </span>
                             )}
                             {collaboration.status === 'approved' && (
-                                <span className="status-badge approved">
+                                <span className="status-badge approved glass">
                                     ✅ Collaboration Approved
                                 </span>
                             )}
                             {collaboration.status === 'rejected' && (
-                                <span className="status-badge rejected">
+                                <span className="status-badge rejected glass">
                                     ❌ Collaboration Declined
                                 </span>
                             )}
@@ -170,8 +233,17 @@ const TrackDetailPage = () => {
                     )}
 
                     {isOwner && (
-                        <Link to={`/my-tracks`} className="btn-secondary btn-large">
+                        <Link to={`/my-tracks`} className="btn-secondary glass">
                             ✏️ Manage Track
+                        </Link>
+                    )}
+
+                    {hasApprovedCollab && (
+                        <Link 
+                            to={`/tracks/${trackId}/submissions`}
+                            className="btn-primary"
+                        >
+                            ➕ Submit Version
                         </Link>
                     )}
                 </div>
@@ -179,7 +251,7 @@ const TrackDetailPage = () => {
 
             {/* Description */}
             {track.description && (
-                <div className="description-section">
+                <div className="description-section glass animate-slide-up stagger-5">
                     <h2>📋 Description</h2>
                     <p>{track.description}</p>
                 </div>
@@ -187,8 +259,8 @@ const TrackDetailPage = () => {
 
             {/* Desired Skills */}
             {track.desired_skills && track.desired_skills.length > 0 && (
-                <div className="skills-section">
-                    <h2>🎯 Desired Skills</h2>
+                <div className="skills-section glass animate-slide-up stagger-6">
+                    <h2>🎯 Looking For</h2>
                     <div className="skills-tags">
                         {track.desired_skills.map((skill, index) => (
                             <span key={index} className="skill-tag">
@@ -199,8 +271,30 @@ const TrackDetailPage = () => {
                 </div>
             )}
 
+            {/* Collaborators Section */}
+            {collaborators.length > 0 && (
+                <div className="collaborators-section glass animate-slide-up stagger-7">
+                    <h2>🤝 Current Collaborators</h2>
+                    <div className="collaborators-list">
+                        {collaborators.map((collab) => (
+                            <div key={collab.id} className="collaborator-item">
+                                <div className="collaborator-avatar">
+                                    {collab.username?.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="collaborator-info">
+                                    <Link to={`/profile/${collab.id}`} className="collaborator-name">
+                                        @{collab.username}
+                                    </Link>
+                                    <span className="collaborator-role">{collab.role || 'Collaborator'}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Submissions */}
-            <div className="submissions-section">
+            <div className="submissions-section glass animate-slide-up stagger-8">
                 <div className="section-header">
                     <h2>🏆 Submissions</h2>
                     {hasApprovedCollab && (
@@ -216,271 +310,16 @@ const TrackDetailPage = () => {
                 <SubmissionList 
                     trackId={trackId}
                     collaborationId={collaboration?.id}
+                    limit={3}
                 />
             </div>
 
-            <style jsx>{`
-                .track-detail-page {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 24px;
-                }
-
-                .page-loading,
-                .page-error {
-                    text-align: center;
-                    padding: 64px 24px;
-                    color: #ffffff;
-                }
-
-                .spinner {
-                    width: 48px;
-                    height: 48px;
-                    border: 4px solid rgba(255, 255, 255, 0.1);
-                    border-top-color: #9b59b6;
-                    border-radius: 50%;
-                    animation: spin 0.8s linear infinite;
-                    margin: 0 auto 16px;
-                }
-
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-
-                .track-hero {
-                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                    border-radius: 16px;
-                    padding: 40px;
-                    margin-bottom: 32px;
-                }
-
-                .hero-content {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 40px;
-                    align-items: center;
-                    margin-bottom: 32px;
-                }
-
-                .track-meta h1 {
-                    color: #ffffff;
-                    font-size: 32px;
-                    font-weight: 700;
-                    margin: 0 0 16px 0;
-                }
-
-                .owner-info {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    margin-bottom: 16px;
-                }
-
-                .avatar {
-                    width: 48px;
-                    height: 48px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: bold;
-                    font-size: 20px;
-                }
-
-                .owner-link {
-                    color: #9b59b6;
-                    text-decoration: none;
-                    font-weight: 600;
-                    transition: color 0.2s;
-                }
-
-                .owner-link:hover {
-                    color: #e94560;
-                }
-
-                .upload-date {
-                    color: #b4b4b4;
-                    font-size: 14px;
-                }
-
-                .music-chips {
-                    display: flex;
-                    gap: 12px;
-                    flex-wrap: wrap;
-                }
-
-                .chip {
-                    padding: 6px 16px;
-                    background: rgba(155, 89, 182, 0.2);
-                    border: 1px solid rgba(155, 89, 182, 0.4);
-                    color: #ffffff;
-                    border-radius: 20px;
-                    font-size: 14px;
-                }
-
-                .track-actions {
-                    display: flex;
-                    gap: 16px;
-                    justify-content: center;
-                    flex-wrap: wrap;
-                }
-
-                .btn-primary,
-                .btn-secondary {
-                    padding: 14px 32px;
-                    border-radius: 8px;
-                    font-size: 16px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    border: none;
-                    text-decoration: none;
-                    display: inline-block;
-                }
-
-                .btn-primary {
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
-                    color: white;
-                }
-
-                .btn-primary:hover:not(:disabled) {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 16px rgba(155, 89, 182, 0.4);
-                }
-
-                .btn-primary:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-
-                .btn-secondary {
-                    background: rgba(255, 255, 255, 0.1);
-                    color: #ffffff;
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                }
-
-                .btn-secondary:hover {
-                    background: rgba(255, 255, 255, 0.15);
-                }
-
-                .collab-status {
-                    display: flex;
-                    align-items: center;
-                }
-
-                .status-badge {
-                    padding: 10px 20px;
-                    border-radius: 8px;
-                    font-weight: 600;
-                    font-size: 14px;
-                }
-
-                .status-badge.pending {
-                    background: rgba(245, 158, 11, 0.2);
-                    color: #f59e0b;
-                    border: 1px solid #f59e0b;
-                }
-
-                .status-badge.approved {
-                    background: rgba(16, 185, 129, 0.2);
-                    color: #10b981;
-                    border: 1px solid #10b981;
-                }
-
-                .status-badge.rejected {
-                    background: rgba(239, 68, 68, 0.2);
-                    color: #ef4444;
-                    border: 1px solid #ef4444;
-                }
-
-                .description-section,
-                .skills-section,
-                .submissions-section {
-                    background: #1e1e2f;
-                    border-radius: 12px;
-                    padding: 32px;
-                    margin-bottom: 24px;
-                }
-
-                .description-section h2,
-                .skills-section h2,
-                .submissions-section h2 {
-                    color: #ffffff;
-                    font-size: 24px;
-                    font-weight: 700;
-                    margin: 0 0 16px 0;
-                }
-
-                .description-section p {
-                    color: #b4b4b4;
-                    line-height: 1.8;
-                    margin: 0;
-                }
-
-                .skills-tags {
-                    display: flex;
-                    gap: 12px;
-                    flex-wrap: wrap;
-                }
-
-                .skill-tag {
-                    padding: 8px 16px;
-                    background: rgba(0, 217, 255, 0.1);
-                    border: 1px solid rgba(0, 217, 255, 0.3);
-                    color: #00d9ff;
-                    border-radius: 8px;
-                    font-size: 14px;
-                }
-
-                .section-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 24px;
-                }
-
-                .btn-view-all {
-                    color: #9b59b6;
-                    text-decoration: none;
-                    font-weight: 600;
-                    transition: color 0.2s;
-                }
-
-                .btn-view-all:hover {
-                    color: #e94560;
-                }
-
-                @media (max-width: 1024px) {
-                    .hero-content {
-                        grid-template-columns: 1fr;
-                    }
-                }
-
-                @media (max-width: 768px) {
-                    .track-detail-page {
-                        padding: 16px;
-                    }
-
-                    .track-hero {
-                        padding: 24px;
-                    }
-
-                    .track-meta h1 {
-                        font-size: 24px;
-                    }
-
-                    .track-actions {
-                        flex-direction: column;
-                    }
-
-                    .btn-primary,
-                    .btn-secondary {
-                        width: 100%;
-                    }
-                }
-            `}</style>
+            {/* Comments Section */}
+            <div className="comments-section glass animate-slide-up">
+                <CommentSection 
+                    submissionId={track.completed_submission_id || track.submissions?.[0]?.id}
+                />
+            </div>
         </div>
     );
 };

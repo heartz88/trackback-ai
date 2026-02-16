@@ -5,11 +5,16 @@ function ProtectedRoute({ children }) {
 const { user, loading } = useAuth();
 
 if (loading) return (
-<div className="flex justify-center items-center h-screen bg-[var(--bg-primary)]">
-    <div className="animate-pulse">
-    <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>
-</div>
+            <div className="page-loading">
+                <div className="music-loader">
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                    <div className="music-loader-bar"></div>
+                </div>
+                <p className="mt-4 text-secondary animate-pulse">Loading...</p>
+            </div>
 );
 if (!user) return <Navigate to="/login" />;
 

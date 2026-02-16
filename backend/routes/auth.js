@@ -1,12 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto'); // ADD THIS - was missing!
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
-
 
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
@@ -55,12 +55,13 @@ router.post('/register',
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert user
+        // Insert user with new columns
         const result = await db.query(
-        `INSERT INTO users (username, email, password_hash, bio, skills, created_at) 
-            VALUES ($1, $2, $3, $4, $5, NOW()) 
-            RETURNING id, username, email, bio, skills, created_at`,
-        [username, email, hashedPassword, bio || '', skills || []]
+            `INSERT INTO users (username, email, password_hash, bio, skills, 
+                               social_links, looking_for_collab, last_active, created_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) 
+             RETURNING id, username, email, bio, skills, social_links, looking_for_collab, created_at`,
+            [username, email, hashedPassword, bio || '', skills || [], '{}', true]
         );
 
         const user = result.rows[0];
@@ -71,14 +72,7 @@ router.post('/register',
         res.status(201).json({
         message: 'User registered successfully',
         token,
-        user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            bio: user.bio,
-            skills: user.skills,
-            createdAt: user.created_at
-        }
+        user
         });
     } catch (error) {
         console.error('Registration error:', error);
@@ -104,8 +98,8 @@ router.post('/login',
 
         // Find user
         const result = await db.query(
-        'SELECT * FROM users WHERE email = $1',
-        [email]
+            'SELECT * FROM users WHERE email = $1',
+            [email]
         );
 
         if (result.rows.length === 0) {
@@ -125,6 +119,12 @@ router.post('/login',
         });
         }
 
+        // Update last active
+        await db.query(
+            'UPDATE users SET last_active = NOW() WHERE id = $1',
+            [user.id]
+        );
+
         // Generate JWT token
         const token = generateToken(user);
 
@@ -137,6 +137,8 @@ router.post('/login',
             email: user.email,
             bio: user.bio,
             skills: user.skills,
+            social_links: user.social_links,
+            looking_for_collab: user.looking_for_collab,
             createdAt: user.created_at
         }
         });
@@ -147,7 +149,7 @@ router.post('/login',
     }
 );
 
-// ✅ NEW: Token refresh endpoint
+// Refresh token
 router.post('/refresh', authMiddleware, async (req, res) => {
     try {
     const userId = req.user.id;
@@ -156,7 +158,7 @@ router.post('/refresh', authMiddleware, async (req, res) => {
 
     // Fetch fresh user data from database
     const result = await db.query(
-        'SELECT id, username, email, bio, skills, created_at FROM users WHERE id = $1',
+        'SELECT id, username, email, bio, skills, social_links, looking_for_collab, created_at FROM users WHERE id = $1',
         [userId]
     );
 
@@ -168,6 +170,12 @@ router.post('/refresh', authMiddleware, async (req, res) => {
 
     const user = result.rows[0];
 
+    // Update last active
+    await db.query(
+        'UPDATE users SET last_active = NOW() WHERE id = $1',
+        [userId]
+    );
+
     // Generate new JWT token
     const newToken = generateToken(user);
 
@@ -176,14 +184,7 @@ router.post('/refresh', authMiddleware, async (req, res) => {
     res.json({
         message: 'Token refreshed successfully',
         token: newToken,
-        user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        bio: user.bio,
-        skills: user.skills,
-        createdAt: user.created_at
-        }
+        user
     });
     } catch (error) {
     console.error('❌ Token refresh error:', error);
@@ -196,13 +197,87 @@ router.post('/refresh', authMiddleware, async (req, res) => {
     }
 });
 
+// Forgot Password - Request reset
+router.post('/forgot-password', async (req, res) => {
+try {
+const { email } = req.body;
+
+// Check if user exists
+const userResult = await db.query(
+    'SELECT id, username FROM users WHERE email = $1',
+    [email]
+);
+
+if (userResult.rows.length === 0) {
+    // Return success even if email doesn't exist (security)
+    return res.json({ message: 'If an account exists, you will receive reset instructions' });
+}
+
+const user = userResult.rows[0];
+
+// Generate reset token
+const resetToken = crypto.randomBytes(32).toString('hex');
+const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+// Store token in database
+await db.query(
+    'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
+    [resetToken, tokenExpiry, user.id]
+);
+
+// Send email with reset link
+const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+// TODO: Implement email sending (using SendGrid, Nodemailer, etc.)
+console.log(`Reset link for ${email}: ${resetLink}`);
+
+res.json({ message: 'If an account exists, you will receive reset instructions' });
+} catch (error) {
+console.error('Forgot password error:', error);
+res.status(500).json({ error: { message: 'Failed to process request' } });
+}
+});
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+try {
+const { token, new_password } = req.body;
+
+// Find user with valid token
+const userResult = await db.query(
+    'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
+    [token]
+);
+
+if (userResult.rows.length === 0) {
+    return res.status(400).json({ error: { message: 'Invalid or expired reset token' } });
+}
+
+const user = userResult.rows[0];
+
+// Hash new password
+const hashedPassword = await bcrypt.hash(new_password, 10);
+
+// Update password and clear reset token
+await db.query(
+    'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
+    [hashedPassword, user.id]
+);
+
+res.json({ message: 'Password reset successfully' });
+} catch (error) {
+console.error('Reset password error:', error);
+res.status(500).json({ error: { message: 'Failed to reset password' } });
+}
+});
+
 // Get current user
 router.get('/me', authMiddleware, async (req, res) => {
     try {
     const userId = req.user.id;
 
     const result = await db.query(
-        'SELECT id, username, email, bio, skills, created_at FROM users WHERE id = $1',
+        'SELECT id, username, email, bio, skills, social_links, looking_for_collab, created_at FROM users WHERE id = $1',
         [userId]
     );
 
@@ -214,16 +289,13 @@ router.get('/me', authMiddleware, async (req, res) => {
 
     const user = result.rows[0];
 
-    res.json({
-        user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        bio: user.bio,
-        skills: user.skills,
-        createdAt: user.created_at
-        }
-    });
+    // Update last active
+    await db.query(
+        'UPDATE users SET last_active = NOW() WHERE id = $1',
+        [userId]
+    );
+
+    res.json({ user });
     } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: { message: 'Failed to fetch user' } });

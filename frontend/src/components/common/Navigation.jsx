@@ -357,11 +357,13 @@ return (
 const NavLink = ({ to, children, badge }) => (
 <Link
 to={to}
-className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors group"
->
+className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)]
+hover:text-[var(--text-primary)] transition-colors group">
 {children}
 {badge > 0 && (
-    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
+    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br
+    from-red-500 to-red-600 text-white text-xs
+    rounded-full flex items-center justify-center font-bold shadow-lg">
     {badge > 9 ? '9+' : badge}
     </span>
 )}

@@ -4,7 +4,7 @@ const db = require('../config/database');
 
 const router = express.Router();
 
-// Get user notifications (FR8)
+// Get user notifications
 router.get('/', authMiddleware, async (req, res) => {
 try {
 const userId = req.user.id;

@@ -1,34 +1,31 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import SubmissionCard from './SubmissionCard';
 
-const SubmissionList = ({ trackId, collaborationId }) => {
+const SubmissionList = ({ trackId, collaborationId, refresh }) => {
+    const { user } = useAuth();
     const [submissions, setSubmissions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [sortBy, setSortBy] = useState('newest');
-    const [filterStatus, setFilterStatus] = useState('all');
+    const [sortBy, setSortBy] = useState('latest'); // 'latest', 'popular', 'controversial'
+    const [filterBy, setFilterBy] = useState('all'); // 'all', 'my', 'featured'
 
     useEffect(() => {
         fetchSubmissions();
-    }, [trackId, collaborationId, sortBy, filterStatus]);
+    }, [trackId, sortBy, filterBy, refresh]);
 
     const fetchSubmissions = async () => {
         setIsLoading(true);
         setError('');
 
         try {
-            const endpoint = collaborationId 
-                ? `/collaborations/${collaborationId}/submissions`
-                : `/tracks/${trackId}/submissions`;
+            const params = {
+                sort: sortBy,
+                filter: filterBy
+            };
 
-            const response = await api.get(endpoint, {
-                params: {
-                    sort: sortBy,
-                    status: filterStatus !== 'all' ? filterStatus : undefined
-                }
-            });
-
+            const response = await api.get(`/tracks/${trackId}/submissions`, { params });
             setSubmissions(response.data.submissions || []);
         } catch (error) {
             console.error('Error fetching submissions:', error);
@@ -38,26 +35,62 @@ const SubmissionList = ({ trackId, collaborationId }) => {
         }
     };
 
-    const sortedSubmissions = [...submissions].sort((a, b) => {
-        switch (sortBy) {
-            case 'newest':
-                return new Date(b.created_at) - new Date(a.created_at);
-            case 'oldest':
-                return new Date(a.created_at) - new Date(b.created_at);
-            case 'most_voted':
-                return (b.vote_score || 0) - (a.vote_score || 0);
-            default:
-                return 0;
+    const handleVote = async (submissionId, voteType) => {
+        if (!user) {
+            alert('Please login to vote');
+            return;
         }
-    });
 
-    const winningSubmission = submissions.find(s => s.status === 'approved');
+        try {
+            const response = await api.post(`/submissions/${submissionId}/vote`, {
+                vote_type: voteType
+            });
+
+            // Update local state
+            setSubmissions(prev => prev.map(sub => 
+                sub.id === submissionId 
+                    ? { 
+                        ...sub, 
+                        upvotes: response.data.upvotes,
+                        downvotes: response.data.downvotes,
+                        user_vote: response.data.user_vote 
+                    }
+                    : sub
+            ));
+        } catch (error) {
+            console.error('Error voting:', error);
+            alert('Failed to register vote');
+        }
+    };
+
+    const handleComment = async (submissionId, content) => {
+        if (!user) {
+            alert('Please login to comment');
+            return;
+        }
+
+        try {
+            const response = await api.post(`/submissions/${submissionId}/comments`, {
+                content
+            });
+
+            // Update submission with new comment
+            setSubmissions(prev => prev.map(sub => 
+                sub.id === submissionId 
+                    ? { ...sub, comment_count: (sub.comment_count || 0) + 1 }
+                    : sub
+            ));
+        } catch (error) {
+            console.error('Error posting comment:', error);
+            alert('Failed to post comment');
+        }
+    };
 
     if (isLoading) {
         return (
             <div className="submission-list-loading">
-                <div className="spinner-large"></div>
-                <p>Loading submissions...</p>
+                <div className="spinner-mini"></div>
+                <span>Loading submissions...</span>
             </div>
         );
     }
@@ -65,7 +98,6 @@ const SubmissionList = ({ trackId, collaborationId }) => {
     if (error) {
         return (
             <div className="submission-list-error">
-                <span className="error-icon">⚠️</span>
                 <p>{error}</p>
                 <button onClick={fetchSubmissions} className="retry-btn">
                     Try Again
@@ -76,265 +108,220 @@ const SubmissionList = ({ trackId, collaborationId }) => {
 
     return (
         <div className="submission-list">
-            {/* Controls */}
-            <div className="list-controls">
-                <div className="control-group">
-                    <label>Sort by:</label>
+            {/* Header with filters */}
+            <div className="list-header">
+                <div className="list-stats">
+                    <span className="stat-item">
+                        🎵 {submissions.length} Submission{submissions.length !== 1 ? 's' : ''}
+                    </span>
+                    <span className="stat-item">
+                        🔥 {submissions.reduce((acc, sub) => acc + sub.upvotes, 0)} Upvotes
+                    </span>
+                </div>
+
+                <div className="list-controls">
+                    <select 
+                        value={filterBy} 
+                        onChange={(e) => setFilterBy(e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="all">All Submissions</option>
+                        <option value="my">My Submissions</option>
+                        <option value="featured">Featured</option>
+                    </select>
+
                     <select 
                         value={sortBy} 
                         onChange={(e) => setSortBy(e.target.value)}
                         className="sort-select"
                     >
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
-                        <option value="most_voted">Most Voted</option>
+                        <option value="latest">Latest First</option>
+                        <option value="popular">Most Popular</option>
+                        <option value="controversial">Most Discussed</option>
                     </select>
                 </div>
-
-                <div className="control-group">
-                    <label>Filter:</label>
-                    <div className="filter-buttons">
-                        <button
-                            className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
-                            onClick={() => setFilterStatus('all')}
-                        >
-                            All
-                        </button>
-                        <button
-                            className={`filter-btn ${filterStatus === 'pending' ? 'active' : ''}`}
-                            onClick={() => setFilterStatus('pending')}
-                        >
-                            Pending
-                        </button>
-                        <button
-                            className={`filter-btn ${filterStatus === 'approved' ? 'active' : ''}`}
-                            onClick={() => setFilterStatus('approved')}
-                        >
-                            Approved
-                        </button>
-                    </div>
-                </div>
             </div>
 
-            {/* Submission Count */}
-            <div className="submission-count">
-                {submissions.length} {submissions.length === 1 ? 'submission' : 'submissions'}
-            </div>
-
-            {/* Submissions */}
-            {submissions.length === 0 ? (
-                <div className="no-submissions">
-                    <span className="empty-icon">📝</span>
-                    <h3>No submissions yet</h3>
-                    <p>Be the first to submit a completed version!</p>
-                </div>
-            ) : (
-                <div className="submissions-container">
-                    {/* Winning Submission First */}
-                    {winningSubmission && (
-                        <SubmissionCard 
-                            submission={winningSubmission}
-                            isWinner={true}
-                        />
-                    )}
-
-                    {/* Other Submissions */}
-                    {sortedSubmissions
-                        .filter(s => s.id !== winningSubmission?.id)
-                        .map(submission => (
-                            <SubmissionCard 
-                                key={submission.id}
-                                submission={submission}
-                            />
-                        ))
-                    }
+            {/* Empty state */}
+            {submissions.length === 0 && (
+                <div className="empty-state">
+                    <div className="empty-icon">🎵</div>
+                    <h3>No Submissions Yet</h3>
+                    <p>
+                        {collaborationId 
+                            ? 'Be the first to submit your version of this track!'
+                            : 'Collaborators haven\'t submitted any versions yet.'}
+                    </p>
                 </div>
             )}
 
+            {/* Submissions grid */}
+            <div className="submissions-grid">
+                {submissions.map((submission) => (
+                    <SubmissionCard
+                        key={submission.id}
+                        submission={submission}
+                        currentUser={user}
+                        onVote={handleVote}
+                        onComment={handleComment}
+                        isCollaborator={collaborationId !== null}
+                    />
+                ))}
+            </div>
+
             <style jsx>{`
-                .submission-list {
-                    width: 100%;
-                }
-
-                .list-controls {
+                .submission-list-loading {
                     display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 24px;
-                    padding: 16px;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-radius: 12px;
-                    gap: 16px;
-                    flex-wrap: wrap;
-                }
-
-                .control-group {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                }
-
-                .control-group label {
-                    color: #b4b4b4;
-                    font-size: 14px;
-                    font-weight: 600;
-                }
-
-                .sort-select {
-                    background: rgba(0, 0, 0, 0.3);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    color: #ffffff;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-
-                .sort-select:hover {
-                    border-color: #9b59b6;
-                }
-
-                .sort-select:focus {
-                    outline: none;
-                    border-color: #9b59b6;
-                }
-
-                .filter-buttons {
-                    display: flex;
-                    gap: 8px;
-                }
-
-                .filter-btn {
-                    padding: 8px 16px;
-                    background: rgba(0, 0, 0, 0.3);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    color: #b4b4b4;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-
-                .filter-btn:hover {
-                    border-color: #9b59b6;
-                    background: rgba(155, 89, 182, 0.1);
-                }
-
-                .filter-btn.active {
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
-                    border-color: transparent;
-                    color: #ffffff;
-                }
-
-                .submission-count {
-                    color: #b4b4b4;
-                    font-size: 14px;
-                    margin-bottom: 16px;
-                }
-
-                .submissions-container {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 20px;
-                }
-
-                .no-submissions {
-                    text-align: center;
-                    padding: 64px 24px;
-                    background: rgba(0, 0, 0, 0.2);
-                    border-radius: 12px;
-                    border: 2px dashed rgba(255, 255, 255, 0.1);
-                }
-
-                .empty-icon {
-                    font-size: 64px;
-                    display: block;
-                    margin-bottom: 16px;
-                }
-
-                .no-submissions h3 {
-                    color: #ffffff;
-                    font-size: 20px;
-                    margin: 0 0 8px 0;
-                }
-
-                .no-submissions p {
-                    color: #b4b4b4;
-                    font-size: 14px;
-                    margin: 0;
-                }
-
-                .submission-list-loading,
-                .submission-list-error {
-                    display: flex;
-                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    padding: 64px 24px;
-                    text-align: center;
+                    gap: 12px;
+                    padding: 48px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 12px;
                 }
 
-                .spinner-large {
-                    width: 48px;
-                    height: 48px;
-                    border: 4px solid rgba(255, 255, 255, 0.1);
+                .spinner-mini {
+                    width: 24px;
+                    height: 24px;
+                    border: 3px solid rgba(155, 89, 182, 0.3);
                     border-top-color: #9b59b6;
                     border-radius: 50%;
                     animation: spin 0.8s linear infinite;
-                    margin-bottom: 16px;
                 }
 
                 @keyframes spin {
                     to { transform: rotate(360deg); }
                 }
 
-                .submission-list-loading p,
-                .submission-list-error p {
-                    color: #b4b4b4;
-                    font-size: 14px;
-                    margin: 0;
-                }
-
-                .error-icon {
-                    font-size: 48px;
-                    margin-bottom: 16px;
+                .submission-list-error {
+                    text-align: center;
+                    padding: 48px;
+                    background: rgba(239, 68, 68, 0.1);
+                    border-radius: 12px;
+                    color: #ef4444;
                 }
 
                 .retry-btn {
                     margin-top: 16px;
-                    padding: 10px 20px;
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
+                    padding: 8px 24px;
+                    background: #ef4444;
                     color: white;
                     border: none;
-                    border-radius: 8px;
+                    border-radius: 6px;
                     cursor: pointer;
-                    font-weight: 600;
-                    transition: transform 0.2s;
+                    transition: background 0.2s;
                 }
 
                 .retry-btn:hover {
-                    transform: translateY(-2px);
+                    background: #dc2626;
+                }
+
+                .list-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 24px;
+                    flex-wrap: wrap;
+                    gap: 16px;
+                }
+
+                .list-stats {
+                    display: flex;
+                    gap: 24px;
+                }
+
+                .stat-item {
+                    color: #b4b4b4;
+                    font-size: 14px;
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 6px 16px;
+                    border-radius: 20px;
+                }
+
+                .list-controls {
+                    display: flex;
+                    gap: 12px;
+                }
+
+                .filter-select,
+                .sort-select {
+                    padding: 8px 16px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 8px;
+                    color: #ffffff;
+                    font-size: 14px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .filter-select:hover,
+                .sort-select:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-color: #9b59b6;
+                }
+
+                .filter-select option,
+                .sort-select option {
+                    background: #1e1e2f;
+                    color: #ffffff;
+                }
+
+                .empty-state {
+                    text-align: center;
+                    padding: 64px 24px;
+                    background: rgba(255, 255, 255, 0.02);
+                    border-radius: 16px;
+                    border: 2px dashed rgba(155, 89, 182, 0.3);
+                }
+
+                .empty-icon {
+                    font-size: 64px;
+                    margin-bottom: 24px;
+                    opacity: 0.5;
+                }
+
+                .empty-state h3 {
+                    color: #ffffff;
+                    font-size: 20px;
+                    font-weight: 600;
+                    margin: 0 0 12px 0;
+                }
+
+                .empty-state p {
+                    color: #b4b4b4;
+                    margin: 0;
+                }
+
+                .submissions-grid {
+                    display: grid;
+                    gap: 24px;
+                    animation: fadeIn 0.5s ease;
+                }
+
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
                 }
 
                 @media (max-width: 768px) {
+                    .list-header {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+
+                    .list-stats {
+                        justify-content: center;
+                    }
+
                     .list-controls {
                         flex-direction: column;
-                        align-items: stretch;
-                    }
-
-                    .control-group {
-                        flex-direction: column;
-                        align-items: stretch;
-                        gap: 8px;
-                    }
-
-                    .filter-buttons {
-                        width: 100%;
-                    }
-
-                    .filter-btn {
-                        flex: 1;
                     }
                 }
             `}</style>
