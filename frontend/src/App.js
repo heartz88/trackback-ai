@@ -39,7 +39,6 @@ function App() {
           <ScrollToTop />
           <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
             <Navigation />
-            {/* Main content with padding-top to account for fixed navbar */}
             <main className="flex-grow pt-20">
               <Routes>
                 <Route path="/" element={<HomePage />} />
