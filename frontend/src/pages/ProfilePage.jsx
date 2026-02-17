@@ -25,40 +25,35 @@ if (profileId) {
 const fetchProfileData = async () => {
 setLoading(true);
 try {
-// Use Promise.allSettled to handle individual failures
-const [profileRes, tracksRes, collabRes] = await Promise.allSettled([
+    const [profileRes, tracksRes, collabRes] = await Promise.allSettled([
     api.get(`/users/${profileId}`),
     api.get(`/tracks/user/${profileId}`),
     api.get(`/collaborations/user/${profileId}`)
-]);
+    ]);
 
-// Handle profile data
-if (profileRes.status === 'fulfilled') {
+    if (profileRes.status === 'fulfilled') {
     setProfile(profileRes.value.data.user);
-} else {
+    } else {
     console.error('Profile fetch failed:', profileRes.reason);
-}
+    }
 
-// Handle tracks data
-if (tracksRes.status === 'fulfilled') {
+    if (tracksRes.status === 'fulfilled') {
     setTracks(tracksRes.value.data.tracks || []);
-} else {
+    } else {
     console.log('Tracks not available yet');
     setTracks([]);
-}
+    }
 
-// Handle collaborations data
-if (collabRes.status === 'fulfilled') {
+    if (collabRes.status === 'fulfilled') {
     setCollaborations(collabRes.value.data.collaborations || []);
-} else {
+    } else {
     console.log('Collaborations not available yet');
     setCollaborations([]);
-}
-
+    }
 } catch (err) {
-console.error('Failed to fetch profile:', err);
+    console.error('Failed to fetch profile:', err);
 } finally {
-setLoading(false);
+    setLoading(false);
 }
 };
 
@@ -123,7 +118,7 @@ return (
 
 return (
 <div className="min-h-screen bg-[var(--bg-primary)]">
-    {/* Profile Header */}
+    {/* Profile Header with Waveform Design */}
     <div className="relative h-48 bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 overflow-hidden">
     <div className="absolute inset-0 opacity-10">
         <svg className="w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
@@ -139,7 +134,7 @@ return (
     {/* Profile Card */}
     <div className="glass-panel rounded-3xl p-8 mb-8">
         <div className="flex flex-col lg:flex-row gap-8">
-        {/* Avatar */}
+        {/* Avatar Section */}
         <div className="flex-shrink-0 text-center lg:text-left">
             <div className="relative inline-block">
             <div className="w-32 h-32 lg:w-36 lg:h-36 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-5xl font-bold border-4 border-white/20 shadow-2xl">
@@ -226,7 +221,7 @@ return (
 
             {/* Skills */}
             {profile.skills?.length > 0 && (
-            <div>
+            <div className="mb-6">
                 <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
                 Skills
                 </h3>
@@ -242,14 +237,179 @@ return (
                 </div>
             </div>
             )}
+
+            {/* Preferred Genres */}
+            {profile.preferred_genres?.length > 0 && (
+            <div className="mb-6">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+                Preferred Genres
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                {profile.preferred_genres.map((genre, index) => (
+                    <span
+                    key={index}
+                    className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-sm"
+                    >
+                    {genre}
+                    </span>
+                ))}
+                </div>
+            </div>
+            )}
+
+            {/* Equipment */}
+            {profile.equipment?.length > 0 && (
+            <div className="mb-6">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+                Equipment / Software
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                {profile.equipment.map((item, index) => (
+                    <span
+                    key={index}
+                    className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-sm"
+                    >
+                    {item}
+                    </span>
+                ))}
+                </div>
+            </div>
+            )}
+
+            {/* Looking For */}
+            {profile.looking_for && (
+            <div className="mb-6 p-4 bg-[var(--bg-tertiary)]/30 rounded-xl border border-[var(--border-color)]">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
+                Looking For
+                </h3>
+                <p className="text-[var(--text-primary)]">{profile.looking_for}</p>
+            </div>
+            )}
+
+            {/* Social Links */}
+            {profile.social_links && Object.values(profile.social_links).some(v => v) && (
+            <div className="mb-6">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+                Connect
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                {profile.social_links.instagram && (
+                    <a
+                    href={`https://instagram.com/${profile.social_links.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Instagram"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/instagram/ffffff"
+                        className="w-5 h-5"
+                        alt="Instagram"
+                    />
+                    </a>
+                )}
+                {profile.social_links.twitter && (
+                    <a
+                    href={`https://twitter.com/${profile.social_links.twitter}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-blue-400 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Twitter/X"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/x/ffffff"
+                        className="w-5 h-5"
+                        alt="X"
+                    />
+                    </a>
+                )}
+                {profile.social_links.soundcloud && (
+                    <a
+                    href={profile.social_links.soundcloud.startsWith('http') ? profile.social_links.soundcloud : `https://${profile.social_links.soundcloud}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="SoundCloud"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/soundcloud/ffffff"
+                        className="w-5 h-5"
+                        alt="SoundCloud"
+                    />
+                    </a>
+                )}
+                {profile.social_links.spotify && (
+                    <a
+                    href={profile.social_links.spotify}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Spotify"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/spotify/ffffff"
+                        className="w-5 h-5"
+                        alt="Spotify"
+                    />
+                    </a>
+                )}
+                {profile.social_links.youtube && (
+                    <a
+                    href={profile.social_links.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="YouTube"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/youtube/ffffff"
+                        className="w-5 h-5"
+                        alt="YouTube"
+                    />
+                    </a>
+                )}
+                
+                {profile.social_links.discord && (
+                <a
+                    href={profile.social_links.discord.startsWith('https') ? profile.social_links.discord : `https://discord.com/users/${profile.social_links.discord}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Discord"
+                >
+                    <img
+                        src="https://cdn.simpleicons.org/discord/ffffff"
+                        className="w-5 h-5"
+                        alt="Discord"
+                    />
+                </a>
+            )}
+            {profile.social_links.tiktok && (
+                <a
+                    href={`https://tiktok.com/@${profile.social_links.tiktok}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-black rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="TikTok"
+                >
+                    <img
+                        src="https://cdn.simpleicons.org/tiktok/ffffff"
+                        className="w-5 h-5"
+                        alt="TikTok"
+                    />
+                </a>
+            )}
+                </div>
+            </div>
+            )}
         </div>
         </div>
     </div>
 
-    {/* Tabs */}
+    {/* Tabs Navigation */}
     <div className="flex gap-2 mb-6 border-b border-[var(--border-color)] pb-4 overflow-x-auto">
-        <TabButton 
-        active={activeTab === 'tracks'} 
+        <TabButton
+        active={activeTab === 'tracks'}
         onClick={() => setActiveTab('tracks')}
         icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,8 +419,8 @@ return (
         label="Tracks"
         count={tracks.length}
         />
-        <TabButton 
-        active={activeTab === 'collabs'} 
+        <TabButton
+        active={activeTab === 'collabs'}
         onClick={() => setActiveTab('collabs')}
         icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -275,8 +435,8 @@ return (
     {/* Tab Content */}
     <div className="min-h-[400px]">
         {activeTab === 'tracks' && (
-        <TracksTab 
-            tracks={tracks} 
+        <TracksTab
+            tracks={tracks}
             isOwnProfile={isOwnProfile}
             playingTrackId={playingTrackId}
             onPlayTrack={handlePlayTrack}
@@ -305,16 +465,18 @@ className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-
 {icon}
 <span>{label}</span>
 {count !== undefined && (
-    <span className={`px-2 py-0.5 rounded-full text-xs ${
-    active ? 'bg-white/20' : 'bg-[var(--bg-tertiary)]'
-    }`}>
+    <span
+    className={`px-2 py-0.5 rounded-full text-xs ${
+        active ? 'bg-white/20' : 'bg-[var(--bg-tertiary)]'
+    }`}
+    >
     {count}
     </span>
 )}
 </button>
 );
 
-// Tracks Tab (simplified)
+// Tracks Tab
 const TracksTab = ({ tracks, isOwnProfile, playingTrackId, onPlayTrack }) => {
 if (tracks.length === 0) {
 return (
@@ -326,13 +488,13 @@ return (
     </div>
     <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No Tracks Yet</h3>
     <p className="text-[var(--text-secondary)] mb-4">
-        {isOwnProfile 
+        {isOwnProfile
         ? "Upload your first track to get started"
         : "This user hasn't uploaded any tracks yet"}
     </p>
     {isOwnProfile && (
-        <Link 
-        to="/upload" 
+        <Link
+        to="/upload"
         className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all"
         >
         Upload Track
@@ -347,7 +509,7 @@ return (
     {tracks.map((track) => (
     <div key={track.id} className="group">
         <div className="glass-panel rounded-2xl overflow-hidden hover:border-primary-500/50 transition-all">
-        {/* Track Header */}
+        {/* Track Header with Play Button */}
         <div className="relative h-32 bg-gradient-to-br from-primary-600/20 to-primary-800/20">
             <button
             onClick={() => onPlayTrack(track.id)}
@@ -356,8 +518,8 @@ return (
             <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform">
                 {playingTrackId === track.id ? (
                 <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <rect x="6" y="4" width="4" height="16" rx="1"/>
-                    <rect x="14" y="4" width="4" height="16" rx="1"/>
+                    <rect x="6" y="4" width="4" height="16" rx="1" />
+                    <rect x="14" y="4" width="4" height="16" rx="1" />
                 </svg>
                 ) : (
                 <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -373,7 +535,7 @@ return (
             <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2 line-clamp-1">
             {track.title}
             </h3>
-            
+
             <div className="flex flex-wrap gap-1.5 mb-3">
             {track.bpm && (
                 <span className="px-2 py-1 bg-primary-500/10 border border-primary-500/30 rounded-full text-xs text-primary-300">
@@ -417,7 +579,7 @@ return (
 );
 };
 
-// Collaborations Tab (simplified)
+// Collaborations Tab
 const CollaborationsTab = ({ collaborations }) => {
 if (collaborations.length === 0) {
 return (
