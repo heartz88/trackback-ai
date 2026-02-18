@@ -95,6 +95,12 @@ return (
             Sign up
         </Link>
         </p>
+        <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+        Forgotten your password?{' '}
+        <Link to="/forgot-password" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+            Forgot Password
+        </Link>
+        </p>
     </form>
     </div>
 </div>
