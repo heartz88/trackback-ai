@@ -90,7 +90,7 @@ try {
 };
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
+<div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4">
     <div className="max-w-3xl mx-auto">
     <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-3">Upload Your Track</h1>

@@ -99,12 +99,13 @@ return (
             </button>
 
             <div className="text-center">
+                <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+                    Remember your password?
             <Link
-                to="/login"
-                className="text-sm text-[var(--text-secondary)] hover:text-primary-400 transition-colors"
-            >
-                Remember your password? Sign in
+                to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                Sign in
             </Link>
+            </p>
             </div>
         </form>
         )}

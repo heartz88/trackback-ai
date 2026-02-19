@@ -180,7 +180,7 @@ const SubmissionsPage = () => {
             {/* Submit Button */}
             {canSubmit && !showSubmitForm && (
                 <div className="submit-section animate-slide-up stagger-5">
-                    <button 
+                    <button
                         onClick={() => setShowSubmitForm(true)}
                         className="btn-submit"
                     >
@@ -206,7 +206,7 @@ const SubmissionsPage = () => {
 
             {/* Submissions List */}
             <div className="submissions-container animate-slide-up stagger-6">
-                <SubmissionList 
+                <SubmissionList
                     trackId={trackId}
                     collaborationId={collaboration?.id}
                     key={refreshKey}

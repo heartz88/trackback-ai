@@ -5,9 +5,9 @@ import api from '../services/api';
 
 function RegisterPage() {
 const [formData, setFormData] = useState({ 
-username: '', 
-email: '', 
-password: '', 
+username: '',
+email: '',
+password: '',
 confirmPassword: '',
 bio: '',
 skills: ''

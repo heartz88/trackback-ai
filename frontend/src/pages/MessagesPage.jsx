@@ -395,7 +395,7 @@ function MessagesPage() {
         <div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4 transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-3xl md:text-4xl font-bold text-[var(--text-primary)] mb-2">Messages</h1>
+                    <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Messages</h1>
                     <div className="flex flex-wrap items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-primary-500 animate-pulse' : 'bg-red-500'}`}></div>
                         <p className="text-[var(--text-secondary)]">
