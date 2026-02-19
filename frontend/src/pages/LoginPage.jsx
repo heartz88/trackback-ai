@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -24,12 +25,10 @@ try {
 
 return (
 <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center py-12 px-4 animate-fade-in">
-    <div className="max-w-md w-full space-y-8 relative animate-slide-up">
+    <div className="max-w-2xl w-full space-y-8 relative animate-slide-up">
     <div className="text-center">
-        <div className="inline-block p-4 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl mb-4 animate-bounce-slow">
-        <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
-        </svg>
+        <div className="inline-block p-4 bg-gradient-to-br rounded-2xl mb-4 animate-bounce-slow">
+            <img src={logo} className="w-20 h-20 object-cover rounded-xl" alt="TrackBack AI Logo" />
         </div>
         <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-2">Welcome back</h2>
         <p className="text-[var(--text-secondary)]">Sign in to continue creating</p>
