@@ -93,10 +93,6 @@ const VoteButton = ({ submissionId, initialVote, initialCounts, onVoteChange }) 
                 </svg>
                 <span>{downvotes}</span>
             </button>
-
-            <style jsx>{`
-                
-            `}</style>
         </div>
     );
 };

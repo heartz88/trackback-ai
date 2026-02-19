@@ -205,7 +205,7 @@ return (
     </div>
 
     
-    {/*{isOwner ? (
+    {isOwner ? (
         <div className="relative group/owner">
         <Link 
             to={`/tracks/${track.id}`}
@@ -218,7 +218,7 @@ return (
             View Track Details
         </Link>
         
-        {/* Owner tooltip 
+        {/* Owner tooltip*/}
         <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-[var(--bg-tertiary)] text-xs text-[var(--text-secondary)] py-1 px-3 rounded-full opacity-0 group-hover/owner:opacity-100 transition-opacity whitespace-nowrap border border-[var(--border-color)]">
             You own this track
         </div>
@@ -263,7 +263,7 @@ return (
             </>
         )}
         </button>
-    )}*/}
+    )}
 
     {/* Collaboration stats */}
     {track.collaboration_count > 0 && !isOwner && (
