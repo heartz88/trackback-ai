@@ -15,10 +15,7 @@ const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 const [scrolled, setScrolled] = useState(false);
 const profileMenuRef = useRef(null);
 
-// Handle scroll effect for navbar
-useEffect(() => {<div className="w-11 h-11 bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 group-hover:scale-110 transition-transform duration-300">
-    <img src={logo} className="w-8 h-8 object-contain" alt="Trackback AI" />
-</div>
+useEffect(() => {
 const handleScroll = () => {
     setScrolled(window.scrollY > 20);
 };
@@ -26,7 +23,6 @@ window.addEventListener('scroll', handleScroll);
 return () => window.removeEventListener('scroll', handleScroll);
 }, []);
 
-// Handle click outside profile menu
 useEffect(() => {
 const handleClickOutside = (event) => {
     if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
@@ -37,7 +33,6 @@ document.addEventListener('mousedown', handleClickOutside);
 return () => document.removeEventListener('mousedown', handleClickOutside);
 }, []);
 
-// Prevent body scroll when menu is open
 useEffect(() => {
 if (isMenuOpen) {
     document.body.style.overflow = 'hidden';
@@ -69,7 +64,6 @@ const toggleProfileMenu = () => {
 setIsProfileMenuOpen(!isProfileMenuOpen);
 };
 
-// Music-inspired Hamburger Icon
 const HamburgerIcon = () => (
 <button
     onClick={toggleMenu}
@@ -87,7 +81,6 @@ const HamburgerIcon = () => (
         isMenuOpen ? '-rotate-45 top-2.5' : 'rotate-0 top-4'
     }`} />
     </div>
-    {/* Waveform animation on hover */}
     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
     <div className="flex items-end space-x-0.5 h-4">
         <span className="w-0.5 h-2 bg-[var(--accent-primary)] rounded-full animate-waveform" />
@@ -102,16 +95,16 @@ return (
 <>
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
     scrolled
-    ? 'bg-[var(--bg-primary)]/95 backdrop-blur-xl border-b border-[var(--border-color)]/50 shadow-lg' 
-    : 'bg-[var(--bg-primary)] border-b border-[var(--border-color)]/10'
+        ? 'bg-[var(--bg-primary)]/95 backdrop-blur-xl border-b border-[var(--border-color)]/50 shadow-lg' 
+        : 'bg-[var(--bg-primary)] border-b border-[var(--border-color)]/10'
     }`}>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-        {/*Brand */}
+        {/* Brand */}
         <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center space-x-3 group" onClick={closeMenu}>
             <div className="relative">
-            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <img src={logo} className="w-full h-full object-cover rounded-xl" alt="Trackback AI"/>
                 </div>
             </div>
@@ -131,7 +124,6 @@ return (
                 <NavLink to="/upload">Upload</NavLink>
                 <NavLink to="/my-tracks">My Tracks</NavLink>
                 <NavLink to="/collaborations">Collabs</NavLink>
-                <NavLink to="/submissions">Submissions</NavLink>
                 <NavLink to="/messages" badge={unreadCount}>Messages</NavLink>
             </div>
             )}
@@ -169,7 +161,6 @@ return (
                     </svg>
                 </button>
 
-                {/* Dropdown Menu */}
                 {isProfileMenuOpen && (
                     <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] shadow-2xl overflow-hidden animate-scale-in">
                     <div className="p-2">
@@ -244,7 +235,6 @@ return (
     <div className={`md:hidden fixed inset-0 z-40 transition-all duration-500 ${
     isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
     }`}>
-    {/* Backdrop */}
     <div
         className={`absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-500 ${
         isMenuOpen ? 'opacity-100' : 'opacity-0'
@@ -252,12 +242,10 @@ return (
         onClick={closeMenu}
     />
     
-    {/* Menu Panel */}
     <div className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transform transition-all duration-500 ease-out ${
         isMenuOpen ? 'translate-x-0' : 'translate-x-full'
     }`}>
         
-        {/* Menu Header */}
         <div className="p-6 border-b border-[var(--border-color)]">
         <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
@@ -286,7 +274,6 @@ return (
             </button>
         </div>
 
-        {/* User Info Section */}
         {user && (
             <Link 
             to={`/profile/${user.id}`} 
@@ -314,7 +301,6 @@ return (
         )}
         </div>
 
-        {/* Menu Items */}
         <div className="p-4 space-y-1 max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
         {user ? (
             <>
@@ -322,7 +308,6 @@ return (
             <MenuItem to="/upload" onClick={closeMenu}>Upload Track</MenuItem>
             <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
             <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
-            <MenuItem to="/submissions" onClick={closeMenu}>Submissions</MenuItem>
             <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
             <MenuItem to={`/profile/${user.id}`} onClick={closeMenu}>Profile</MenuItem>
             <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
@@ -353,17 +338,15 @@ return (
 );
 }
 
-// Desktop nav link with underline hover + optional badge
+// Desktop nav link
 const NavLink = ({ to, children, badge }) => (
 <Link
 to={to}
-className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)]
-hover:text-[var(--text-primary)] transition-colors group">
+className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors group"
+>
 {children}
 {badge > 0 && (
-    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br
-    from-red-500 to-red-600 text-white text-xs
-    rounded-full flex items-center justify-center font-bold shadow-lg">
+    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
     {badge > 9 ? '9+' : badge}
     </span>
 )}
@@ -371,7 +354,7 @@ hover:text-[var(--text-primary)] transition-colors group">
 </Link>
 );
 
-// Mobile Menu Item Component
+// Mobile Menu Item
 const MenuItem = ({ to, children, badge, onClick }) => (
 <Link
 to={to}

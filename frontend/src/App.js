@@ -22,7 +22,6 @@ import TrackDetailPage from './pages/TrackDetailPage';
 import UploadPage from './pages/UploadPage';
 
 function App() {
-  // Set initial theme class on document
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') {
@@ -56,7 +55,6 @@ function App() {
                 <Route path="/profile/:userid" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}/>
                 <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
                 <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
-                <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
               </Routes>

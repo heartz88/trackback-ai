@@ -24,7 +24,6 @@ const handleDelete = async (trackId) => {
 if (!window.confirm('Are you sure you want to delete this track? This action cannot be undone.')) {
     return;
 }
-
 try {
     await api.delete(`/tracks/${trackId}`);
     setTracks(tracks.filter(track => track.id !== trackId));
@@ -53,7 +52,12 @@ return (
         <div key={track.id} className="glass-panel p-6 rounded-2xl hover:border-primary-500/50 transition-all">
             <div className="flex items-start justify-between mb-4">
             <div>
-                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">{track.title}</h3>
+                {/* Make title a link to track detail */}
+                <Link to={`/tracks/${track.id}`}>
+                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2 hover:text-primary-400 transition-colors">
+                    {track.title}
+                </h3>
+                </Link>
                 <div className="flex flex-wrap gap-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${track.status === 'active'
                     ? 'bg-primary-500/10 text-primary-400 border border-primary-500/30'
@@ -103,9 +107,7 @@ return (
             <audio
             controls
             className="w-full rounded-lg h-10"
-            style={{
-                filter: 'invert(1) hue-rotate(180deg)',
-            }}
+            style={{ filter: 'invert(1) hue-rotate(180deg)' }}
             src={track.audio_url}
             />
         </div>
