@@ -60,7 +60,7 @@ return (
     hover:shadow-primary-500/20 animate-fade-in
     ${isOwner ? 'border-primary-500/30' : ''}
 `}>
-    {/* Header with gradient accent for owner tracks */}
+    {/* Header for owner tracks */}
     {isOwner && (
     <div className="h-1 w-full bg-gradient-to-r from-primary-500 to-primary-400"></div>
     )}
@@ -80,7 +80,7 @@ return (
             )}
         </div>
         
-        <Link 
+        <Link
             to={`/profile/${track.user_id}`}
             className="text-sm text-[var(--text-secondary)] hover:text-primary-400 transition-colors inline-flex items-center gap-1"
         >
