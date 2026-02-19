@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import TrackCard from '../components/tracks/TrackCard';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 function DiscoverPage() {
+const { user } = useAuth();
 const [tracks, setTracks] = useState([]);
 const [filters, setFilters] = useState({ bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
 const [loading, setLoading] = useState(true);
@@ -30,19 +33,29 @@ useEffect(() => {
 fetchTracks();
 }, [fetchTracks]);
 
-const clearFilters = () => {
-setFilters({ bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
-};
-
-const activeFilterCount = Object.values(filters).filter(v => v !== '').length;
+const clearFilters = () => setFilters({ bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
+const activeFilterCount = Object.values(filters).filter((v) => v !== '').length;
 
 return (
 <div className="min-h-screen bg-[var(--bg-primary)] px-4 transition-colors duration-300">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* Header */}
-    <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Discover Tracks</h1>
+    <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div>
+        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-1">Discover Tracks</h1>
         <p className="text-[var(--text-secondary)]">Find the perfect collaboration match</p>
+        </div>
+        {user && (
+        <Link
+            to="/upload"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
+        >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Upload Track
+        </Link>
+        )}
     </div>
 
     {/* Filter Bar */}
@@ -57,58 +70,47 @@ return (
             </svg>
             <span className="text-[var(--text-primary)] font-medium">Filters</span>
             {activeFilterCount > 0 && (
-            <span className="px-2 py-0.5 bg-primary-500 text-white text-xs font-semibold rounded-full">
-                {activeFilterCount}
-            </span>
+            <span className="px-2 py-0.5 bg-primary-500 text-white text-xs font-semibold rounded-full">{activeFilterCount}</span>
             )}
         </button>
-
         {activeFilterCount > 0 && (
-            <button
-            onClick={clearFilters}
-            className="text-sm text-[var(--text-tertiary)] hover:text-primary-500 transition-colors"
-            >
+            <button onClick={clearFilters} className="text-sm text-[var(--text-tertiary)] hover:text-primary-500 transition-colors">
             Clear all
             </button>
         )}
         </div>
 
-        {/* Filter Panel */}
         {isFilterOpen && (
         <div className="glass-panel p-6 rounded-2xl animate-slide-down">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* BPM Range */}
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-[var(--text-secondary)]">
-                BPM Range
-                </label>
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">BPM Range</label>
                 <div className="flex gap-2">
                 <input
                     type="number"
                     placeholder="Min"
                     value={filters.bpm_min}
                     onChange={(e) => setFilters({ ...filters, bpm_min: e.target.value })}
-                    className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <input
                     type="number"
                     placeholder="Max"
                     value={filters.bpm_max}
                     onChange={(e) => setFilters({ ...filters, bpm_max: e.target.value })}
-                    className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 </div>
             </div>
 
             {/* Energy Level */}
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-[var(--text-secondary)]">
-                Energy Level
-                </label>
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Energy Level</label>
                 <select
                 value={filters.energy_level}
                 onChange={(e) => setFilters({ ...filters, energy_level: e.target.value })}
-                className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                 <option value="">All Energy Levels</option>
                 <option value="low">Low Energy</option>
@@ -119,20 +121,18 @@ return (
 
             {/* Genre */}
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-[var(--text-secondary)]">
-                Genre
-                </label>
+                <label className="block text-sm font-medium text-[var(--text-secondary)]">Genre</label>
                 <input
                 type="text"
                 placeholder="e.g., Electronic, Hip-Hop"
                 value={filters.genre}
                 onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
-                className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
             </div>
 
-            {/* Apply Button - refreshes for new instances when as the filters will already show the current tracks and loops */}
-            <div className="space-y-2">
+            {/* Apply */}
+            <div className="space-y-2 flex items-end">
                 <button
                 onClick={fetchTracks}
                 className="w-full px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-lg transition-all shadow-lg shadow-primary-500/20"
@@ -145,99 +145,87 @@ return (
         )}
     </div>
 
-    {/* Active Filters Display */}
+    {/* Active Filter Tags */}
     {activeFilterCount > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
         {filters.bpm_min && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-500/10 border border-primary-500/30 rounded-full text-sm text-primary-400">
-            Min BPM: {filters.bpm_min}
-            <button
-                onClick={() => setFilters({ ...filters, bpm_min: '' })}
-                className="hover:text-primary-300"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            </span>
+            <FilterTag label={`Min BPM: ${filters.bpm_min}`} onRemove={() => setFilters({ ...filters, bpm_min: '' })} />
         )}
         {filters.bpm_max && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-500/10 border border-primary-500/30 rounded-full text-sm text-primary-400">
-            Max BPM: {filters.bpm_max}
-            <button
-                onClick={() => setFilters({ ...filters, bpm_max: '' })}
-                className="hover:text-primary-300"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            </span>
+            <FilterTag label={`Max BPM: ${filters.bpm_max}`} onRemove={() => setFilters({ ...filters, bpm_max: '' })} />
         )}
         {filters.energy_level && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-500/10 border border-primary-500/30 rounded-full text-sm text-primary-400 capitalize">
-            {filters.energy_level} Energy
-            <button
-                onClick={() => setFilters({ ...filters, energy_level: '' })}
-                className="hover:text-primary-300"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            </span>
+            <FilterTag label={`${filters.energy_level} Energy`} onRemove={() => setFilters({ ...filters, energy_level: '' })} />
         )}
         {filters.genre && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-500/10 border border-primary-500/30 rounded-full text-sm text-primary-400">
-            Genre: {filters.genre}
-            <button
-                onClick={() => setFilters({ ...filters, genre: '' })}
-                className="hover:text-primary-300"
-            >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            </span>
+            <FilterTag label={`Genre: ${filters.genre}`} onRemove={() => setFilters({ ...filters, genre: '' })} />
         )}
         </div>
     )}
 
-    {/* Results Count */}
+    {/* Results */}
     {!loading && (
-        <div className="mb-6">
-        <p className="text-[var(--text-secondary)] text-sm">
-            {tracks.length} {tracks.length === 1 ? 'track' : 'tracks'} found
+        <p className="text-[var(--text-secondary)] text-sm mb-6">
+        {tracks.length} {tracks.length === 1 ? 'track' : 'tracks'} found
         </p>
-        </div>
     )}
 
-    {/* Tracks Grid */}
     {loading ? (
         <div className="text-center py-20">
         <div className="inline-block w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-[var(--text-secondary)] mt-4">Loading tracks...</p>
+        </div>
+    ) : tracks.length === 0 ? (
+        <div className="text-center py-20 bg-[var(--bg-tertiary)] rounded-3xl border border-[var(--border-color)]">
+        <svg className="mx-auto w-16 h-16 text-[var(--text-tertiary)] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+        </svg>
+        <p className="text-[var(--text-primary)] text-lg font-semibold mb-2">No tracks found</p>
+        <p className="text-[var(--text-tertiary)] text-sm mb-4">Try adjusting your filters or check back later</p>
+        {activeFilterCount > 0 && (
+            <button onClick={clearFilters} className="text-primary-400 hover:text-primary-300 text-sm font-medium">
+            Clear filters
+            </button>
+        )}
         </div>
     ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tracks.map((track) => (
             <TrackCard key={track.id} track={track} />
         ))}
-        {tracks.length === 0 && (
-            <div className="col-span-full text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-[var(--bg-tertiary)] rounded-full mb-4">
-                <svg className="w-10 h-10 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                </svg>
-            </div>
-            <p className="text-[var(--text-primary)] text-lg font-semibold mb-2">No tracks found</p>
-            <p className="text-[var(--text-tertiary)] text-sm">Try adjusting your filters or check back later</p>
-            </div>
-        )}
+        </div>
+    )}
+
+    {/* CTA for logged out */}
+    {!user && tracks.length > 0 && (
+        <div className="mt-12 text-center py-10 bg-gradient-to-br from-primary-500/10 to-primary-600/5 rounded-3xl border border-primary-500/20">
+        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Want to collaborate?</h3>
+        <p className="text-[var(--text-secondary)] mb-4">Sign up to request collaborations and submit your versions</p>
+        <div className="flex gap-3 justify-center">
+            <Link to="/register" className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all">
+            Get Started Free
+            </Link>
+            <Link to="/login" className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] font-semibold rounded-xl transition-all border border-[var(--border-color)]">
+            Sign In
+            </Link>
+        </div>
         </div>
     )}
     </div>
 </div>
+);
+}
+
+function FilterTag({ label, onRemove }) {
+return (
+<span className="inline-flex items-center gap-1 px-3 py-1 bg-primary-500/10 border border-primary-500/30 rounded-full text-sm text-primary-400">
+    {label}
+    <button onClick={onRemove} className="hover:text-primary-300">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+    </button>
+</span>
 );
 }
 

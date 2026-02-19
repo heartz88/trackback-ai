@@ -3,7 +3,7 @@ import api from '../../services/api';
 import CommentForm from './CommentForm';
 import CommentList from './CommentList';
 
-const CommentSection = ({ submissionId }) => {
+const CommentSection = ({ submissionId, onCommentCountChange }) => {
     const [comments, setComments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -11,6 +11,13 @@ const CommentSection = ({ submissionId }) => {
     useEffect(() => {
         fetchComments();
     }, [submissionId]);
+
+    // Notify parent whenever comment count changes
+    useEffect(() => {
+        if (onCommentCountChange) {
+            onCommentCountChange(comments.length);
+        }
+    }, [comments.length, onCommentCountChange]);
 
     const fetchComments = async () => {
         setIsLoading(true);
@@ -32,7 +39,7 @@ const CommentSection = ({ submissionId }) => {
     };
 
     const handleCommentDelete = (commentId) => {
-        setComments(prevComments => 
+        setComments(prevComments =>
             prevComments.filter(c => c.id !== commentId)
         );
     };
@@ -49,7 +56,7 @@ const CommentSection = ({ submissionId }) => {
                 <h3>💬 Comments ({comments.length})</h3>
             </div>
 
-            <CommentForm 
+            <CommentForm
                 submissionId={submissionId}
                 onCommentAdded={handleCommentAdded}
             />
