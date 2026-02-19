@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import WaveformPlayer from '../tracks/WaveformPlayer';
 import VoteButton from './VoteButton';
@@ -74,14 +75,18 @@ const SubmissionCard = ({ submission, isWinner = false }) => {
                 {/* Info Section */}
                 <div className="submission-info">
                     <div className="user-header">
+                        <Link to={`/profile/${submission.collaborator_id}`} className="flex items-center gap-3">
                         <div className="avatar">
                             {submission.collaborator_name?.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                            <h3 className="username">{submission.collaborator_name}</h3>
-                            <span className="timestamp">{formatDate(submission.created_at)}</span>
-                        </div>
+                    <div>
+                    <h3 className="username hover:text-primary-400 transition-colors">
+                        {submission.collaborator_name}
+                    </h3>
+                    <span className="timestamp">{formatDate(submission.created_at)}</span>
                     </div>
+                    </Link>
+                </div>
 
                     <h4 className="submission-title">{submission.title}</h4>
                     
@@ -108,129 +113,7 @@ const SubmissionCard = ({ submission, isWinner = false }) => {
             </div>
 
             <style jsx>{`
-                .submission-card {
-                    background: #1e1e2f;
-                    border-radius: 12px;
-                    padding: 24px;
-                    margin-bottom: 20px;
-                    border: 1px solid #2d3748;
-                    transition: all 0.3s ease;
-                }
-
-                .submission-card:hover {
-                    border-color: #9b59b6;
-                    box-shadow: 0 8px 16px rgba(155, 89, 182, 0.15);
-                    transform: translateY(-2px);
-                }
-
-                .submission-card.winner {
-                    border: 2px solid #f59e0b;
-                    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, #1e1e2f 100%);
-                }
-
-                .winner-badge {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: linear-gradient(135deg, #f59e0b, #d97706);
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    margin-bottom: 16px;
-                    font-weight: 600;
-                    font-size: 14px;
-                }
-
-                .crown {
-                    font-size: 20px;
-                }
-
-                .submission-content {
-                    display: grid;
-                    grid-template-columns: 300px 1fr 120px;
-                    gap: 24px;
-                    align-items: start;
-                }
-
-                .user-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    margin-bottom: 16px;
-                }
-
-                .avatar {
-                    width: 48px;
-                    height: 48px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: bold;
-                    font-size: 20px;
-                }
-
-                .username {
-                    color: #ffffff;
-                    font-size: 16px;
-                    font-weight: 600;
-                    margin: 0;
-                }
-
-                .timestamp {
-                    color: #b4b4b4;
-                    font-size: 12px;
-                }
-
-                .submission-title {
-                    color: #ffffff;
-                    font-size: 18px;
-                    margin: 0 0 12px 0;
-                    font-weight: 600;
-                }
-
-                .description {
-                    color: #b4b4b4;
-                    font-size: 14px;
-                    line-height: 1.6;
-                    margin-bottom: 16px;
-                }
-
-                .submission-actions {
-                    display: flex;
-                    gap: 12px;
-                }
-
-                .action-btn {
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    color: #b4b4b4;
-                    padding: 8px 16px;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-
-                .action-btn:hover {
-                    background: rgba(155, 89, 182, 0.1);
-                    border-color: #9b59b6;
-                    color: #ffffff;
-                }
-
-                @media (max-width: 1024px) {
-                    .submission-content {
-                        grid-template-columns: 1fr;
-                        gap: 20px;
-                    }
-
-                    .submission-voting {
-                        display: flex;
-                        justify-content: center;
-                    }
-                }
+                
             `}</style>
         </div>
     );
