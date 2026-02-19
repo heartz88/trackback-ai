@@ -437,7 +437,7 @@ function EditProfilePage() {
                         <div className="space-y-5">
                             {/* Instagram */}
                             <div>
-                            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+                            <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
                                 <img src="https://cdn.simpleicons.org/instagram" className="w-6 h-6" alt="Instagram" />
                                 Instagram
                                 </label>
@@ -456,7 +456,7 @@ function EditProfilePage() {
 
                             {/* Twitter / X */}
                             <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
                                     <img src="https://cdn.simpleicons.org/x" className="w-6 h-6" alt="X" />
                                     Twitter / X
                                 </label>
@@ -475,7 +475,7 @@ function EditProfilePage() {
 
                             {/* SoundCloud */}
                             <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
                                     <img src="https://cdn.simpleicons.org/soundcloud" className="w-6 h-6" alt="SoundCloud" />
                                     SoundCloud
                                 </label>
@@ -491,7 +491,7 @@ function EditProfilePage() {
 
                             {/* Spotify */}
                             <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
                                     <img src="https://cdn.simpleicons.org/spotify" className="w-6 h-6" alt="Spotify" />
                                     Spotify
                                 </label>
@@ -507,7 +507,7 @@ function EditProfilePage() {
 
                             {/* YouTube */}
                             <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
                                     <img src="https://cdn.simpleicons.org/youtube" className="w-6 h-6" alt="YouTube" />
                                     YouTube
                                 </label>
@@ -523,7 +523,7 @@ function EditProfilePage() {
 
                             {/* Discord */}
                             <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
                                     <img src="https://cdn.simpleicons.org/discord" className="w-6 h-6" alt="Discord" />
                                     Discord
                                 </label>
@@ -540,7 +540,7 @@ function EditProfilePage() {
 
                             {/* TikTok */}
                             <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
+                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
                                     <img src="https://cdn.simpleicons.org/tiktok" className="w-6 h-6" alt="TikTok" />
                                     TikTok
                                 </label>
