@@ -1,124 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-
-// Audio-reactive hero background blobs
-const HeroVisualizer = ({ analyser }) => {
-const canvasRef = useRef(null);
-const animRef = useRef(null);
-const blobsRef = useRef([
-{ x: 0.2, y: 0.4, vx: 0.0003, vy: 0.0002, baseR: 0.28, color: '20,184,166' },  // teal
-{ x: 0.75, y: 0.6, vx: -0.0002, vy: 0.0003, baseR: 0.22, color: '99,102,241' }, // indigo
-{ x: 0.5, y: 0.2, vx: 0.0002, vy: -0.0002, baseR: 0.18, color: '20,184,166' },  // teal
-{ x: 0.85, y: 0.2, vx: -0.0003, vy: 0.0002, baseR: 0.14, color: '139,92,246' }, // violet
-]);
-
-const draw = useCallback(() => {
-const canvas = canvasRef.current;
-if (!canvas) return;
-
-const ctx = canvas.getContext('2d');
-const W = canvas.width;
-const H = canvas.height;
-
-// Read frequency data if analyser available
-let bassEnergy = 0;
-let midEnergy = 0;
-let highEnergy = 0;
-
-if (analyser) {
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(data);
-    const len = data.length;
-
-    for (let i = 0; i < Math.floor(len * 0.05); i++) bassEnergy += data[i];
-    bassEnergy = bassEnergy / (Math.floor(len * 0.05) * 255);
-
-    for (let i = Math.floor(len * 0.05); i < Math.floor(len * 0.2); i++) midEnergy += data[i];
-    midEnergy = midEnergy / (Math.floor(len * 0.15) * 255);
-
-    for (let i = Math.floor(len * 0.2); i < Math.floor(len * 0.5); i++) highEnergy += data[i];
-    highEnergy = highEnergy / (Math.floor(len * 0.3) * 255);
-}
-
-ctx.clearRect(0, 0, W, H);
-
-const blobs = blobsRef.current;
-const energies = [bassEnergy, midEnergy, bassEnergy, highEnergy];
-const baseBoost = [1.8, 1.4, 1.6, 1.3];
-
-blobs.forEach((blob, i) => {
-    // Drift blobs slowly
-    blob.x += blob.vx;
-    blob.y += blob.vy;
-    if (blob.x < 0.05 || blob.x > 0.95) blob.vx *= -1;
-    if (blob.y < 0.05 || blob.y > 0.95) blob.vy *= -1;
-
-    const energy = energies[i] || 0;
-    const r = (blob.baseR + energy * baseBoost[i] * 0.15) * Math.min(W, H);
-
-    const grad = ctx.createRadialGradient(
-    blob.x * W, blob.y * H, 0,
-    blob.x * W, blob.y * H, r
-    );
-    const alpha = 0.18 + energy * 0.25;
-    grad.addColorStop(0, `rgba(${blob.color},${Math.min(alpha, 0.55)})`);
-    grad.addColorStop(0.5, `rgba(${blob.color},${Math.min(alpha * 0.4, 0.2)})`);
-    grad.addColorStop(1, `rgba(${blob.color},0)`);
-
-    ctx.beginPath();
-    ctx.arc(blob.x * W, blob.y * H, r, 0, Math.PI * 2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-});
-
-animRef.current = requestAnimationFrame(draw);
-}, [analyser]);
-
-useEffect(() => {
-const canvas = canvasRef.current;
-if (!canvas) return;
-
-const resize = () => {
-    const parent = canvas.parentElement;
-    if (parent) {
-    canvas.width = parent.clientWidth;
-    canvas.height = parent.clientHeight;
-    }
-};
-resize();
-
-const ro = new ResizeObserver(resize);
-ro.observe(canvas.parentElement);
-
-// Always animate (even without audio — slow drift looks great)
-animRef.current = requestAnimationFrame(draw);
-
-return () => {
-    ro.disconnect();
-    if (animRef.current) cancelAnimationFrame(animRef.current);
-};
-}, [draw]);
-
-return (
-<canvas
-    ref={canvasRef}
-    style={{
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-    zIndex: 1,
-    filter: 'blur(40px)',
-    opacity: 0.9,
-    }}
-/>
-);
-};
 
 const TrackDetailPage = () => {
 const { trackId } = useParams();
@@ -134,11 +19,9 @@ const [collaborators, setCollaborators] = useState([]);
 const [submissionsCount, setSubmissionsCount] = useState(0);
 const [collabMessage, setCollabMessage] = useState('');
 const [showMessageInput, setShowMessageInput] = useState(false);
-const [analyser, setAnalyser] = useState(null);
+const [isPlaying, setIsPlaying] = useState(false);
 
-useEffect(() => {
-fetchTrackDetails();
-}, [trackId]);
+useEffect(() => { fetchTrackDetails(); }, [trackId]);
 
 const fetchTrackDetails = async () => {
 setIsLoading(true);
@@ -146,34 +29,24 @@ setError('');
 try {
     const trackResponse = await api.get(`/tracks/${trackId}`);
     setTrack(trackResponse.data.track);
-
     const ownerResponse = await api.get(`/users/${trackResponse.data.track.user_id}`);
     setOwner(ownerResponse.data.user);
-
     try {
-    const submissionsResponse = await api.get(`/submissions/track/${trackId}`);
-    setSubmissionsCount(submissionsResponse.data.submissions?.length || 0);
-    } catch {
-    setSubmissionsCount(0);
-    }
-
+    const r = await api.get(`/submissions/track/${trackId}`);
+    setSubmissionsCount(r.data.submissions?.length || 0);
+    } catch { setSubmissionsCount(0); }
     try {
-    const collabResponse = await api.get(`/collaborations/track/${trackId}/active`);
-    setCollaborators(collabResponse.data.collaborators || []);
-    } catch {
-    setCollaborators([]);
-    }
-
+    const r = await api.get(`/collaborations/track/${trackId}/active`);
+    setCollaborators(r.data.collaborators || []);
+    } catch { setCollaborators([]); }
     if (user) {
     try {
-        const collabResponse = await api.get(`/collaborations/track/${trackId}`);
-        setCollaboration(collabResponse.data.collaboration);
-    } catch {
-        setCollaboration(null);
+        const r = await api.get(`/collaborations/track/${trackId}`);
+        setCollaboration(r.data.collaboration);
+    } catch { setCollaboration(null); }
     }
-    }
-} catch (error) {
-    console.error('Error fetching track:', error);
+} catch (err) {
+    console.error('Error fetching track:', err);
     setError('Failed to load track');
 } finally {
     setIsLoading(false);
@@ -210,9 +83,8 @@ try {
 }
 };
 
-const handleAnalyserReady = useCallback((analyserNode) => {
-setAnalyser(analyserNode);
-}, []);
+const handlePlay = useCallback(() => setIsPlaying(true), []);
+const handlePause = useCallback(() => setIsPlaying(false), []);
 
 const isOwner = user && track && user.id === track.user_id;
 const canRequestCollab = user && !isOwner && !collaboration;
@@ -222,11 +94,7 @@ if (isLoading) {
 return (
     <div className="page-loading">
     <div className="music-loader">
-        <div className="music-loader-bar"></div>
-        <div className="music-loader-bar"></div>
-        <div className="music-loader-bar"></div>
-        <div className="music-loader-bar"></div>
-        <div className="music-loader-bar"></div>
+        {[...Array(5)].map((_, i) => <div key={i} className="music-loader-bar" />)}
     </div>
     <p className="mt-4 text-secondary animate-pulse">Loading track...</p>
     </div>
@@ -244,236 +112,302 @@ return (
 }
 
 return (
-<div className="track-detail-page animate-fade-in">
+<div className="animate-fade-in" style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px 60px' }}>
+
     {/* Breadcrumb */}
-    <div className="px-4 pt-4 max-w-7xl mx-auto">
-    <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)] mb-4">
-        <Link to="/discover" className="hover:text-primary-400 transition-colors">Discover</Link>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 20 }}>
+    <Link to="/discover" style={{ color: 'var(--text-tertiary)', textDecoration: 'none' }}
+        onMouseEnter={e => e.target.style.color = 'var(--accent-primary)'}
+        onMouseLeave={e => e.target.style.color = 'var(--text-tertiary)'}
+    >Discover</Link>
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        <span className="text-[var(--text-secondary)] truncate">{track.title}</span>
-    </div>
+    </svg>
+    <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.title}</span>
     </div>
 
-    {/* Hero Section — position relative so blobs canvas can fill it */}
-    <div className="track-hero glass-strong" style={{ position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
-    {/* Audio-reactive background blobs */}
-    <HeroVisualizer analyser={analyser} />
+    {/* ── FULL WIDTH PLAYER ── */}
+    <div style={{ marginBottom: 24 }}>
+    <WaveformPlayer
+        audioUrl={track.audio_url}
+        height={80}
+        onPlay={handlePlay}
+        onPause={handlePause}
+    />
+    </div>
 
-    {/* All hero content sits above blobs */}
-    <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
-        <div className="waveform-container glass">
-        <WaveformPlayer
-            audioUrl={track.audio_url}
-            height={200}
-            onAnalyserReady={handleAnalyserReady}
-        />
+    {/* ── MAIN CONTENT GRID: info left, actions right ── */}
+    <div style={{
+    display: 'grid',
+    gridTemplateColumns: '1fr 320px',
+    gap: 20,
+    alignItems: 'start',
+    marginBottom: 20,
+    }}>
+
+    {/* LEFT — Track info */}
+    <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16,
+        padding: '28px 28px 24px',
+    }}>
+        {/* Title + playing indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+            {track.title}
+        </h1>
+        {isPlaying && (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 20, flexShrink: 0 }}>
+            {[1, 1.6, 1.2, 1.8, 1.4].map((h, i) => (
+                <div key={i} style={{
+                width: 3,
+                height: `${h * 8}px`,
+                background: 'var(--accent-primary, #14B8A6)',
+                borderRadius: 2,
+                animation: `equalizerBar ${0.6 + i * 0.1}s ease-in-out infinite alternate`,
+                animationDelay: `${i * 0.1}s`,
+                }} />
+            ))}
+            </div>
+        )}
         </div>
 
-        <div className="track-meta">
-        <h1 className="animate-slide-up">{track.title}</h1>
-
-        {/* Owner */}
-        <div className="owner-info animate-slide-up stagger-1">
-            <Link to={`/profile/${owner?.id}`} className="flex items-center gap-3 group">
-            <div className="avatar bpm-badge group-hover:scale-105 transition-transform">
-                {owner?.username?.charAt(0).toUpperCase()}
+        {/* Owner row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <Link to={`/profile/${owner?.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div className="avatar bpm-badge" style={{ width: 38, height: 38, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700 }}>
+            {owner?.username?.charAt(0).toUpperCase()}
             </div>
             <div>
-                <span className="owner-link">@{owner?.username}</span>
-                <span className="upload-date"> · {new Date(track.created_at).toLocaleDateString()}</span>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>@{owner?.username}</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{new Date(track.created_at).toLocaleDateString()}</div>
             </div>
-            </Link>
-            {user && !isOwner && (
+        </Link>
+        {user && !isOwner && (
             <Link
-                to={`/messages/new?userId=${owner?.id}`}
-                className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-xs transition-all border border-[var(--border-color)]"
+            to={`/messages/new?userId=${owner?.id}`}
+            style={{
+                marginLeft: 'auto',
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 14px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'var(--text-secondary)', fontSize: 12,
+                textDecoration: 'none', transition: 'all 0.2s',
+            }}
             >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                Message
+            </svg>
+            Message
             </Link>
-            )}
+        )}
         </div>
 
-        {/* Track Stats */}
-        <div className="track-stats animate-slide-up stagger-2">
-            <div className="stat-item">
-            <span className="stat-label">Plays</span>
-            <span className="stat-value">{track.plays || 0}</span>
+        {/* Stats row */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+        {[
+            { label: 'Plays', value: track.plays || 0 },
+            { label: 'Submissions', value: submissionsCount },
+            { label: 'Collaborators', value: collaborators.length },
+        ].map((stat, i) => (
+            <div key={stat.label} style={{
+            flex: 1,
+            padding: '14px 0',
+            textAlign: 'center',
+            borderRight: i < 2 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+            background: 'rgba(255,255,255,0.02)',
+            }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)' }}>{stat.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{stat.label}</div>
             </div>
-            <div className="stat-item">
-            <span className="stat-label">Submissions</span>
-            <span className="stat-value">{submissionsCount}</span>
-            </div>
-            <div className="stat-item">
-            <span className="stat-label">Collaborators</span>
-            <span className="stat-value">{collaborators.length}</span>
-            </div>
+        ))}
         </div>
 
-        {/* MIR Tags */}
-        <div className="music-chips animate-slide-up stagger-3">
-            {track.bpm && <span className="chip bpm-badge">🎵 {Math.round(track.bpm)} BPM</span>}
-            {track.musical_key && <span className="chip genre-tag">🎹 {track.musical_key}</span>}
-            {track.energy_level && (
-            <span
-                className="chip"
-                style={{
-                background:
-                    track.energy_level === 'high' ? 'rgba(239,68,68,0.2)'
-                    : track.energy_level === 'medium' ? 'rgba(245,158,11,0.2)'
-                    : 'rgba(16,185,129,0.2)',
-                borderColor:
-                    track.energy_level === 'high' ? '#ef4444'
-                    : track.energy_level === 'medium' ? '#f59e0b'
-                    : '#10b981',
-                }}
-            >
-                ⚡ {track.energy_level}
-            </span>
-            )}
-            {track.genre && <span className="chip genre-tag">🎸 {track.genre}</span>}
+        {/* Tags */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: track.description ? 20 : 0 }}>
+        {track.bpm && (
+            <span className="chip bpm-badge">🎵 {Math.round(track.bpm)} BPM</span>
+        )}
+        {track.musical_key && (
+            <span className="chip genre-tag">🎹 {track.musical_key}</span>
+        )}
+        {track.energy_level && (
+            <span className="chip" style={{
+            background: track.energy_level === 'high' ? 'rgba(239,68,68,0.15)' : track.energy_level === 'medium' ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)',
+            borderColor: track.energy_level === 'high' ? '#ef4444' : track.energy_level === 'medium' ? '#f59e0b' : '#10b981',
+            border: '1px solid',
+            }}>⚡ {track.energy_level}</span>
+        )}
+        {track.genre && (
+            <span className="chip genre-tag">🎸 {track.genre}</span>
+        )}
         </div>
+
+        {/* Description */}
+        {track.description && (
+        <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>About</div>
+            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.7 }}>{track.description}</p>
         </div>
+        )}
+
+        {/* Desired skills */}
+        {track.desired_skills && track.desired_skills.length > 0 && (
+        <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>🎯 Looking For</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {track.desired_skills.map((skill, i) => (
+                <span key={i} className="skill-tag">{skill}</span>
+            ))}
+            </div>
+        </div>
+        )}
     </div>
 
-    {/* Actions */}
-    <div className="track-actions animate-slide-up stagger-4" style={{ position: 'relative', zIndex: 2 }}>
+    {/* RIGHT — Actions panel */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* Collab actions card */}
+        <div style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16,
+        padding: 20,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Collaborate</div>
+
         {!user && (
-        <Link to="/login" className="btn-primary">Login to Collaborate</Link>
+            <Link to="/login" className="btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>Login to Collaborate</Link>
         )}
 
         {canRequestCollab && (
-        <div className="flex flex-col gap-2 w-full">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {showMessageInput && (
-            <textarea
+                <textarea
                 value={collabMessage}
                 onChange={(e) => setCollabMessage(e.target.value)}
                 placeholder={`Tell ${owner?.username} why you'd like to collaborate...`}
-                className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '10px 12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 10, color: 'var(--text-primary)',
+                    fontSize: 13, resize: 'none', outline: 'none',
+                }}
                 rows={3}
-            />
+                />
             )}
             <button onClick={handleRequestCollaboration} className="btn-primary" disabled={requestingCollab}>
-            {requestingCollab ? (
-                <><span className="music-loader-small"></span>Sending...</>
-            ) : showMessageInput ? '🤝 Send Request' : '🤝 Request Collaboration'}
+                {requestingCollab ? 'Sending...' : showMessageInput ? '🤝 Send Request' : '🤝 Request Collaboration'}
             </button>
             {showMessageInput && (
-            <button onClick={() => setShowMessageInput(false)} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
+                <button onClick={() => setShowMessageInput(false)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: 12, cursor: 'pointer' }}>
                 Cancel
-            </button>
+                </button>
             )}
-        </div>
+            </div>
         )}
 
         {collaboration && (
-        <div className="collab-status w-full">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {collaboration.status === 'pending' && (
-            <span className="status-badge pending glass w-full text-center">⏳ Collaboration Request Pending</span>
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', fontSize: 13, textAlign: 'center' }}>
+                ⏳ Request Pending
+                </div>
             )}
             {collaboration.status === 'approved' && (
-            <div className="flex flex-col gap-2 w-full">
-                <span className="status-badge approved glass w-full text-center">✅ Collaboration Approved</span>
-                <Link to={`/tracks/${trackId}/submissions`} className="btn-primary text-center">
-                ➕ Submit Your Version
+                <>
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', fontSize: 13, textAlign: 'center' }}>
+                    ✅ Collaboration Approved
+                </div>
+                <Link to={`/tracks/${trackId}/submissions`} className="btn-primary" style={{ textAlign: 'center', textDecoration: 'none' }}>
+                    ➕ Submit Your Version
                 </Link>
-            </div>
+                </>
             )}
             {collaboration.status === 'rejected' && (
-            <span className="status-badge rejected glass w-full text-center">❌ Collaboration Declined</span>
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontSize: 13, textAlign: 'center' }}>
+                ❌ Collaboration Declined
+                </div>
             )}
-        </div>
+            </div>
         )}
 
         {isOwner && (
-        <div className="flex flex-col gap-2 w-full">
-            <Link to="/my-tracks" className="btn-secondary glass text-center">✏️ Manage My Tracks</Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Link to="/my-tracks" className="btn-secondary glass" style={{ textAlign: 'center', textDecoration: 'none' }}>✏️ Manage My Tracks</Link>
             {submissionsCount > 0 && (
-            <>
-                <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary glass text-center">
-                📋 View All Submissions ({submissionsCount})
+                <>
+                <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary glass" style={{ textAlign: 'center', textDecoration: 'none' }}>
+                    📋 View Submissions ({submissionsCount})
                 </Link>
                 <button onClick={handleCompleteTrack} className="btn-secondary glass">✅ Mark as Completed</button>
-            </>
+                </>
             )}
-        </div>
+            </div>
         )}
 
         {hasApprovedCollab && track.audio_url && (
-        <a
-            href={track.audio_url}
-            download
-            target="_blank"
-            rel="noreferrer"
-            className="btn-secondary glass text-center flex items-center gap-2 justify-center"
-        >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            <a href={track.audio_url} download target="_blank" rel="noreferrer" className="btn-secondary glass"
+            style={{ textAlign: 'center', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', textDecoration: 'none' }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Download Track
-        </a>
+            </a>
+        )}
+        </div>
+
+        {/* Collaborators card */}
+        {collaborators.length > 0 && (
+        <div style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 16,
+            padding: 20,
+        }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>🤝 Collaborators</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {collaborators.map((collab) => (
+                <div key={collab.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Link to={`/profile/${collab.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, textDecoration: 'none' }}>
+                    <div className="collaborator-avatar" style={{ width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+                    {collab.username?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                    <div style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 500 }}>@{collab.username}</div>
+                    <div style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{collab.role || 'Collaborator'}</div>
+                    </div>
+                </Link>
+                {user && user.id !== collab.id && (
+                    <Link to={`/messages/new?userId=${collab.id}`}
+                    style={{ fontSize: 11, color: 'var(--text-tertiary)', textDecoration: 'none', padding: '3px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.05)' }}>
+                    Msg
+                    </Link>
+                )}
+                </div>
+            ))}
+            </div>
+        </div>
         )}
     </div>
     </div>
 
-    {/* Description */}
-    {track.description && (
-    <div className="description-section glass animate-slide-up stagger-5">
-        <h2>📋 Description</h2>
-        <p>{track.description}</p>
-    </div>
-    )}
-
-    {/* Desired Skills */}
-    {track.desired_skills && track.desired_skills.length > 0 && (
-    <div className="skills-section glass animate-slide-up stagger-6">
-        <h2>🎯 Looking For</h2>
-        <div className="skills-tags">
-        {track.desired_skills.map((skill, index) => (
-            <span key={index} className="skill-tag">{skill}</span>
-        ))}
-        </div>
-    </div>
-    )}
-
-    {/* Collaborators */}
-    {collaborators.length > 0 && (
-    <div className="collaborators-section glass animate-slide-up stagger-7">
-        <h2>🤝 Current Collaborators</h2>
-        <div className="collaborators-list">
-        {collaborators.map((collab) => (
-            <div key={collab.id} className="collaborator-item">
-            <Link to={`/profile/${collab.id}`} className="flex items-center gap-3 group">
-                <div className="collaborator-avatar group-hover:scale-105 transition-transform">
-                {collab.username?.charAt(0).toUpperCase()}
-                </div>
-                <div className="collaborator-info">
-                <span className="collaborator-name">@{collab.username}</span>
-                <span className="collaborator-role">{collab.role || 'Collaborator'}</span>
-                </div>
-            </Link>
-            {user && user.id !== collab.id && (
-                <Link
-                to={`/messages/new?userId=${collab.id}`}
-                className="ml-auto text-xs text-[var(--text-tertiary)] hover:text-primary-400 px-2 py-1 rounded-lg hover:bg-primary-500/10 transition-all"
-                >
-                Message
-                </Link>
-            )}
-            </div>
-        ))}
-        </div>
-    </div>
-    )}
-
-    {/* Submissions */}
-    <div className="submissions-section glass animate-slide-up stagger-8">
-    <div className="section-header">
-        <h2>🏆 Submissions</h2>
+    {/* ── SUBMISSIONS ── */}
+    <div style={{
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: '24px 28px',
+    }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>🏆 Submissions</h2>
         {submissionsCount > 0 && (
         <Link to={`/tracks/${trackId}/submissions`} className="btn-view-all">
             View All ({submissionsCount}) →
@@ -482,16 +416,22 @@ return (
     </div>
     <SubmissionList trackId={trackId} limit={3} />
     {submissionsCount === 0 && (
-        <div className="text-center py-8 text-[var(--text-secondary)]">
+        <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-secondary)', fontSize: 14 }}>
         No submissions yet.{' '}
         {hasApprovedCollab && (
-            <Link to={`/tracks/${trackId}/submissions`} className="text-primary-400 hover:text-primary-300">
-            Be the first to submit!
-            </Link>
+            <Link to={`/tracks/${trackId}/submissions`} style={{ color: 'var(--accent-primary)' }}>Be the first to submit!</Link>
         )}
         </div>
     )}
     </div>
+
+    {/* Equalizer bar keyframe */}
+    <style>{`
+    @keyframes equalizerBar {
+        from { transform: scaleY(0.4); }
+        to { transform: scaleY(1); }
+    }
+    `}</style>
 </div>
 );
 };
