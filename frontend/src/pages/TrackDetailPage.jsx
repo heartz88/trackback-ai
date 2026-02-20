@@ -1,9 +1,124 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+
+// Audio-reactive hero background blobs
+const HeroVisualizer = ({ analyser }) => {
+const canvasRef = useRef(null);
+const animRef = useRef(null);
+const blobsRef = useRef([
+{ x: 0.2, y: 0.4, vx: 0.0003, vy: 0.0002, baseR: 0.28, color: '20,184,166' },  // teal
+{ x: 0.75, y: 0.6, vx: -0.0002, vy: 0.0003, baseR: 0.22, color: '99,102,241' }, // indigo
+{ x: 0.5, y: 0.2, vx: 0.0002, vy: -0.0002, baseR: 0.18, color: '20,184,166' },  // teal
+{ x: 0.85, y: 0.2, vx: -0.0003, vy: 0.0002, baseR: 0.14, color: '139,92,246' }, // violet
+]);
+
+const draw = useCallback(() => {
+const canvas = canvasRef.current;
+if (!canvas) return;
+
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+
+// Read frequency data if analyser available
+let bassEnergy = 0;
+let midEnergy = 0;
+let highEnergy = 0;
+
+if (analyser) {
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(data);
+    const len = data.length;
+
+    for (let i = 0; i < Math.floor(len * 0.05); i++) bassEnergy += data[i];
+    bassEnergy = bassEnergy / (Math.floor(len * 0.05) * 255);
+
+    for (let i = Math.floor(len * 0.05); i < Math.floor(len * 0.2); i++) midEnergy += data[i];
+    midEnergy = midEnergy / (Math.floor(len * 0.15) * 255);
+
+    for (let i = Math.floor(len * 0.2); i < Math.floor(len * 0.5); i++) highEnergy += data[i];
+    highEnergy = highEnergy / (Math.floor(len * 0.3) * 255);
+}
+
+ctx.clearRect(0, 0, W, H);
+
+const blobs = blobsRef.current;
+const energies = [bassEnergy, midEnergy, bassEnergy, highEnergy];
+const baseBoost = [1.8, 1.4, 1.6, 1.3];
+
+blobs.forEach((blob, i) => {
+    // Drift blobs slowly
+    blob.x += blob.vx;
+    blob.y += blob.vy;
+    if (blob.x < 0.05 || blob.x > 0.95) blob.vx *= -1;
+    if (blob.y < 0.05 || blob.y > 0.95) blob.vy *= -1;
+
+    const energy = energies[i] || 0;
+    const r = (blob.baseR + energy * baseBoost[i] * 0.15) * Math.min(W, H);
+
+    const grad = ctx.createRadialGradient(
+    blob.x * W, blob.y * H, 0,
+    blob.x * W, blob.y * H, r
+    );
+    const alpha = 0.18 + energy * 0.25;
+    grad.addColorStop(0, `rgba(${blob.color},${Math.min(alpha, 0.55)})`);
+    grad.addColorStop(0.5, `rgba(${blob.color},${Math.min(alpha * 0.4, 0.2)})`);
+    grad.addColorStop(1, `rgba(${blob.color},0)`);
+
+    ctx.beginPath();
+    ctx.arc(blob.x * W, blob.y * H, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+});
+
+animRef.current = requestAnimationFrame(draw);
+}, [analyser]);
+
+useEffect(() => {
+const canvas = canvasRef.current;
+if (!canvas) return;
+
+const resize = () => {
+    const parent = canvas.parentElement;
+    if (parent) {
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
+    }
+};
+resize();
+
+const ro = new ResizeObserver(resize);
+ro.observe(canvas.parentElement);
+
+// Always animate (even without audio — slow drift looks great)
+animRef.current = requestAnimationFrame(draw);
+
+return () => {
+    ro.disconnect();
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+};
+}, [draw]);
+
+return (
+<canvas
+    ref={canvasRef}
+    style={{
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+    zIndex: 0,
+    filter: 'blur(40px)',
+    opacity: 0.9,
+    }}
+/>
+);
+};
 
 const TrackDetailPage = () => {
 const { trackId } = useParams();
@@ -19,6 +134,7 @@ const [collaborators, setCollaborators] = useState([]);
 const [submissionsCount, setSubmissionsCount] = useState(0);
 const [collabMessage, setCollabMessage] = useState('');
 const [showMessageInput, setShowMessageInput] = useState(false);
+const [analyser, setAnalyser] = useState(null);
 
 useEffect(() => {
 fetchTrackDetails();
@@ -65,14 +181,8 @@ try {
 };
 
 const handleRequestCollaboration = async () => {
-if (!user) {
-    navigate('/login');
-    return;
-}
-if (!showMessageInput) {
-    setShowMessageInput(true);
-    return;
-}
+if (!user) { navigate('/login'); return; }
+if (!showMessageInput) { setShowMessageInput(true); return; }
 setRequestingCollab(true);
 try {
     const response = await api.post('/collaborations/request', {
@@ -99,6 +209,10 @@ try {
     alert(err.response?.data?.error?.message || 'Failed to complete track');
 }
 };
+
+const handleAnalyserReady = useCallback((analyserNode) => {
+setAnalyser(analyserNode);
+}, []);
 
 const isOwner = user && track && user.id === track.user_id;
 const canRequestCollab = user && !isOwner && !collaboration;
@@ -142,11 +256,19 @@ return (
     </div>
     </div>
 
-    {/* Hero Section */}
-    <div className="track-hero glass-strong">
-    <div className="hero-content">
+    {/* Hero Section — position relative so blobs canvas can fill it */}
+    <div className="track-hero glass-strong" style={{ position: 'relative', overflow: 'hidden' }}>
+    {/* Audio-reactive background blobs */}
+    <HeroVisualizer analyser={analyser} />
+
+    {/* All hero content sits above blobs */}
+    <div className="hero-content" style={{ position: 'relative', zIndex: 1 }}>
         <div className="waveform-container glass">
-        <WaveformPlayer audioUrl={track.audio_url} height={200} />
+        <WaveformPlayer
+            audioUrl={track.audio_url}
+            height={200}
+            onAnalyserReady={handleAnalyserReady}
+        />
         </div>
 
         <div className="track-meta">
@@ -163,7 +285,6 @@ return (
                 <span className="upload-date"> · {new Date(track.created_at).toLocaleDateString()}</span>
             </div>
             </Link>
-            {/* Message owner (if not own track and logged in) */}
             {user && !isOwner && (
             <Link
                 to={`/messages/new?userId=${owner?.id}`}
@@ -202,13 +323,13 @@ return (
                 className="chip"
                 style={{
                 background:
-                    track.energy_level === 'high'
-                    ? 'rgba(239,68,68,0.2)'
-                    : track.energy_level === 'medium'
-                    ? 'rgba(245,158,11,0.2)'
+                    track.energy_level === 'high' ? 'rgba(239,68,68,0.2)'
+                    : track.energy_level === 'medium' ? 'rgba(245,158,11,0.2)'
                     : 'rgba(16,185,129,0.2)',
                 borderColor:
-                    track.energy_level === 'high' ? '#ef4444' : track.energy_level === 'medium' ? '#f59e0b' : '#10b981',
+                    track.energy_level === 'high' ? '#ef4444'
+                    : track.energy_level === 'medium' ? '#f59e0b'
+                    : '#10b981',
                 }}
             >
                 ⚡ {track.energy_level}
@@ -220,15 +341,11 @@ return (
     </div>
 
     {/* Actions */}
-    <div className="track-actions animate-slide-up stagger-4">
-        {/* Not logged in */}
+    <div className="track-actions animate-slide-up stagger-4" style={{ position: 'relative', zIndex: 1 }}>
         {!user && (
-        <Link to="/login" className="btn-primary">
-            Login to Collaborate
-        </Link>
+        <Link to="/login" className="btn-primary">Login to Collaborate</Link>
         )}
 
-        {/* Request collaboration */}
         {canRequestCollab && (
         <div className="flex flex-col gap-2 w-full">
             {showMessageInput && (
@@ -240,21 +357,10 @@ return (
                 rows={3}
             />
             )}
-            <button
-            onClick={handleRequestCollaboration}
-            className="btn-primary"
-            disabled={requestingCollab}
-            >
+            <button onClick={handleRequestCollaboration} className="btn-primary" disabled={requestingCollab}>
             {requestingCollab ? (
-                <>
-                <span className="music-loader-small"></span>
-                Sending...
-                </>
-            ) : showMessageInput ? (
-                '🤝 Send Request'
-            ) : (
-                '🤝 Request Collaboration'
-            )}
+                <><span className="music-loader-small"></span>Sending...</>
+            ) : showMessageInput ? '🤝 Send Request' : '🤝 Request Collaboration'}
             </button>
             {showMessageInput && (
             <button onClick={() => setShowMessageInput(false)} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
@@ -264,7 +370,6 @@ return (
         </div>
         )}
 
-        {/* Collaboration status */}
         {collaboration && (
         <div className="collab-status w-full">
             {collaboration.status === 'pending' && (
@@ -284,26 +389,20 @@ return (
         </div>
         )}
 
-        {/* Owner actions */}
         {isOwner && (
         <div className="flex flex-col gap-2 w-full">
-            <Link to="/my-tracks" className="btn-secondary glass text-center">
-            ✏️ Manage My Tracks
-            </Link>
+            <Link to="/my-tracks" className="btn-secondary glass text-center">✏️ Manage My Tracks</Link>
             {submissionsCount > 0 && (
             <>
                 <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary glass text-center">
                 📋 View All Submissions ({submissionsCount})
                 </Link>
-                <button onClick={handleCompleteTrack} className="btn-secondary glass">
-                ✅ Mark as Completed
-                </button>
+                <button onClick={handleCompleteTrack} className="btn-secondary glass">✅ Mark as Completed</button>
             </>
             )}
         </div>
         )}
 
-        {/* Download track link for approved collaborators */}
         {hasApprovedCollab && track.audio_url && (
         <a
             href={track.audio_url}
@@ -341,7 +440,7 @@ return (
     </div>
     )}
 
-    {/* Collaborators Section */}
+    {/* Collaborators */}
     {collaborators.length > 0 && (
     <div className="collaborators-section glass animate-slide-up stagger-7">
         <h2>🤝 Current Collaborators</h2>

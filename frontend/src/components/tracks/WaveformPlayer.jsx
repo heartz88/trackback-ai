@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
-const WaveformPlayer = ({ audioUrl, height = 128, onReady, onPlay, onPause }) => {
+// Expose analyser node so parent (TrackDetailPage) can use it for hero blobs
+export let sharedAnalyser = null;
+export let sharedAudioCtx = null;
+
+const WaveformPlayer = ({ audioUrl, height = 128, onReady, onPlay, onPause, onAnalyserReady }) => {
 const waveformRef = useRef(null);
 const waveformWrapRef = useRef(null);
-const analyzerCanvasRef = useRef(null);
+const oscCanvasRef = useRef(null);
 const wavesurfer = useRef(null);
 const analyserNode = useRef(null);
 const audioCtx = useRef(null);
@@ -22,33 +26,24 @@ const [beatScale, setBeatScale] = useState(1);
 const lastBeatTime = useRef(0);
 const energyHistory = useRef(new Array(43).fill(0));
 
-// WaveSurfer v7: no backend property — wire up via MediaElementSource instead
 const tryConnectAnalyser = useCallback(() => {
 if (analyserConnected.current) return;
 try {
     const ws = wavesurfer.current;
     if (!ws) return;
-
-    // v7 exposes the underlying <audio> element via getMediaElement()
     const mediaEl = ws.getMediaElement();
-    if (!mediaEl) {
-    console.warn('WaveformPlayer: media element not available yet');
-    return;
-    }
+    if (!mediaEl) return;
 
-    // Create (or reuse) a single AudioContext for this player instance
     if (!audioCtx.current) {
     audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
     }
     const ac = audioCtx.current;
-
-    // Resume if browser suspended it (autoplay policy)
     if (ac.state === 'suspended') ac.resume();
 
     const source = ac.createMediaElementSource(mediaEl);
     const analyser = ac.createAnalyser();
-    analyser.fftSize = 512;
-    analyser.smoothingTimeConstant = 0.8;
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.75;
 
     source.connect(analyser);
     analyser.connect(ac.destination);
@@ -56,22 +51,26 @@ try {
     analyserNode.current = analyser;
     analyserConnected.current = true;
 
-    // Size canvas to match wrapper
-    const canvas = analyzerCanvasRef.current;
+    // Share globally so TrackDetailPage hero can access
+    sharedAnalyser = analyser;
+    sharedAudioCtx = ac;
+
+    if (onAnalyserReady) onAnalyserReady(analyser, ac);
+
+    // Size canvas
+    const canvas = oscCanvasRef.current;
     const wrap = waveformWrapRef.current;
     if (canvas && wrap) {
     canvas.width = wrap.clientWidth;
     canvas.height = wrap.clientHeight;
     }
-
-    console.log('WaveformPlayer: analyser connected ✅');
 } catch (e) {
-    console.warn('WaveformPlayer: analyser connect failed:', e);
+    console.warn('WaveformPlayer: analyser connect failed:', e.message);
 }
-}, []);
+}, [onAnalyserReady]);
 
-const drawAnalyzer = useCallback(() => {
-const canvas = analyzerCanvasRef.current;
+const drawOscilloscope = useCallback(() => {
+const canvas = oscCanvasRef.current;
 const analyser = analyserNode.current;
 if (!canvas || !analyser) return;
 
@@ -79,86 +78,88 @@ const ctx = canvas.getContext('2d');
 const W = canvas.width;
 const H = canvas.height;
 
-const bufferLength = analyser.frequencyBinCount;
-const dataArray = new Uint8Array(bufferLength);
-analyser.getByteFrequencyData(dataArray);
+const bufferLength = analyser.fftSize;
+const dataArray = new Float32Array(bufferLength);
+analyser.getFloatTimeDomainData(dataArray);
 
 ctx.clearRect(0, 0, W, H);
 
-// Beat detection on sub-bass bins (roughly 20–200Hz)
-const bassEnd = Math.floor(bufferLength * 0.06);
+// Beat detection for play button pulse
+const freqData = new Uint8Array(analyser.frequencyBinCount);
+analyser.getByteFrequencyData(freqData);
+const bassEnd = Math.floor(freqData.length * 0.06);
 let bassEnergy = 0;
-for (let i = 0; i < bassEnd; i++) bassEnergy += dataArray[i];
+for (let i = 0; i < bassEnd; i++) bassEnergy += freqData[i];
 bassEnergy /= bassEnd;
 
 energyHistory.current.push(bassEnergy);
 energyHistory.current.shift();
-const avgEnergy =
-    energyHistory.current.reduce((a, b) => a + b, 0) / energyHistory.current.length;
+const avgEnergy = energyHistory.current.reduce((a, b) => a + b, 0) / energyHistory.current.length;
 
 const now = performance.now();
-const isBeat =
-    bassEnergy > avgEnergy * 1.4 &&
-    bassEnergy > 60 &&
-    now - lastBeatTime.current > 220;
-
-if (isBeat) {
+if (bassEnergy > avgEnergy * 1.45 && bassEnergy > 55 && now - lastBeatTime.current > 220) {
     lastBeatTime.current = now;
-    setBeatScale(1.1);
-    setTimeout(() => setBeatScale(1), 110);
+    setBeatScale(1.12);
+    setTimeout(() => setBeatScale(1), 120);
 }
 
-// Draw bars overlaid on the waveform
+// --- Oscilloscope line ---
 const computedStyle = getComputedStyle(document.documentElement);
-const accentColor =
-    computedStyle.getPropertyValue('--accent-primary').trim() || '#14B8A6';
+const accent = computedStyle.getPropertyValue('--accent-primary').trim() || '#14B8A6';
 
-const barCount = 80;
-const step = Math.floor(bufferLength / barCount);
-const barW = W / barCount - 1;
+// Glow pass
+ctx.shadowBlur = 18;
+ctx.shadowColor = accent;
+ctx.strokeStyle = accent;
+ctx.lineWidth = 1.5;
+ctx.globalAlpha = 0.35;
+ctx.beginPath();
 
-for (let i = 0; i < barCount; i++) {
-    let val = 0;
-    for (let j = 0; j < step; j++) val += dataArray[i * step + j];
-    val /= step;
-
-    if (val < 4) continue;
-
-    const barH = (val / 255) * (H * 0.9);
-    const x = i * (barW + 1);
-    const y = H / 2 - barH / 2;
-    const alpha = 0.25 + (val / 255) * 0.55;
-    const isBassBar = i < Math.floor(barCount * 0.1);
-
-    ctx.globalAlpha = isBassBar ? Math.min(alpha * 1.4, 0.95) : alpha;
-    ctx.shadowBlur = isBassBar && bassEnergy > avgEnergy * 1.2 ? 10 : 0;
-    ctx.shadowColor = accentColor;
-    ctx.fillStyle = accentColor;
-
-    ctx.beginPath();
-    ctx.roundRect(x, y, barW, barH, 2);
-    ctx.fill();
+const sliceW = W / bufferLength;
+let x = 0;
+for (let i = 0; i < bufferLength; i++) {
+    const v = dataArray[i];
+    const y = H / 2 + v * (H * 0.42);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+    x += sliceW;
 }
+ctx.stroke();
+
+// Crisp pass on top
+ctx.shadowBlur = 6;
+ctx.globalAlpha = 0.85;
+ctx.lineWidth = 1.5;
+ctx.beginPath();
+x = 0;
+for (let i = 0; i < bufferLength; i++) {
+    const v = dataArray[i];
+    const y = H / 2 + v * (H * 0.42);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+    x += sliceW;
+}
+ctx.stroke();
 
 ctx.globalAlpha = 1;
 ctx.shadowBlur = 0;
 
 if (isPlayingRef.current) {
-    animFrameRef.current = requestAnimationFrame(drawAnalyzer);
+    animFrameRef.current = requestAnimationFrame(drawOscilloscope);
 }
 }, []);
 
-const startAnalyzer = useCallback(() => {
+const startVisualizer = useCallback(() => {
 if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-animFrameRef.current = requestAnimationFrame(drawAnalyzer);
-}, [drawAnalyzer]);
+animFrameRef.current = requestAnimationFrame(drawOscilloscope);
+}, [drawOscilloscope]);
 
-const stopAnalyzer = useCallback(() => {
+const stopVisualizer = useCallback(() => {
 if (animFrameRef.current) {
     cancelAnimationFrame(animFrameRef.current);
     animFrameRef.current = null;
 }
-const canvas = analyzerCanvasRef.current;
+const canvas = oscCanvasRef.current;
 if (canvas) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -169,10 +170,8 @@ useEffect(() => {
 if (!waveformRef.current) return;
 
 const computedStyle = getComputedStyle(document.documentElement);
-const accentColor =
-    computedStyle.getPropertyValue('--accent-primary').trim() || '#14B8A6';
-const textSecondary =
-    computedStyle.getPropertyValue('--text-secondary').trim() || '#cbd5e1';
+const accentColor = computedStyle.getPropertyValue('--accent-primary').trim() || '#14B8A6';
+const textSecondary = computedStyle.getPropertyValue('--text-secondary').trim() || '#cbd5e1';
 
 wavesurfer.current = WaveSurfer.create({
     container: waveformRef.current,
@@ -185,7 +184,6 @@ wavesurfer.current = WaveSurfer.create({
     height: height,
     barGap: 2,
     normalize: true,
-    // NOTE: do NOT pass backend: 'WebAudio' in v7 — it's removed
 });
 
 wavesurfer.current.load(audioUrl);
@@ -199,25 +197,23 @@ wavesurfer.current.on('ready', () => {
 wavesurfer.current.on('play', () => {
     isPlayingRef.current = true;
     setIsPlaying(true);
-    // Connect analyser here — media element is guaranteed to exist now
     tryConnectAnalyser();
-    // Resume AudioContext (required after user gesture in Chrome)
     if (audioCtx.current?.state === 'suspended') audioCtx.current.resume();
-    startAnalyzer();
+    startVisualizer();
     if (onPlay) onPlay();
 });
 
 wavesurfer.current.on('pause', () => {
     isPlayingRef.current = false;
     setIsPlaying(false);
-    stopAnalyzer();
+    stopVisualizer();
     if (onPause) onPause();
 });
 
 wavesurfer.current.on('finish', () => {
     isPlayingRef.current = false;
     setIsPlaying(false);
-    stopAnalyzer();
+    stopVisualizer();
 });
 
 wavesurfer.current.on('audioprocess', () => {
@@ -229,7 +225,7 @@ wavesurfer.current.on('seek', () => {
 });
 
 const ro = new ResizeObserver(() => {
-    const canvas = analyzerCanvasRef.current;
+    const canvas = oscCanvasRef.current;
     const wrap = waveformWrapRef.current;
     if (canvas && wrap) {
     canvas.width = wrap.clientWidth;
@@ -240,16 +236,18 @@ if (waveformWrapRef.current) ro.observe(waveformWrapRef.current);
 
 return () => {
     isPlayingRef.current = false;
-    stopAnalyzer();
+    stopVisualizer();
     ro.disconnect();
     if (wavesurfer.current) wavesurfer.current.destroy();
     if (audioCtx.current) {
     audioCtx.current.close();
     audioCtx.current = null;
     }
+    sharedAnalyser = null;
+    sharedAudioCtx = null;
     analyserConnected.current = false;
 };
-}, [audioUrl, height, onReady, onPlay, onPause, tryConnectAnalyser, startAnalyzer, stopAnalyzer]);
+}, [audioUrl, height, onReady, onPlay, onPause, tryConnectAnalyser, startVisualizer, stopVisualizer]);
 
 const togglePlay = () => {
 if (wavesurfer.current) wavesurfer.current.playPause();
@@ -269,14 +267,15 @@ return `${mins}:${secs.toString().padStart(2, '0')}`;
 
 return (
 <div className="waveform-player glass">
-    {/* Waveform + overlaid analyzer canvas */}
+    {/* Waveform + oscilloscope overlay */}
     <div ref={waveformWrapRef} style={{ position: 'relative', width: '100%' }}>
     <div
         ref={waveformRef}
         className={`waveform-canvas ${isLoading ? 'loading' : ''}`}
     />
+    {/* Oscilloscope canvas overlaid on waveform */}
     <canvas
-        ref={analyzerCanvasRef}
+        ref={oscCanvasRef}
         style={{
         position: 'absolute',
         top: 0,
@@ -285,7 +284,8 @@ return (
         height: '100%',
         pointerEvents: 'none',
         opacity: isPlaying ? 1 : 0,
-        transition: 'opacity 0.5s ease',
+        transition: 'opacity 0.6s ease',
+        mixBlendMode: 'screen',
         }}
     />
     </div>
@@ -312,13 +312,11 @@ return (
         disabled={isLoading}
         style={{
         transform: `scale(${beatScale})`,
-        transition:
-            beatScale > 1
+        transition: beatScale > 1
             ? 'transform 0.05s ease-out, box-shadow 0.05s ease-out'
-            : 'transform 0.15s ease-in, box-shadow 0.15s ease-in',
-        boxShadow:
-            beatScale > 1
-            ? '0 0 16px 4px var(--accent-primary, #14B8A6)'
+            : 'transform 0.18s ease-in, box-shadow 0.18s ease-in',
+        boxShadow: beatScale > 1
+            ? '0 0 20px 6px var(--accent-primary, #14B8A6)'
             : undefined,
         }}
     >
