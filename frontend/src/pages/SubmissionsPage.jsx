@@ -18,6 +18,7 @@ const [error, setError] = useState('');
 const [refreshKey, setRefreshKey] = useState(0);
 const [votingStats, setVotingStats] = useState({ totalVotes: 0, activeSubmissions: 0, featured: 0 });
 const [submissionsCount, setSubmissionsCount] = useState(0);
+const [hasAlreadySubmitted, setHasAlreadySubmitted] = useState(false);
 
 useEffect(() => {
 fetchTrack();
@@ -60,7 +61,12 @@ try {
 const fetchSubmissionsCount = async () => {
 try {
     const response = await api.get(`/submissions/track/${trackId}`);
-    setSubmissionsCount(response.data.submissions?.length || 0);
+    const submissions = response.data.submissions || [];
+    setSubmissionsCount(submissions.length);
+    // Check if the current user has already submitted
+    if (user) {
+    setHasAlreadySubmitted(submissions.some((s) => s.collaborator_id === user.id));
+    }
 } catch {
     setSubmissionsCount(0);
 }
@@ -84,7 +90,7 @@ try {
 }
 };
 
-const canSubmit = collaboration && collaboration.status === 'approved';
+const canSubmit = collaboration && collaboration.status === 'approved' && !hasAlreadySubmitted;
 const isOwner = user && track && user.id === track.user_id;
 
 if (isLoading) {
@@ -240,6 +246,18 @@ return (
         <Link to="/register" className="px-5 py-2 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl transition-all text-sm border border-[var(--border-color)]">
             Register
         </Link>
+        </div>
+    </div>
+    )}
+
+    {collaboration && collaboration.status === 'approved' && hasAlreadySubmitted && (
+    <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-2xl mb-6 animate-slide-up stagger-4">
+        <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+        <p className="text-green-400 font-medium text-sm">You've already submitted a version!</p>
+        <p className="text-[var(--text-tertiary)] text-xs mt-0.5">Your submission is in the list below. Each collaborator can only submit one version.</p>
         </div>
     </div>
     )}

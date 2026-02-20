@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import CommentSection from '../components/comments/CommentSection';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
@@ -394,13 +393,6 @@ return (
         </div>
     )}
     </div>
-
-    {/* Comments Section */}
-    {submissionsCount > 0 && track.latest_submission_id && (
-    <div className="comments-section glass animate-slide-up">
-        <CommentSection submissionId={track.latest_submission_id} />
-    </div>
-    )}
 </div>
 );
 };
