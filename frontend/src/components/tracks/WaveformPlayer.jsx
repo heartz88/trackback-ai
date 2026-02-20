@@ -285,7 +285,7 @@ return (
         pointerEvents: 'none',
         opacity: isPlaying ? 1 : 0,
         transition: 'opacity 0.6s ease',
-        mixBlendMode: 'screen',
+        zIndex: 10,
         }}
     />
     </div>

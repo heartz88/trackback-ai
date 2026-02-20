@@ -112,7 +112,7 @@ return (
     width: '100%',
     height: '100%',
     pointerEvents: 'none',
-    zIndex: 0,
+    zIndex: 1,
     filter: 'blur(40px)',
     opacity: 0.9,
     }}
@@ -257,12 +257,12 @@ return (
     </div>
 
     {/* Hero Section — position relative so blobs canvas can fill it */}
-    <div className="track-hero glass-strong" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="track-hero glass-strong" style={{ position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
     {/* Audio-reactive background blobs */}
     <HeroVisualizer analyser={analyser} />
 
     {/* All hero content sits above blobs */}
-    <div className="hero-content" style={{ position: 'relative', zIndex: 1 }}>
+    <div className="hero-content" style={{ position: 'relative', zIndex: 2 }}>
         <div className="waveform-container glass">
         <WaveformPlayer
             audioUrl={track.audio_url}
@@ -341,7 +341,7 @@ return (
     </div>
 
     {/* Actions */}
-    <div className="track-actions animate-slide-up stagger-4" style={{ position: 'relative', zIndex: 1 }}>
+    <div className="track-actions animate-slide-up stagger-4" style={{ position: 'relative', zIndex: 2 }}>
         {!user && (
         <Link to="/login" className="btn-primary">Login to Collaborate</Link>
         )}
