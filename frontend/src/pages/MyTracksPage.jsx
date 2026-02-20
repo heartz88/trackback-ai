@@ -7,6 +7,9 @@ const [tracks, setTracks] = useState([]);
 const [loading, setLoading] = useState(true);
 const [submissionCounts, setSubmissionCounts] = useState({});
 const [collabCounts, setCollabCounts] = useState({});
+const [editingTrackId, setEditingTrackId] = useState(null);
+const [metadataForms, setMetadataForms] = useState({});
+const [savingId, setSavingId] = useState(null);
 const navigate = useNavigate();
 
 useEffect(() => {
@@ -44,6 +47,39 @@ try {
     console.error('Failed to fetch tracks:', err);
 } finally {
     setLoading(false);
+}
+};
+
+const openEditMetadata = (track) => {
+setMetadataForms(prev => ({
+    ...prev,
+    [track.id]: {
+    bpm: track.bpm ? Math.round(track.bpm) : '',
+    musical_key: track.musical_key || '',
+    energy_level: track.energy_level || '',
+    genre: track.genre || '',
+    }
+}));
+setEditingTrackId(track.id);
+};
+
+const handleSaveMetadata = async (trackId) => {
+setSavingId(trackId);
+const form = metadataForms[trackId];
+try {
+    const payload = {};
+    if (form.bpm !== '') payload.bpm = form.bpm;
+    if (form.musical_key !== '') payload.musical_key = form.musical_key;
+    if (form.energy_level !== '') payload.energy_level = form.energy_level;
+    if (form.genre !== '') payload.genre = form.genre;
+
+    const res = await api.put(`/tracks/${trackId}/metadata`, payload);
+    setTracks(prev => prev.map(t => t.id === trackId ? { ...t, ...res.data.track } : t));
+    setEditingTrackId(null);
+} catch (err) {
+    alert(err.response?.data?.error?.message || 'Failed to save changes');
+} finally {
+    setSavingId(null);
 }
 };
 
@@ -174,6 +210,83 @@ return (
                     </div>
                 ))}
                 </div>
+
+                {/* Edit button */}
+                {editingTrackId !== track.id && (
+                <button
+                    onClick={() => openEditMetadata(track)}
+                    className="mb-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-[var(--text-tertiary)] hover:text-primary-400 border border-[var(--border-color)] hover:border-primary-500/50 rounded-lg transition-all"
+                >
+                    ✏️ Correct AI values
+                </button>
+                )}
+
+                {/* Inline metadata edit form */}
+                {editingTrackId === track.id && metadataForms[track.id] && (
+                <div className="mb-4 p-4 bg-[var(--bg-primary)] border border-primary-500/40 rounded-xl">
+                    <p className="text-xs text-[var(--text-tertiary)] mb-3">Correct the AI-detected values. Leave blank to keep current.</p>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label className="text-xs text-[var(--text-secondary)] block mb-1">BPM</label>
+                        <input
+                        type="number" min="20" max="400"
+                        value={metadataForms[track.id].bpm}
+                        onChange={e => setMetadataForms(prev => ({...prev, [track.id]: {...prev[track.id], bpm: e.target.value}}))}
+                        placeholder={track.bpm ? Math.round(track.bpm) : 'e.g. 140'}
+                        className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-sm focus:outline-none focus:border-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-[var(--text-secondary)] block mb-1">Energy</label>
+                        <select
+                        value={metadataForms[track.id].energy_level}
+                        onChange={e => setMetadataForms(prev => ({...prev, [track.id]: {...prev[track.id], energy_level: e.target.value}}))}
+                        className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-sm focus:outline-none focus:border-primary-500"
+                        >
+                        <option value="">Keep ({track.energy_level || '—'})</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-xs text-[var(--text-secondary)] block mb-1">Key</label>
+                        <input
+                        type="text"
+                        value={metadataForms[track.id].musical_key}
+                        onChange={e => setMetadataForms(prev => ({...prev, [track.id]: {...prev[track.id], musical_key: e.target.value}}))}
+                        placeholder={track.musical_key || 'e.g. C# Minor'}
+                        className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-sm focus:outline-none focus:border-primary-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs text-[var(--text-secondary)] block mb-1">Genre</label>
+                        <input
+                        type="text"
+                        value={metadataForms[track.id].genre}
+                        onChange={e => setMetadataForms(prev => ({...prev, [track.id]: {...prev[track.id], genre: e.target.value}}))}
+                        placeholder={track.genre || 'e.g. Hip Hop'}
+                        className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-sm focus:outline-none focus:border-primary-500"
+                        />
+                    </div>
+                    </div>
+                    <div className="flex gap-2">
+                    <button
+                        onClick={() => handleSaveMetadata(track.id)}
+                        disabled={savingId === track.id}
+                        className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all"
+                    >
+                        {savingId === track.id ? 'Saving…' : '✓ Save Changes'}
+                    </button>
+                    <button
+                        onClick={() => setEditingTrackId(null)}
+                        className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] text-sm rounded-lg border border-[var(--border-color)] transition-all"
+                    >
+                        Cancel
+                    </button>
+                    </div>
+                </div>
+                )}
 
                 {/* Audio Player */}
                 {track.audio_url && (

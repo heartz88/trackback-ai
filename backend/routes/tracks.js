@@ -481,6 +481,71 @@ res.status(500).json({ error: { message: 'Failed to fetch tracks' } });
 }
 });
 
+// Update MIR metadata (owner correction of AI-detected values)
+// Separate from general track update so corrections are clearly logged
+router.put('/:id/metadata', authMiddleware, async (req, res) => {
+try {
+const { id } = req.params;
+const userId = req.user.id;
+const { bpm, musical_key, energy_level, genre } = req.body;
+
+// Verify ownership
+const ownerCheck = await db.query('SELECT user_id FROM tracks WHERE id = $1', [id]);
+if (ownerCheck.rows.length === 0) {
+    return res.status(404).json({ error: { message: 'Track not found' } });
+}
+if (ownerCheck.rows[0].user_id !== userId) {
+    return res.status(403).json({ error: { message: 'Not authorized to update this track' } });
+}
+
+// Validate BPM if provided
+if (bpm !== undefined && bpm !== null) {
+    const bpmNum = parseFloat(bpm);
+    if (isNaN(bpmNum) || bpmNum < 20 || bpmNum > 400) {
+    return res.status(400).json({ error: { message: 'BPM must be between 20 and 400' } });
+    }
+}
+
+// Validate energy_level if provided
+if (energy_level !== undefined && energy_level !== null) {
+    if (!['low', 'medium', 'high'].includes(energy_level)) {
+    return res.status(400).json({ error: { message: 'Energy level must be low, medium, or high' } });
+    }
+}
+
+const result = await db.query(
+    `UPDATE tracks
+    SET bpm          = COALESCE($1, bpm),
+        musical_key  = COALESCE($2, musical_key),
+        energy_level = COALESCE($3, energy_level),
+        genre        = COALESCE($4, genre),
+        updated_at   = CURRENT_TIMESTAMP
+    WHERE id = $5
+    RETURNING *`,
+    [
+    bpm ? parseFloat(bpm) : null,
+    musical_key || null,
+    energy_level || null,
+    genre || null,
+    id
+    ]
+);
+
+const track = result.rows[0];
+track.audio_url = getSignedUrl(track.s3_key);
+
+console.log(`✏️  Track ${id} metadata corrected by owner (user ${userId})`);
+
+res.json({
+    message: 'Track metadata updated successfully',
+    track
+});
+} catch (error) {
+console.error('❌ Update track metadata error:', error);
+res.status(500).json({ error: { message: 'Failed to update track metadata' } });
+}
+});
+
 // Update track
 router.put('/:id', authMiddleware, async (req, res) => {
 try {
