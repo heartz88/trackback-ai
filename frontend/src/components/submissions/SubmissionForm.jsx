@@ -208,10 +208,6 @@ const SubmissionForm = ({ trackId, collaborationId, onSuccess, onCancel }) => {
                     </button>
                 </div>
             </form>
-
-            <style jsx>{`
-                
-            `}</style>
         </div>
     );
 };

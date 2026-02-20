@@ -446,6 +446,41 @@ res.status(500).json({
 }
 });
 
+// Get tracks by any user ID (public — used for viewing other people's profiles)
+router.get('/user/:userId', async (req, res) => {
+try {
+const { userId } = req.params;
+
+if (isNaN(parseInt(userId))) {
+    return res.status(400).json({ error: { message: 'Invalid user ID' } });
+}
+
+const result = await db.query(
+    `SELECT t.*, u.username
+    FROM tracks t
+    JOIN users u ON t.user_id = u.id
+    WHERE t.user_id = $1
+    AND t.analysis_status = 'completed'
+    ORDER BY t.created_at DESC`,
+    [parseInt(userId)]
+);
+
+const tracks = result.rows.map(track => ({
+    ...track,
+    audio_url: getSignedUrl(track.s3_key),
+    duration: track.duration ? Math.round(track.duration) : null,
+    bpm: track.bpm ? Math.round(track.bpm) : null,
+    desired_skills: track.desired_skills || [],
+    musical_key: track.musical_key || null
+}));
+
+res.json({ tracks });
+} catch (error) {
+console.error('❌ Get user tracks by ID error:', error);
+res.status(500).json({ error: { message: 'Failed to fetch tracks' } });
+}
+});
+
 // Update track
 router.put('/:id', authMiddleware, async (req, res) => {
 try {

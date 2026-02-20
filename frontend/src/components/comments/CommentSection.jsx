@@ -80,65 +80,6 @@ const CommentSection = ({ submissionId, onCommentCountChange }) => {
                     onCommentUpdate={handleCommentUpdate}
                 />
             )}
-
-            <style jsx>{`
-                .comment-section {
-                    background: #1e1e2f;
-                    border-radius: 12px;
-                    padding: 24px;
-                    margin-top: 32px;
-                }
-
-                .section-header {
-                    margin-bottom: 24px;
-                    padding-bottom: 16px;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-                }
-
-                .section-header h3 {
-                    color: #ffffff;
-                    font-size: 20px;
-                    font-weight: 700;
-                    margin: 0;
-                }
-
-                .loading,
-                .error {
-                    text-align: center;
-                    padding: 48px 24px;
-                    color: #b4b4b4;
-                }
-
-                .spinner {
-                    width: 40px;
-                    height: 40px;
-                    border: 3px solid rgba(255, 255, 255, 0.1);
-                    border-top-color: #9b59b6;
-                    border-radius: 50%;
-                    animation: spin 0.8s linear infinite;
-                    margin: 0 auto 16px;
-                }
-
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-
-                .retry-btn {
-                    margin-top: 16px;
-                    padding: 10px 20px;
-                    background: linear-gradient(135deg, #9b59b6, #e94560);
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    transition: transform 0.2s;
-                }
-
-                .retry-btn:hover {
-                    transform: translateY(-2px);
-                }
-            `}</style>
         </div>
     );
 };
