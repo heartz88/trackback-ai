@@ -176,6 +176,170 @@ return (
                 ))}
             </div>
             )}
+            {/* Preferred Genres */}
+            {profile.preferred_genres?.length > 0 && (
+            <div className="mb-6">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+                Preferred Genres
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                {profile.preferred_genres.map((genre, index) => (
+                    <span
+                    key={index}
+                    className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-sm"
+                    >
+                    {genre}
+                    </span>
+                ))}
+                </div>
+            </div>
+            )}
+
+            {/* Equipment */}
+            {profile.equipment?.length > 0 && (
+            <div className="mb-6">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+                Equipment / Software
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                {profile.equipment.map((item, index) => (
+                    <span
+                    key={index}
+                    className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-sm"
+                    >
+                    {item}
+                    </span>
+                ))}
+                </div>
+            </div>
+            )}
+
+            {/* Looking For */}
+            {profile.looking_for && (
+            <div className="mb-6 p-4 bg-[var(--bg-tertiary)]/30 rounded-xl border border-[var(--border-color)]">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
+                Looking For
+                </h3>
+                <p className="text-[var(--text-primary)]">{profile.looking_for}</p>
+            </div>
+            )}
+
+            {/* Social Links */}
+            {profile.social_links && Object.values(profile.social_links).some(v => v) && (
+            <div className="mb-6">
+                <h3 className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-3">
+                Connect
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                {profile.social_links.instagram && (
+                    <a
+                    href={`https://instagram.com/${profile.social_links.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Instagram"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/instagram/ffffff"
+                        className="w-5 h-5"
+                        alt="Instagram"
+                    />
+                    </a>
+                )}
+                {profile.social_links.twitter && (
+                    <a
+                    href={`https://twitter.com/${profile.social_links.twitter}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-blue-400 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Twitter/X"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/x/ffffff"
+                        className="w-5 h-5"
+                        alt="X"
+                    />
+                    </a>
+                )}
+                {profile.social_links.soundcloud && (
+                    <a
+                    href={profile.social_links.soundcloud.startsWith('http') ? profile.social_links.soundcloud : `https://${profile.social_links.soundcloud}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="SoundCloud"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/soundcloud/ffffff"
+                        className="w-5 h-5"
+                        alt="SoundCloud"
+                    />
+                    </a>
+                )}
+                {profile.social_links.spotify && (
+                    <a
+                    href={profile.social_links.spotify}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Spotify"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/spotify/ffffff"
+                        className="w-5 h-5"
+                        alt="Spotify"
+                    />
+                    </a>
+                )}
+                {profile.social_links.youtube && (
+                    <a
+                    href={profile.social_links.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="YouTube"
+                    >
+                    <img
+                        src="https://cdn.simpleicons.org/youtube/ffffff"
+                        className="w-5 h-5"
+                        alt="YouTube"
+                    />
+                    </a>
+                )}
+                
+                {profile.social_links.discord && (
+                <a
+                    href={profile.social_links.discord.startsWith('https') ? profile.social_links.discord : `https://discord.com/users/${profile.social_links.discord}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="Discord"
+                >
+                    <img
+                        src="https://cdn.simpleicons.org/discord/ffffff"
+                        className="w-5 h-5"
+                        alt="Discord"
+                    />
+                </a>
+            )}
+            {profile.social_links.tiktok && (
+                <a
+                    href={`https://tiktok.com/@${profile.social_links.tiktok}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-black rounded-xl flex items-center justify-center hover:scale-110 transition-transform"
+                    title="TikTok"
+                >
+                    <img
+                        src="https://cdn.simpleicons.org/tiktok/ffffff"
+                        className="w-5 h-5"
+                        alt="TikTok"
+                    />
+                </a>
+            )}
+                </div>
+            </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[var(--border-color)]">
