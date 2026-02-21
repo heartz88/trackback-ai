@@ -130,6 +130,32 @@ res.status(500).json({ error: { message: 'Failed to send request' } });
 }
 });
 
+// Get current user's collaboration status for a specific track
+// Used by SubmissionsPage and TrackDetailPage to check if approved
+router.get('/track/:trackId', authMiddleware, async (req, res) => {
+try {
+const { trackId } = req.params;
+const userId = req.user.id;
+
+const result = await db.query(
+    `SELECT cr.*, t.title as track_title, t.user_id as owner_id
+    FROM collaboration_requests cr
+    JOIN tracks t ON cr.track_id = t.id
+    WHERE cr.track_id = $1 AND cr.collaborator_id = $2`,
+    [trackId, userId]
+);
+
+if (result.rows.length === 0) {
+    return res.json({ collaboration: null });
+}
+
+res.json({ collaboration: result.rows[0] });
+} catch (error) {
+console.error('Get collaboration status error:', error);
+res.status(500).json({ error: { message: 'Failed to fetch collaboration status' } });
+}
+});
+
 // Get collaboration requests for user's tracks
 router.get('/requests/received', authMiddleware, async (req, res) => {
 try {
