@@ -1,14 +1,35 @@
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { useToast } from '../common/Toast';
 
-const VoteButton = ({ submissionId, initialVote, initialCounts, onVoteChange }) => {
+const VoteButton = ({ submissionId, initialVote, initialCounts, onVoteChange, submitterId, trackOwnerId }) => {
+    const { user } = useAuth();
+    const toast = useToast();
     const [userVote, setUserVote] = useState(initialVote);
     const [upvotes, setUpvotes] = useState(initialCounts?.upvotes || 0);
     const [downvotes, setDownvotes] = useState(initialCounts?.downvotes || 0);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Work out if this user is blocked from voting
+    const isOwnSubmission = user && submitterId && user.id === submitterId;
+    const isTrackOwner = user && trackOwnerId && user.id === trackOwnerId;
+    const cannotVote = !user || isOwnSubmission || isTrackOwner;
+
+    const getBlockedReason = () => {
+        if (!user) return 'Sign in to vote';
+        if (isOwnSubmission) return "You can't vote on your own submission";
+        if (isTrackOwner) return "Track owners don't vote — you pick the winner";
+        return null;
+    };
+
     const handleVote = async (voteType) => {
         if (isLoading) return;
+
+        if (cannotVote) {
+            toast.info(getBlockedReason());
+            return;
+        }
 
         setIsLoading(true);
         const previousVote = userVote;
@@ -18,49 +39,31 @@ const VoteButton = ({ submissionId, initialVote, initialCounts, onVoteChange }) 
         try {
             // Optimistic update
             if (userVote === voteType) {
-                // Remove vote
                 setUserVote(null);
-                if (voteType === 'upvote') {
-                    setUpvotes(prev => prev - 1);
-                } else {
-                    setDownvotes(prev => prev - 1);
-                }
+                if (voteType === 'upvote') setUpvotes(prev => prev - 1);
+                else setDownvotes(prev => prev - 1);
             } else {
-                // Add/change vote
                 if (userVote) {
-                    // Changing from one to another
-                    if (userVote === 'upvote') {
-                        setUpvotes(prev => prev - 1);
-                        setDownvotes(prev => prev + 1);
-                    } else {
-                        setDownvotes(prev => prev - 1);
-                        setUpvotes(prev => prev + 1);
-                    }
+                    if (userVote === 'upvote') { setUpvotes(prev => prev - 1); setDownvotes(prev => prev + 1); }
+                    else { setDownvotes(prev => prev - 1); setUpvotes(prev => prev + 1); }
                 } else {
-                    // Adding new vote
-                    if (voteType === 'upvote') {
-                        setUpvotes(prev => prev + 1);
-                    } else {
-                        setDownvotes(prev => prev + 1);
-                    }
+                    if (voteType === 'upvote') setUpvotes(prev => prev + 1);
+                    else setDownvotes(prev => prev + 1);
                 }
                 setUserVote(voteType);
             }
 
-            // Make API call
-            const response = await api.post(`/votes/submission/${submissionId}`, {
+            const response = await api.post(`/collaborations/submissions/${submissionId}/vote`, {
                 vote_type: voteType
             });
 
-            if (onVoteChange) {
-                onVoteChange(response.data.vote);
-            }
+            if (onVoteChange) onVoteChange(response.data.vote);
         } catch (error) {
             console.error('Vote error:', error);
-            // Revert on error
             setUserVote(previousVote);
             setUpvotes(previousUpvotes);
             setDownvotes(previousDownvotes);
+            toast.error(error.response?.data?.error?.message || 'Failed to vote');
         } finally {
             setIsLoading(false);
         }
@@ -69,9 +72,9 @@ const VoteButton = ({ submissionId, initialVote, initialCounts, onVoteChange }) 
     const score = upvotes - downvotes;
 
     return (
-        <div className="vote-buttons">
+        <div className="vote-buttons" title={cannotVote ? getBlockedReason() : undefined}>
             <button
-                className={`vote-btn upvote ${userVote === 'upvote' ? 'active' : ''}`}
+                className={`vote-btn upvote ${userVote === 'upvote' ? 'active' : ''} ${cannotVote ? 'opacity-40 cursor-not-allowed' : ''}`}
                 onClick={() => handleVote('upvote')}
                 disabled={isLoading}
             >
@@ -84,7 +87,7 @@ const VoteButton = ({ submissionId, initialVote, initialCounts, onVoteChange }) 
             <div className="vote-score">{score > 0 ? '+' : ''}{score}</div>
 
             <button
-                className={`vote-btn downvote ${userVote === 'downvote' ? 'active' : ''}`}
+                className={`vote-btn downvote ${userVote === 'downvote' ? 'active' : ''} ${cannotVote ? 'opacity-40 cursor-not-allowed' : ''}`}
                 onClick={() => handleVote('downvote')}
                 disabled={isLoading}
             >

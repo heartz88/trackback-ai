@@ -142,6 +142,8 @@ return (
         initialVote={userVote}
         initialCounts={voteCounts}
         onVoteChange={setUserVote}
+        submitterId={submission.collaborator_id}
+        trackOwnerId={submission.track_owner_id}
         />
     </div>
     </div>
