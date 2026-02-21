@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useToast } from '../components/common/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 import socketService from '../services/socket';
 
 function MessagesPage() {
+const toast = useToast();
 const { conversationId } = useParams();
 const navigate = useNavigate();
 const { user } = useAuth();
@@ -250,7 +252,7 @@ if (!newMessage.trim() || !selectedConversation || !isConnected) {
         isConnected
     });
     if (!isConnected) {
-        alert('Please wait for connection to establish before sending messages.');
+        toast.error('Please wait for connection to establish before sending messages.');
     }
     return;
 }
@@ -263,7 +265,7 @@ console.log(`📤 Sending message to conversation ${selectedConversation.id}:`, 
 const success = sendMessage(selectedConversation.id, messageContent);
 if (!success) {
     console.error('❌ Failed to send message');
-    alert('Failed to send message. Please check your connection.');
+    toast.error('Failed to send message. Please check your connection.');
 }
 setTypingStatus(selectedConversation.id, false);
 };
@@ -290,12 +292,12 @@ try {
     // Make sure recipientId is a number
     const parsedRecipientId = parseInt(recipientId);
     if (isNaN(parsedRecipientId)) {
-        alert('Invalid user ID');
+        toast.error('Invalid user ID');
         return;
     }
 
     if (parsedRecipientId === user.id) {
-        alert('You cannot start a conversation with yourself');
+        toast.error('You cannot start a conversation with yourself');
         return;
     }
 
@@ -346,7 +348,7 @@ try {
         }
     }
 
-    alert(`Error: ${errorMessage}`);
+    toast.error(errorMessage || 'Failed to start conversation');
 } finally {
     setStartingConversation(false);
 }

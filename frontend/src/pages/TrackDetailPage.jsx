@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +10,8 @@ const TrackDetailPage = () => {
 const { trackId } = useParams();
 const { user } = useAuth();
 const navigate = useNavigate();
+const toast = useToast();
+const confirm = useConfirm();
 const [track, setTrack] = useState(null);
 const [owner, setOwner] = useState(null);
 const [collaboration, setCollaboration] = useState(null);
@@ -20,10 +23,6 @@ const [submissionsCount, setSubmissionsCount] = useState(0);
 const [collabMessage, setCollabMessage] = useState('');
 const [showMessageInput, setShowMessageInput] = useState(false);
 const [isPlaying, setIsPlaying] = useState(false);
-const [editingMetadata, setEditingMetadata] = useState(false);
-const [metadataForm, setMetadataForm] = useState({ bpm: '', musical_key: '', energy_level: '', genre: '' });
-const [savingMetadata, setSavingMetadata] = useState(false);
-const [metadataSaved, setMetadataSaved] = useState(false);
 
 useEffect(() => { fetchTrackDetails(); }, [trackId]);
 
@@ -49,50 +48,24 @@ try {
     const r = await api.post('/collaborations/request', { track_id: trackId, message: collabMessage || `I'd like to collaborate on "${track.title}"` });
     setCollaboration(r.data.request);
     setShowMessageInput(false);
-} catch (err) { alert(err.response?.data?.error?.message || 'Failed to send request'); }
+    toast.success('Collaboration request sent!');
+} catch (err) { toast.error(err.response?.data?.error?.message || 'Failed to send request'); }
 finally { setRequestingCollab(false); }
 };
 
 const handleCompleteTrack = async () => {
-if (!window.confirm('Mark this track as completed?')) return;
-try { await api.post(`/collaborations/${trackId}/complete`); fetchTrackDetails(); }
-catch (err) { alert(err.response?.data?.error?.message || 'Failed'); }
+const ok = await confirm({
+    title: 'Mark as completed?',
+    message: 'The highest voted submission will be selected as the final version.',
+    confirmText: 'Complete Track',
+});
+if (!ok) return;
+try { await api.post(`/collaborations/${trackId}/complete`); fetchTrackDetails(); toast.success('Track marked as completed!'); }
+catch (err) { toast.error(err.response?.data?.error?.message || 'Failed to complete track'); }
 };
 
 const handlePlay  = useCallback(() => setIsPlaying(true), []);
 const handlePause = useCallback(() => setIsPlaying(false), []);
-
-const openEditMetadata = () => {
-setMetadataForm({
-    bpm: track.bpm ? Math.round(track.bpm) : '',
-    musical_key: track.musical_key || '',
-    energy_level: track.energy_level || '',
-    genre: track.genre || '',
-});
-setEditingMetadata(true);
-setMetadataSaved(false);
-};
-
-const handleSaveMetadata = async () => {
-setSavingMetadata(true);
-try {
-    const payload = {};
-    if (metadataForm.bpm !== '') payload.bpm = metadataForm.bpm;
-    if (metadataForm.musical_key !== '') payload.musical_key = metadataForm.musical_key;
-    if (metadataForm.energy_level !== '') payload.energy_level = metadataForm.energy_level;
-    if (metadataForm.genre !== '') payload.genre = metadataForm.genre;
-
-    const res = await api.put(`/tracks/${trackId}/metadata`, payload);
-    setTrack(res.data.track);
-    setEditingMetadata(false);
-    setMetadataSaved(true);
-    setTimeout(() => setMetadataSaved(false), 3000);
-} catch (err) {
-    alert(err.response?.data?.error?.message || 'Failed to save changes');
-} finally {
-    setSavingMetadata(false);
-}
-};
 
 const isOwner = user && track && user.id === track.user_id;
 const canRequestCollab = user && !isOwner && !collaboration;
@@ -167,90 +140,7 @@ return (
         {track.musical_key && <span className="tdp-tag tdp-tag-key">🎹 {track.musical_key}</span>}
         {track.energy_level && <span className={energyClass(track.energy_level)}>⚡ {track.energy_level}</span>}
         {track.genre && <span className="tdp-tag tdp-tag-genre">🎸 {track.genre}</span>}
-        {isOwner && !editingMetadata && (
-            <button onClick={openEditMetadata} style={{
-            display:'inline-flex',alignItems:'center',gap:4,padding:'4px 10px',
-            background:'var(--surface-2)',border:'1px solid var(--surface-border)',
-            borderRadius:'var(--radius-sm)',color:'var(--text-tertiary)',fontSize:11,
-            cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s'
-            }}
-            onMouseEnter={e=>{e.target.style.color='var(--accent-primary)';e.target.style.borderColor='var(--accent-primary)'}}
-            onMouseLeave={e=>{e.target.style.color='var(--text-tertiary)';e.target.style.borderColor='var(--surface-border)'}}
-            >
-            ✏️ Correct AI values
-            </button>
-        )}
-        {metadataSaved && <span style={{fontSize:11,color:'#22c55e',fontWeight:600}}>✓ Saved</span>}
         </div>
-
-        {/* Inline metadata edit panel — owner only */}
-        {isOwner && editingMetadata && (
-        <div style={{
-            marginTop:12,padding:16,background:'var(--surface-2)',
-            border:'1px solid var(--accent-primary)',borderRadius:'var(--radius-md)',
-        }}>
-            <p style={{fontSize:11,color:'var(--text-tertiary)',marginBottom:12,marginTop:0}}>
-            ✏️ Correct the AI-detected values below. Leave a field blank to keep the current value.
-            </p>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
-            {/* BPM */}
-            <div>
-                <label style={{fontSize:11,color:'var(--text-secondary)',display:'block',marginBottom:4}}>BPM</label>
-                <input
-                type="number" min="20" max="400" step="1"
-                value={metadataForm.bpm}
-                onChange={e=>setMetadataForm(f=>({...f,bpm:e.target.value}))}
-                placeholder={track.bpm ? Math.round(track.bpm) : 'e.g. 140'}
-                style={{width:'100%',boxSizing:'border-box',padding:'7px 10px',background:'var(--bg-primary)',border:'1px solid var(--surface-border)',borderRadius:'var(--radius-sm)',color:'var(--text-primary)',fontSize:13,fontFamily:'inherit'}}
-                />
-            </div>
-            {/* Energy */}
-            <div>
-                <label style={{fontSize:11,color:'var(--text-secondary)',display:'block',marginBottom:4}}>Energy</label>
-                <select
-                value={metadataForm.energy_level}
-                onChange={e=>setMetadataForm(f=>({...f,energy_level:e.target.value}))}
-                style={{width:'100%',boxSizing:'border-box',padding:'7px 10px',background:'var(--bg-primary)',border:'1px solid var(--surface-border)',borderRadius:'var(--radius-sm)',color:'var(--text-primary)',fontSize:13,fontFamily:'inherit'}}
-                >
-                <option value="">Keep current ({track.energy_level || '—'})</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                </select>
-            </div>
-            {/* Key */}
-            <div>
-                <label style={{fontSize:11,color:'var(--text-secondary)',display:'block',marginBottom:4}}>Key</label>
-                <input
-                type="text"
-                value={metadataForm.musical_key}
-                onChange={e=>setMetadataForm(f=>({...f,musical_key:e.target.value}))}
-                placeholder={track.musical_key || 'e.g. C# Minor'}
-                style={{width:'100%',boxSizing:'border-box',padding:'7px 10px',background:'var(--bg-primary)',border:'1px solid var(--surface-border)',borderRadius:'var(--radius-sm)',color:'var(--text-primary)',fontSize:13,fontFamily:'inherit'}}
-                />
-            </div>
-            {/* Genre */}
-            <div>
-                <label style={{fontSize:11,color:'var(--text-secondary)',display:'block',marginBottom:4}}>Genre</label>
-                <input
-                type="text"
-                value={metadataForm.genre}
-                onChange={e=>setMetadataForm(f=>({...f,genre:e.target.value}))}
-                placeholder={track.genre || 'e.g. Hip Hop'}
-                style={{width:'100%',boxSizing:'border-box',padding:'7px 10px',background:'var(--bg-primary)',border:'1px solid var(--surface-border)',borderRadius:'var(--radius-sm)',color:'var(--text-primary)',fontSize:13,fontFamily:'inherit'}}
-                />
-            </div>
-            </div>
-            <div style={{display:'flex',gap:8}}>
-            <button onClick={handleSaveMetadata} disabled={savingMetadata} className="btn-primary" style={{flex:1}}>
-                {savingMetadata ? 'Saving…' : '✓ Save Changes'}
-            </button>
-            <button onClick={()=>setEditingMetadata(false)} className="btn-secondary">
-                Cancel
-            </button>
-            </div>
-        </div>
-        )}
 
         {track.description && (<>
         <hr className="tdp-divider"/>

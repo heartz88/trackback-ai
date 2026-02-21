@@ -4,6 +4,7 @@ import Footer from './components/common/Footer';
 import Navigation from './components/common/Navigation';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ScrollToTop from './components/common/ScrollToTop';
+import { ConfirmModal, ToastContainer } from './components/common/Toast';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import CollaborationsPage from './pages/CollaborationsPage';
@@ -60,6 +61,8 @@ function App() {
               </Routes>
             </main>
             <Footer />
+            <ToastContainer />
+            <ConfirmModal />
           </div>
         </BrowserRouter>
       </SocketProvider>

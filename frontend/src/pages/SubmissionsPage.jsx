@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionForm from '../components/submissions/SubmissionForm';
 import SubmissionList from '../components/submissions/SubmissionList';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +10,8 @@ const SubmissionsPage = () => {
 const { trackId } = useParams();
 const { user } = useAuth();
 const navigate = useNavigate();
+const toast = useToast();
+const confirm = useConfirm();
 const [track, setTrack] = useState(null);
 const [owner, setOwner] = useState(null);
 const [collaboration, setCollaboration] = useState(null);
@@ -18,7 +21,6 @@ const [error, setError] = useState('');
 const [refreshKey, setRefreshKey] = useState(0);
 const [votingStats, setVotingStats] = useState({ totalVotes: 0, activeSubmissions: 0, featured: 0 });
 const [submissionsCount, setSubmissionsCount] = useState(0);
-const [hasAlreadySubmitted, setHasAlreadySubmitted] = useState(false);
 
 useEffect(() => {
 fetchTrack();
@@ -61,12 +63,7 @@ try {
 const fetchSubmissionsCount = async () => {
 try {
     const response = await api.get(`/submissions/track/${trackId}`);
-    const submissions = response.data.submissions || [];
-    setSubmissionsCount(submissions.length);
-    // Check if the current user has already submitted
-    if (user) {
-    setHasAlreadySubmitted(submissions.some((s) => s.collaborator_id === user.id));
-    }
+    setSubmissionsCount(response.data.submissions?.length || 0);
 } catch {
     setSubmissionsCount(0);
 }
@@ -80,17 +77,22 @@ fetchSubmissionsCount();
 };
 
 const handleCompleteTrack = async () => {
-if (!window.confirm('Mark this track as completed? The highest voted submission will be selected as the final version.')) return;
+const ok = await confirm({
+    title: 'Mark as completed?',
+    message: 'The highest voted submission will be selected as the final version.',
+    confirmText: 'Complete Track',
+});
+if (!ok) return;
 try {
     await api.post(`/collaborations/${trackId}/complete`);
-    alert('Track marked as completed!');
+    toast.success('Track marked as completed!');
     navigate(`/tracks/${trackId}`);
 } catch (err) {
-    alert(err.response?.data?.error?.message || 'Failed to complete track');
+    toast.error(err.response?.data?.error?.message || 'Failed to complete track');
 }
 };
 
-const canSubmit = collaboration && collaboration.status === 'approved' && !hasAlreadySubmitted;
+const canSubmit = collaboration && collaboration.status === 'approved';
 const isOwner = user && track && user.id === track.user_id;
 
 if (isLoading) {
@@ -246,18 +248,6 @@ return (
         <Link to="/register" className="px-5 py-2 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl transition-all text-sm border border-[var(--border-color)]">
             Register
         </Link>
-        </div>
-    </div>
-    )}
-
-    {collaboration && collaboration.status === 'approved' && hasAlreadySubmitted && (
-    <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-2xl mb-6 animate-slide-up stagger-4">
-        <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-        <div>
-        <p className="text-green-400 font-medium text-sm">You've already submitted a version!</p>
-        <p className="text-[var(--text-tertiary)] text-xs mt-0.5">Your submission is in the list below. Each collaborator can only submit one version.</p>
         </div>
     </div>
     )}

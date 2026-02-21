@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../components/common/Toast';
 import api from '../services/api';
 
 function CollaborationsPage() {
@@ -8,6 +9,7 @@ const [sent, setSent] = useState([]);
 const [history, setHistory] = useState({ received: [], sent: [] });
 const [loading, setLoading] = useState(true);
 const [activeTab, setActiveTab] = useState('pending');
+const toast = useToast();
 
 useEffect(() => {
 const fetchRequests = async () => {
@@ -44,9 +46,9 @@ try {
     if (respondedRequest) {
     setHistory({ ...history, received: [...history.received, { ...respondedRequest, status }] });
     }
-    alert(`Request ${status}!`);
+    toast.success(`Request ${status === 'approved' ? 'approved! ✅' : 'declined'}`);
 } catch (err) {
-    alert('Action failed');
+    toast.error('Action failed — please try again');
 }
 };
 

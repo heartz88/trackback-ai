@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { useConfirm, useToast } from '../common/Toast';
 
 const CommentItem = ({ comment, onDelete, onUpdate, isReply = false }) => {
+const toast = useToast();
+const confirm = useConfirm();
     const { user } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(comment.content);
@@ -40,16 +43,20 @@ const CommentItem = ({ comment, onDelete, onUpdate, isReply = false }) => {
             setIsEditing(false);
         } catch (error) {
             console.error('Error updating comment:', error);
-            alert('Failed to update comment');
+            toast.error('Failed to update comment');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('Are you sure you want to delete this comment?')) {
-            return;
-        }
+        const ok = await confirm({
+            title: 'Delete comment?',
+            message: 'This action cannot be undone.',
+            confirmText: 'Delete',
+            danger: true,
+        });
+        if (!ok) return;
 
         try {
             await api.delete(`/comments/${comment.id}`);
@@ -58,7 +65,7 @@ const CommentItem = ({ comment, onDelete, onUpdate, isReply = false }) => {
             }
         } catch (error) {
             console.error('Error deleting comment:', error);
-            alert('Failed to delete comment');
+            toast.error('Failed to delete comment');
         }
     };
 
@@ -93,7 +100,7 @@ const CommentItem = ({ comment, onDelete, onUpdate, isReply = false }) => {
             // Refresh comments would be handled by parent component
         } catch (error) {
             console.error('Error posting reply:', error);
-            alert('Failed to post reply');
+            toast.error('Failed to post reply');
         } finally {
             setIsSubmitting(false);
         }
@@ -232,7 +239,212 @@ const CommentItem = ({ comment, onDelete, onUpdate, isReply = false }) => {
             </div>
 
             <style jsx>{`
-                
+                .comment-item {
+                    display: flex;
+                    gap: 16px;
+                    padding: 20px 0;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .comment-item.reply {
+                    margin-left: 40px;
+                    padding-left: 16px;
+                    border-left: 2px solid rgba(155, 89, 182, 0.3);
+                }
+
+                .comment-item:last-child {
+                    border-bottom: none;
+                }
+
+                .comment-avatar {
+                    flex-shrink: 0;
+                }
+
+                .avatar {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #9b59b6, #e94560);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 16px;
+                }
+
+                .comment-content {
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .comment-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin-bottom: 8px;
+                    flex-wrap: wrap;
+                }
+
+                .comment-author {
+                    font-weight: 600;
+                    color: #ffffff;
+                    font-size: 14px;
+                }
+
+                .comment-timestamp {
+                    font-size: 12px;
+                    color: #b4b4b4;
+                }
+
+                .edited-badge {
+                    font-size: 11px;
+                    color: #6b7280;
+                    font-style: italic;
+                }
+
+                .comment-text {
+                    color: #ffffff;
+                    line-height: 1.6;
+                    margin: 0 0 12px 0;
+                    word-wrap: break-word;
+                }
+
+                .comment-edit textarea {
+                    width: 100%;
+                    background: rgba(0, 0, 0, 0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    color: #ffffff;
+                    padding: 12px;
+                    border-radius: 8px;
+                    font-family: inherit;
+                    font-size: 14px;
+                    resize: vertical;
+                    margin-bottom: 8px;
+                }
+
+                .comment-edit textarea:focus {
+                    outline: none;
+                    border-color: #9b59b6;
+                }
+
+                .edit-actions,
+                .reply-actions {
+                    display: flex;
+                    gap: 8px;
+                    justify-content: flex-end;
+                }
+
+                .comment-actions {
+                    display: flex;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                }
+
+                .action-btn {
+                    background: transparent;
+                    border: none;
+                    color: #b4b4b4;
+                    font-size: 12px;
+                    cursor: pointer;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    transition: all 0.2s;
+                }
+
+                .action-btn:hover {
+                    background: rgba(255, 255, 255, 0.05);
+                    color: #9b59b6;
+                }
+
+                .action-btn.delete:hover {
+                    color: #ef4444;
+                }
+
+                .btn-save,
+                .btn-cancel {
+                    padding: 6px 16px;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border: none;
+                }
+
+                .btn-save {
+                    background: linear-gradient(135deg, #9b59b6, #e94560);
+                    color: white;
+                }
+
+                .btn-save:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                }
+
+                .btn-save:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                .btn-cancel {
+                    background: rgba(255, 255, 255, 0.05);
+                    color: #b4b4b4;
+                }
+
+                .btn-cancel:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                }
+
+                .reply-form {
+                    margin-top: 12px;
+                    padding: 12px;
+                    background: rgba(0, 0, 0, 0.2);
+                    border-radius: 8px;
+                }
+
+                .reply-form textarea {
+                    width: 100%;
+                    background: rgba(0, 0, 0, 0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    color: #ffffff;
+                    padding: 10px;
+                    border-radius: 6px;
+                    font-family: inherit;
+                    font-size: 13px;
+                    resize: vertical;
+                    margin-bottom: 8px;
+                }
+
+                .reply-form textarea:focus {
+                    outline: none;
+                    border-color: #9b59b6;
+                }
+
+                .comment-replies {
+                    margin-top: 16px;
+                }
+
+                .toggle-replies {
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    color: #b4b4b4;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    margin-bottom: 12px;
+                }
+
+                .toggle-replies:hover {
+                    background: rgba(155, 89, 182, 0.1);
+                    border-color: #9b59b6;
+                    color: #ffffff;
+                }
+
+                .replies-container {
+                    margin-top: 12px;
+                }
             `}</style>
         </div>
     );
