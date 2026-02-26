@@ -3884,7 +3884,27 @@ overflow: hidden;
 
 /* waveform section */
 .waveform-section {
-padding: 12px 20px 0;
+padding: 12px 0 0;
+width: 100%;
+box-sizing: border-box;
+overflow: hidden;
+}
+
+/* The wavesurfer shadow DOM canvas must fill full parent width */
+.waveform-canvas {
+width: 100% !important;
+display: block;
+}
+
+/* WaveSurfer injects a <wave> element — make sure it's full width too */
+.waveform-canvas > wave {
+width: 100% !important;
+overflow: hidden !important;
+}
+
+/* Controls keep their horizontal padding for visual breathing room */
+.waveform-controls {
+padding: 12px 20px 16px;
 }
 
 /* controls bar */

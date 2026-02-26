@@ -1,5 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+
+/**
+ * WaveformPlayer — Fixed issues:
+ *
+ * 1. NO SOUND on first play:
+ *    - WaveSurfer was being destroyed/recreated every render because
+ *      onPlay/onPause callbacks were in the useEffect dependency array.
+ *      Each recreation lost the play state, causing the "press twice" bug.
+ *    - Fix: Store callbacks in refs so the effect never needs to re-run
+ *      when parent re-renders. Effect only runs when audioUrl or height changes.
+ *
+ * 2. Volume not applied on init:
+ *    - WaveSurfer default volume is 1 (100%) but our UI showed 75.
+ *    - Fix: Call setVolume(0.75) immediately after instance creation.
+ */
 const WaveformPlayer = ({ audioUrl, height = 128, onReady, onPlay, onPause }) => {
 const waveformRef  = useRef(null);
 const wavesurfer   = useRef(null);
@@ -58,6 +73,15 @@ ws.setVolume(0.75);
 
 ws.load(audioUrl);
 
+// Force WaveSurfer to redraw when container width changes
+// (fixes cut-off waveform when parent panel finishes animating in)
+const ro = new ResizeObserver(() => {
+    if (ws && !ws.isDestroyed) {
+    try { ws.drawBuffer(); } catch {}
+    }
+});
+if (waveformRef.current) ro.observe(waveformRef.current);
+
 ws.on('ready', () => {
     setIsLoading(false);
     setDuration(ws.getDuration());
@@ -95,6 +119,7 @@ ws.on('error', err => {
 });
 
 return () => {
+    ro.disconnect();
     ws.destroy();
 };
 // Only audioUrl and height should trigger recreation — NOT callbacks
@@ -148,9 +173,14 @@ const progressPct = duration ? (currentTime / duration) * 100 : 0;
 return (
 <div className="waveform-player glass">
 
-    {/* Waveform canvas */}
+    {/* Waveform canvas — must be full-width with no side padding so WaveSurfer
+        measures the correct container width and renders all bars */}
     <div className="waveform-section">
-    <div ref={waveformRef} className={`waveform-canvas ${isLoading ? 'loading' : ''}`}/>
+    <div
+        ref={waveformRef}
+        className={`waveform-canvas ${isLoading ? 'loading' : ''}`}
+        style={{ width: '100%', boxSizing: 'border-box' }}
+    />
     </div>
 
     {/* Loading overlay */}
