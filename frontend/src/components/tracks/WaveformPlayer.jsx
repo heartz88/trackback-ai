@@ -1,277 +1,224 @@
-import AudioMotionAnalyzer from 'audiomotion-analyzer';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+const WaveformPlayer = ({ audioUrl, height = 128, onReady, onPlay, onPause }) => {
+const waveformRef  = useRef(null);
+const wavesurfer   = useRef(null);
 
-const WaveformPlayer = ({ audioUrl, height = 80, onReady, onPlay, onPause, onAnalyserReady }) => {
-const waveformRef = useRef(null);
-const audioMotionRef = useRef(null);
-const audioMotionContainerRef = useRef(null);
-const wavesurfer = useRef(null);
-const audioCtx = useRef(null);
-const analyserNode = useRef(null);
-const analyserConnected = useRef(false);
-const isPlayingRef = useRef(false);
+// Store callbacks in refs — so the effect never needs callbacks in its dep array
+const onReadyRef  = useRef(onReady);
+const onPlayRef   = useRef(onPlay);
+const onPauseRef  = useRef(onPause);
+useEffect(() => { onReadyRef.current  = onReady;  }, [onReady]);
+useEffect(() => { onPlayRef.current   = onPlay;   }, [onPlay]);
+useEffect(() => { onPauseRef.current  = onPause;  }, [onPause]);
 
-const [isPlaying, setIsPlaying] = useState(false);
-const [isLoading, setIsLoading] = useState(true);
-const [currentTime, setCurrentTime] = useState(0);
-const [duration, setDuration] = useState(0);
-const [volume, setVolume] = useState(75);
-const [beatFlash, setBeatFlash] = useState(false);
+const [isPlaying,    setIsPlaying]    = useState(false);
+const [isLoading,    setIsLoading]    = useState(true);
+const [currentTime,  setCurrentTime]  = useState(0);
+const [duration,     setDuration]     = useState(0);
+const [volume,       setVolume]       = useState(75);
+const [isMuted,      setIsMuted]      = useState(false);
+const prevVolume = useRef(75);
 
-const lastBeatRef = useRef(0);
-
-const initAudioMotion = useCallback(() => {
-if (analyserConnected.current) return;
-try {
-    const ws = wavesurfer.current;
-    if (!ws) return;
-    const mediaEl = ws.getMediaElement();
-    if (!mediaEl || !audioMotionContainerRef.current) return;
-
-    if (!audioCtx.current) {
-    audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    const ac = audioCtx.current;
-    if (ac.state === 'suspended') ac.resume();
-
-    const analyser = ac.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
-    analyserNode.current = analyser;
-
-    const source = ac.createMediaElementSource(mediaEl);
-    source.connect(analyser);
-    analyser.connect(ac.destination);
-
-    analyserConnected.current = true;
-    if (onAnalyserReady) onAnalyserReady(analyser);
-
-    audioMotionRef.current = new AudioMotionAnalyzer(audioMotionContainerRef.current, {
-    audioCtx: ac,
-    source,
-    mode: 10,
-    gradient: 'rainbow',
-    showBgColor: false,
-    bgAlpha: 0,
-    overlay: true,
-    showScaleX: false,
-    showScaleY: false,
-    showPeaks: true,
-    peakLine: false,
-    smoothing: 0.82,
-    minFreq: 30,
-    maxFreq: 18000,
-    barSpace: 0.25,
-    reflexRatio: 0.42,
-    reflexAlpha: 0.15,
-    reflexFit: true,
-    lineWidth: 0,
-    fillAlpha: 1,
-    roundBars: true,
-    weightingFilter: 'D',
-    });
-
-    const detectBeats = () => {
-    if (!analyserNode.current) return;
-    const data = new Uint8Array(analyserNode.current.frequencyBinCount);
-    analyserNode.current.getByteFrequencyData(data);
-    const bassEnd = Math.floor(data.length * 0.06);
-    let bassSum = 0;
-    for (let i = 0; i < bassEnd; i++) bassSum += data[i];
-    const bassAvg = bassSum / bassEnd;
-    const now = performance.now();
-    if (bassAvg > 155 && now - lastBeatRef.current > 240) {
-        lastBeatRef.current = now;
-        setBeatFlash(true);
-        setTimeout(() => setBeatFlash(false), 140);
-    }
-    if (isPlayingRef.current) requestAnimationFrame(detectBeats);
-    };
-    requestAnimationFrame(detectBeats);
-} catch (e) {
-    console.warn('audioMotion init failed:', e.message);
-}
-}, [onAnalyserReady]);
-
+// ── Create / recreate WaveSurfer only when audioUrl or height changes ──
 useEffect(() => {
-if (!waveformRef.current) return;
-const cs = getComputedStyle(document.documentElement);
-const accent = cs.getPropertyValue('--accent-primary').trim() || '#14B8A6';
-const textSec = cs.getPropertyValue('--text-secondary').trim() || '#4a5568';
+if (!waveformRef.current || !audioUrl) return;
 
-wavesurfer.current = WaveSurfer.create({
-    container: waveformRef.current,
-    waveColor: textSec,
-    progressColor: accent,
-    cursorColor: accent,
-    barWidth: 2,
-    barRadius: 3,
-    cursorWidth: 1,
-    height,
-    barGap: 2,
-    normalize: true,
+// Reset UI state for new track
+setIsPlaying(false);
+setIsLoading(true);
+setCurrentTime(0);
+setDuration(0);
+
+const computedStyle  = getComputedStyle(document.documentElement);
+const accentColor    = computedStyle.getPropertyValue('--accent-primary').trim()    || '#14B8A6';
+const textSecondary  = computedStyle.getPropertyValue('--text-secondary').trim()    || '#cbd5e1';
+const surfaceColor   = computedStyle.getPropertyValue('--surface-2').trim()         || 'rgba(255,255,255,0.06)';
+
+const ws = WaveSurfer.create({
+    container:     waveformRef.current,
+    waveColor:     textSecondary,
+    progressColor: accentColor,
+    cursorColor:   accentColor,
+    barWidth:      2,
+    barRadius:     3,
+    cursorWidth:   2,
+    height:        height,
+    barGap:        2,
+    normalize:     true,
+    backend:       'MediaElement',
+    // Set volume at creation — fixes "no sound on first play"
+    volume:        0.75,
 });
 
-wavesurfer.current.load(audioUrl);
-wavesurfer.current.on('ready', () => {
+wavesurfer.current = ws;
+
+// Apply initial volume immediately after creation
+ws.setVolume(0.75);
+
+ws.load(audioUrl);
+
+ws.on('ready', () => {
     setIsLoading(false);
-    setDuration(wavesurfer.current.getDuration());
-    if (onReady) onReady();
+    setDuration(ws.getDuration());
+    // Re-apply volume after ready (some browsers reset it)
+    ws.setVolume(prevVolume.current / 100);
+    if (onReadyRef.current) onReadyRef.current();
 });
-wavesurfer.current.on('play', () => {
-    isPlayingRef.current = true;
+
+ws.on('play', () => {
     setIsPlaying(true);
-    initAudioMotion();
-    if (audioCtx.current?.state === 'suspended') audioCtx.current.resume();
-    if (onPlay) onPlay();
+    if (onPlayRef.current) onPlayRef.current();
 });
-wavesurfer.current.on('pause', () => {
-    isPlayingRef.current = false;
+
+ws.on('pause', () => {
     setIsPlaying(false);
-    if (onPause) onPause();
+    if (onPauseRef.current) onPauseRef.current();
 });
-wavesurfer.current.on('finish', () => { isPlayingRef.current = false; setIsPlaying(false); });
-wavesurfer.current.on('audioprocess', () => setCurrentTime(wavesurfer.current.getCurrentTime()));
-wavesurfer.current.on('seek', () => setCurrentTime(wavesurfer.current.getCurrentTime()));
+
+ws.on('finish', () => {
+    setIsPlaying(false);
+    if (onPauseRef.current) onPauseRef.current();
+});
+
+ws.on('audioprocess', () => {
+    setCurrentTime(ws.getCurrentTime());
+});
+
+ws.on('seek', () => {
+    setCurrentTime(ws.getCurrentTime());
+});
+
+ws.on('error', err => {
+    console.error('WaveSurfer error:', err);
+    setIsLoading(false);
+});
 
 return () => {
-    isPlayingRef.current = false;
-    if (audioMotionRef.current) { try { audioMotionRef.current.destroy(); } catch (_) {} audioMotionRef.current = null; }
-    if (wavesurfer.current) wavesurfer.current.destroy();
-    if (audioCtx.current) { audioCtx.current.close(); audioCtx.current = null; }
-    analyserConnected.current = false;
+    ws.destroy();
 };
-}, [audioUrl, height, onReady, onPlay, onPause, initAudioMotion]);
+// Only audioUrl and height should trigger recreation — NOT callbacks
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [audioUrl, height]);
 
-const togglePlay = () => { if (wavesurfer.current) wavesurfer.current.playPause(); };
-const handleVolumeChange = (e) => {
-const v = parseInt(e.target.value);
-setVolume(v);
-if (wavesurfer.current) wavesurfer.current.setVolume(v / 100);
-if (audioMotionRef.current) audioMotionRef.current.volume = v / 100;
+const togglePlay = () => {
+if (wavesurfer.current && !isLoading) {
+    wavesurfer.current.playPause();
+}
 };
-const fmt = (s) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+
+const handleVolumeChange = e => {
+const val = parseInt(e.target.value);
+setVolume(val);
+prevVolume.current = val;
+setIsMuted(val === 0);
+if (wavesurfer.current) wavesurfer.current.setVolume(val / 100);
+};
+
+const toggleMute = () => {
+if (!wavesurfer.current) return;
+if (isMuted) {
+    const restore = prevVolume.current || 75;
+    setVolume(restore);
+    setIsMuted(false);
+    wavesurfer.current.setVolume(restore / 100);
+} else {
+    prevVolume.current = volume;
+    setVolume(0);
+    setIsMuted(true);
+    wavesurfer.current.setVolume(0);
+}
+};
+
+const handleProgressClick = e => {
+if (!wavesurfer.current || !duration) return;
+const rect = e.currentTarget.getBoundingClientRect();
+const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+wavesurfer.current.seekTo(pct);
+};
+
+const formatTime = secs => {
+const m = Math.floor(secs / 60);
+const s = Math.floor(secs % 60);
+return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+const progressPct = duration ? (currentTime / duration) * 100 : 0;
 
 return (
-<div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    borderRadius: 16,
-    overflow: 'hidden',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.08)',
-}}>
-    {/* audioMotion spectrum visualizer — full width */}
-    <div
-    ref={audioMotionContainerRef}
-    style={{
-        width: '100%',
-        height: 160,
-        flexShrink: 0,
-        background: 'transparent',
-        opacity: isPlaying ? 1 : 0.15,
-        transition: 'opacity 0.6s ease',
-    }}
-    />
+<div className="waveform-player glass">
 
-    {/* Divider line */}
-    <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-
-    {/* WaveSurfer waveform */}
-    <div style={{ padding: '12px 16px 0', position: 'relative' }}>
-    <div ref={waveformRef} className={`waveform-canvas ${isLoading ? 'loading' : ''}`} />
-    {isLoading && (
-        <div className="waveform-loading">
-        <div className="music-loader">
-            {[...Array(5)].map((_, i) => <div key={i} className="music-loader-bar" />)}
-        </div>
-        <span className="text-[var(--text-secondary)]">Loading audio...</span>
-        </div>
-    )}
+    {/* Waveform canvas */}
+    <div className="waveform-section">
+    <div ref={waveformRef} className={`waveform-canvas ${isLoading ? 'loading' : ''}`}/>
     </div>
 
-    {/* Controls row */}
-    <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '10px 16px 14px',
-    }}>
-    {/* Play/Pause */}
+    {/* Loading overlay */}
+    {isLoading && (
+    <div className="waveform-loading">
+        <div className="music-loader">
+        {[...Array(5)].map((_,i) => <div key={i} className="music-loader-bar"/>)}
+        </div>
+        <span style={{ color:'var(--text-secondary)', fontSize:13 }}>Loading audio…</span>
+    </div>
+    )}
+
+    {/* Controls */}
+    <div className="waveform-controls">
+
+    {/* Play / Pause */}
     <button
+        className="play-btn"
         onClick={togglePlay}
         disabled={isLoading}
-        style={{
-        width: 42,
-        height: 42,
-        borderRadius: '50%',
-        border: 'none',
-        cursor: isLoading ? 'not-allowed' : 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        background: 'var(--accent-primary, #14B8A6)',
-        color: '#fff',
-        transition: 'transform 0.08s ease, box-shadow 0.08s ease',
-        transform: beatFlash && isPlaying ? 'scale(1.18)' : 'scale(1)',
-        boxShadow: beatFlash && isPlaying
-            ? '0 0 24px 8px var(--accent-primary, #14B8A6)'
-            : '0 2px 12px rgba(20,184,166,0.3)',
-        }}
+        aria-label={isPlaying ? 'Pause' : 'Play'}
     >
         {isPlaying ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16" rx="1"/>
+            <rect x="14" y="4" width="4" height="16" rx="1"/>
         </svg>
         ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z" />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
         </svg>
         )}
     </button>
 
-    {/* Time */}
-    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, minWidth: 70 }}>
-        {fmt(currentTime)} / {fmt(duration)}
-    </span>
-
-    {/* Progress bar — clickable */}
-    <div
-        style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, cursor: 'pointer', position: 'relative' }}
-        onClick={(e) => {
-        if (!wavesurfer.current || !duration) return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        const pct = (e.clientX - rect.left) / rect.width;
-        wavesurfer.current.seekTo(Math.max(0, Math.min(1, pct)));
-        }}
-    >
-        <div style={{
-        height: '100%',
-        width: `${(currentTime / duration) * 100 || 0}%`,
-        background: 'var(--accent-primary, #14B8A6)',
-        borderRadius: 2,
-        transition: 'width 0.1s linear',
-        }} />
+    {/* Timeline */}
+    <div className="timeline">
+        <span className="current-time">{formatTime(currentTime)}</span>
+        <div className="progress-bar-container" onClick={handleProgressClick} role="slider"
+        aria-label="Seek" aria-valuenow={Math.round(progressPct)} aria-valuemin={0} aria-valuemax={100}>
+        <div className="progress-bar" style={{ width: `${progressPct}%` }}/>
+        </div>
+        <span className="total-time">{formatTime(duration)}</span>
     </div>
 
     {/* Volume */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--text-secondary)" style={{ flexShrink: 0 }}>
-        {volume === 0
-            ? <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-            : volume < 50
-            ? <path d="M7 9v6h4l5 5V4l-5 5H7z" />
-            : <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-        }
-        </svg>
+    <div className="volume-control">
+        <button className="volume-icon" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'}>
+        {isMuted || volume === 0 ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+            </svg>
+        ) : volume < 50 ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7 9v6h4l5 5V4l-5 5H7z"/>
+            </svg>
+        ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+        )}
+        </button>
         <input
         type="range"
-        min="0" max="100" value={volume}
+        className="volume-slider"
+        min="0" max="100"
+        value={volume}
         onChange={handleVolumeChange}
-        style={{ width: 72, accentColor: 'var(--accent-primary, #14B8A6)', cursor: 'pointer' }}
+        aria-label="Volume"
         />
     </div>
     </div>

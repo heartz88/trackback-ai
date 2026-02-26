@@ -35,7 +35,7 @@ const topSubmission = submissions.length > 0
 const topScore = topSubmission ? Math.max(0, (topSubmission.upvotes || 0) - (topSubmission.downvotes || 0)) : 0;
 
 useEffect(() => { fetchTrackDetails(); fetchCollaboration(); }, [trackId]);
-useEffect(() => { fetchSubmissions(); }, [trackId, refreshKey]);
+useEffect(() => { fetchSubmissions(); }, [trackId, refreshKey, user]);
 
 const fetchTrackDetails = async () => {
 setIsLoading(true);
@@ -63,12 +63,21 @@ try {
 };
 
 const fetchSubmissions = async () => {
+if (!user) { setSubmissionsLoading(false); return; }
 setSubmissionsLoading(true);
 try {
-    const res = await api.get(`/submissions/track/${trackId}`);
+    // /collaborations/:trackId/submissions returns track_owner_id on each row,
+    // which VoteButton needs to correctly block owner voting client-side
+    const res = await api.get(`/collaborations/${trackId}/submissions`);
     setSubmissions(res.data.submissions || []);
 } catch {
+    // Fallback for non-collaborators who can still see a public list
+    try {
+    const res = await api.get(`/submissions/track/${trackId}`);
+    setSubmissions(res.data.submissions || []);
+    } catch {
     setSubmissions([]);
+    }
 } finally {
     setSubmissionsLoading(false);
 }
