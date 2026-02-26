@@ -137,7 +137,10 @@ return (
         </div>
 
         {/* Title */}
+        <div className="tdp-title-row">
         <h3 className="sp-card-title">{submission.title}</h3>
+        {isPlaying && <div className="eq-indicator" aria-label="Now playing"><span/><span/><span/><span/><span/></div>}
+        </div>
 
         {/* Description */}
         {submission.description && (
@@ -156,13 +159,6 @@ return (
 
         {/* Action bar */}
         <div className="sp-action-bar">
-        {/* Playing indicator */}
-        {isPlaying && (
-            <div className="eq-indicator" aria-label="Playing" style={{ marginRight:4 }}>
-            <span/><span/><span/><span/><span/>
-            </div>
-        )}
-
         {/* Comments toggle */}
         <button
             className={`sp-action-btn ${showComments ? 'active' : ''}`}
