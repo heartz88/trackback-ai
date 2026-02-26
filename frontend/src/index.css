@@ -4462,68 +4462,591 @@ transition: color 0.2s;
 SUBMISSIONS PAGE
 ═══════════════════════════════════════════════════════════ */
 
-.submissions-page {
-max-width: 1000px;
+/* ── Page wrapper ── */
+.sp-page {
+max-width: 1120px;
 margin: 0 auto;
 padding: 24px 20px 80px;
 }
 
-/* Voting summary — more visual */
-.voting-summary {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 0;
-border-radius: var(--radius-lg);
+/* ── Count badge next to section title ── */
+.sp-count-badge {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-width: 22px;
+height: 22px;
+padding: 0 7px;
+background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+color: var(--accent-primary);
+border-radius: var(--radius-full);
+font-size: 11px;
+font-weight: 700;
+margin-left: 10px;
+}
+
+/* ── Leaderboard card inside actions panel ── */
+.sp-leaderboard-card {
+position: relative;
 overflow: hidden;
+}
+.sp-leaderboard-card::before {
+content: '';
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 2px;
+background: linear-gradient(90deg, var(--accent-primary-dark), var(--accent-primary-light));
+}
+.sp-leaderboard {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+.sp-leaderboard-row {
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 8px 10px;
+background: var(--surface-2);
+border-radius: var(--radius-sm);
 border: 1px solid var(--surface-border);
-background: var(--surface-1);
-margin-bottom: 24px;
+}
+.sp-medal {
+font-size: 16px;
+flex-shrink: 0;
+}
+.sp-lb-name {
+flex: 1;
+font-size: 13px;
+font-weight: 600;
+color: var(--text-primary);
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+.sp-lb-score {
+font-size: 13px;
+font-weight: 700;
+font-family: 'JetBrains Mono', monospace;
+flex-shrink: 0;
+}
+.sp-lb-score.positive { color: #10b981; }
+.sp-lb-score.negative { color: #ef4444; }
+.sp-lb-score:not(.positive):not(.negative) { color: var(--text-tertiary); }
+
+/* ── Guidelines inside action card ── */
+.sp-guidelines {
+background: color-mix(in srgb, var(--accent-primary) 4%, transparent) !important;
+border-color: color-mix(in srgb, var(--accent-primary) 20%, transparent) !important;
+}
+.sp-guidelines-list {
+list-style: none;
 padding: 0;
+margin: 0;
+display: flex;
+flex-direction: column;
+gap: 7px;
 }
-.voting-summary h3 { display: none; } /* hide old title, use grid */
-.summary-stats { display: contents; }
-.summary-item {
-padding: 20px 0;
+.sp-guidelines-list li {
+font-size: 12.5px;
+color: var(--text-secondary);
+line-height: 1.5;
+}
+
+/* ── Empty state ── */
+.sp-empty {
 text-align: center;
-background: transparent;
-border-right: 1px solid var(--surface-border);
-border-radius: 0;
+padding: 48px 24px;
+color: var(--text-tertiary);
 }
-.summary-item:last-child { border-right: none; }
-.summary-label {
-font-size: 10px;
+.sp-empty-icon {
+font-size: 44px;
+display: block;
+margin-bottom: 12px;
+opacity: 0.7;
+}
+.sp-empty-title {
+font-size: 17px;
+font-weight: 700;
+color: var(--text-primary);
+margin: 0 0 6px;
+}
+.sp-empty-sub {
+font-size: 14px;
+color: var(--text-tertiary);
+margin: 0;
+}
+
+/* ── Submissions list ── */
+.sp-submissions-list {
+display: flex;
+flex-direction: column;
+gap: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+SUBMISSION CARD — Redesigned
+═══════════════════════════════════════════════════════════ */
+
+.sp-card {
+background: var(--surface-1);
+border: 1px solid var(--surface-border);
+border-radius: var(--radius-lg);
+margin-bottom: 12px;
+overflow: hidden;
+transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.sp-card:hover {
+border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+box-shadow: 0 4px 24px color-mix(in srgb, var(--accent-primary) 10%, transparent);
+transform: translateY(-1px);
+}
+.sp-card:last-child { margin-bottom: 0; }
+
+/* Winner variant */
+.sp-card-winner {
+border-color: #f59e0b;
+background: linear-gradient(
+135deg,
+rgba(245,158,11,0.06) 0%,
+var(--surface-1) 100%
+);
+}
+.sp-card-winner:hover {
+border-color: #fbbf24;
+box-shadow: 0 4px 24px rgba(245,158,11,0.15);
+}
+
+.sp-winner-banner {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
+padding: 8px 16px;
+background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08));
+border-bottom: 1px solid rgba(245,158,11,0.3);
+font-size: 13px;
+font-weight: 700;
+color: #f59e0b;
+letter-spacing: 0.02em;
+}
+
+/* Card body: vote column + content */
+.sp-card-body {
+display: flex;
+gap: 0;
+}
+
+/* ── Vote column (left sidebar) ── */
+.sp-vote-col {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 6px;
+padding: 20px 6px 20px 14px;
+flex-shrink: 0;
+width: 64px;
+}
+.sp-rank-medal {
+font-size: 18px;
+margin-bottom: 2px;
+}
+
+/* ── Content column ── */
+.sp-card-content {
+flex: 1;
+min-width: 0;
+padding: 18px 20px 18px 10px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+
+/* Card header */
+.sp-card-header {
+display: flex;
+align-items: center;
+gap: 10px;
+flex-wrap: wrap;
+}
+.sp-author-link {
+display: flex;
+align-items: center;
+gap: 10px;
+text-decoration: none;
+flex: 1;
+min-width: 0;
+}
+.sp-author-link:hover .sp-author-name { color: var(--accent-primary); }
+.sp-author-avatar {
+width: 34px;
+height: 34px;
+border-radius: 50%;
+background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary));
+display: flex;
+align-items: center;
+justify-content: center;
+color: #fff;
+font-weight: 700;
+font-size: 13px;
+flex-shrink: 0;
+}
+.sp-author-name {
+font-size: 14px;
+font-weight: 600;
+color: var(--text-primary);
+transition: color 0.2s;
+display: block;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+.sp-timestamp {
+font-size: 11px;
+color: var(--text-tertiary);
+}
+
+/* Score pill */
+.sp-score-pill {
+padding: 3px 10px;
+border-radius: var(--radius-full);
+font-size: 12px;
+font-weight: 700;
+font-family: 'JetBrains Mono', monospace;
+border: 1px solid;
+flex-shrink: 0;
+}
+.sp-score-pill.positive {
+background: rgba(16,185,129,0.1);
+border-color: rgba(16,185,129,0.4);
+color: #10b981;
+}
+.sp-score-pill.negative {
+background: rgba(239,68,68,0.1);
+border-color: rgba(239,68,68,0.35);
+color: #ef4444;
+}
+.sp-score-pill.neutral {
+background: var(--surface-2);
+border-color: var(--surface-border);
+color: var(--text-tertiary);
+}
+
+/* Title & description */
+.sp-card-title {
+font-size: 15px;
+font-weight: 700;
+color: var(--text-primary);
+margin: 0;
+letter-spacing: -0.01em;
+}
+.sp-card-description {
+font-size: 13.5px;
+color: var(--text-secondary);
+line-height: 1.65;
+margin: 0;
+}
+
+/* Player */
+.sp-player {
+border-radius: var(--radius-md);
+overflow: hidden;
+background: var(--surface-2);
+border: 1px solid var(--surface-border);
+}
+
+/* Action bar */
+.sp-action-bar {
+display: flex;
+align-items: center;
+gap: 10px;
+flex-wrap: wrap;
+}
+.sp-action-btn {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+padding: 5px 12px;
+border-radius: var(--radius-sm);
+background: var(--surface-2);
+border: 1px solid var(--surface-border);
+color: var(--text-secondary);
+font-size: 12px;
+font-weight: 500;
+cursor: pointer;
+transition: all 0.15s;
+}
+.sp-action-btn:hover {
+border-color: var(--accent-primary);
+color: var(--accent-primary);
+background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+}
+.sp-action-btn.active {
+border-color: color-mix(in srgb, var(--accent-primary) 45%, transparent);
+color: var(--accent-primary);
+background: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+}
+
+/* Vote summary text */
+.sp-vote-summary {
+font-size: 12px;
+color: var(--text-tertiary);
+display: flex;
+align-items: center;
+gap: 4px;
+margin-left: auto;
+}
+.sp-votes-up   { color: #10b981; font-weight: 600; }
+.sp-votes-down { color: #ef4444; font-weight: 600; }
+.sp-votes-sep  { opacity: 0.4; }
+
+/* Comments panel */
+.sp-comments-panel {
+border-top: 1px solid var(--surface-border);
+background: color-mix(in srgb, var(--accent-primary) 2%, var(--surface-1));
+}
+
+/* Mobile: stack vote col on top */
+@media (max-width: 540px) {
+.sp-card-body { flex-direction: column; }
+.sp-vote-col {
+flex-direction: row;
+width: 100%;
+padding: 12px 16px 6px;
+justify-content: flex-start;
+gap: 12px;
+}
+}
+
+/* ═══════════════════════════════════════════════════════════
+VOTE WIDGET — Vertical pill, music-app style
+═══════════════════════════════════════════════════════════ */
+
+.sp-vote-widget {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 2px;
+position: relative;
+user-select: none;
+}
+
+.sp-vote-up,
+.sp-vote-down {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 1px;
+width: 40px;
+padding: 8px 0;
+background: transparent;
+border: 1px solid transparent;
+border-radius: var(--radius-sm);
+cursor: pointer;
+transition: all 0.15s ease;
+color: var(--text-tertiary);
+}
+
+/* Upvote active */
+.sp-vote-up.active {
+color: #10b981;
+background: rgba(16,185,129,0.12);
+border-color: rgba(16,185,129,0.4);
+}
+.sp-vote-up:hover:not(.blocked):not(.active):not(:disabled) {
+color: #10b981;
+background: rgba(16,185,129,0.07);
+border-color: rgba(16,185,129,0.25);
+}
+
+/* Downvote active */
+.sp-vote-down.active {
+color: #ef4444;
+background: rgba(239,68,68,0.12);
+border-color: rgba(239,68,68,0.4);
+}
+.sp-vote-down:hover:not(.blocked):not(.active):not(:disabled) {
+color: #ef4444;
+background: rgba(239,68,68,0.07);
+border-color: rgba(239,68,68,0.25);
+}
+
+/* Blocked state */
+.sp-vote-up.blocked,
+.sp-vote-down.blocked {
+opacity: 0.35;
+cursor: not-allowed;
+}
+
+.sp-vote-count {
+font-size: 11px;
+font-weight: 700;
+font-family: 'JetBrains Mono', monospace;
+line-height: 1;
+}
+
+/* Net score between the two buttons */
+.sp-vote-score {
+font-size: 13px;
+font-weight: 800;
+font-family: 'JetBrains Mono', monospace;
+text-align: center;
+padding: 3px 0;
+min-width: 36px;
+letter-spacing: -0.02em;
+}
+.sp-vote-score.positive { color: #10b981; }
+.sp-vote-score.negative { color: #ef4444; }
+.sp-vote-score.neutral  { color: var(--text-tertiary); }
+
+/* Loading spinner overlay */
+.sp-vote-loading {
+position: absolute;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+border-radius: var(--radius-sm);
+background: color-mix(in srgb, var(--bg-primary) 60%, transparent);
+}
+.sp-vote-loading::after {
+content: '';
+width: 14px;
+height: 14px;
+border: 2px solid var(--surface-border);
+border-top-color: var(--accent-primary);
+border-radius: 50%;
+animation: sp-spin 0.6s linear infinite;
+}
+@keyframes sp-spin { to { transform: rotate(360deg); } }
+
+/* Mobile vote widget — horizontal */
+@media (max-width: 540px) {
+.sp-vote-widget { flex-direction: row; gap: 6px; }
+.sp-vote-up,
+.sp-vote-down { flex-direction: row; width: auto; padding: 6px 10px; }
+.sp-vote-score { min-width: 28px; font-size: 12px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+COMMENT SECTION — Themed
+═══════════════════════════════════════════════════════════ */
+
+.sp-comment-section {
+padding: 20px 20px 20px 74px;
+}
+@media (max-width: 540px) {
+.sp-comment-section { padding: 16px; }
+}
+
+.sp-comment-header {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-bottom: 16px;
+padding-bottom: 12px;
+border-bottom: 1px solid var(--surface-border);
+}
+.sp-comment-title {
+font-size: 12px;
 font-weight: 700;
 letter-spacing: 0.08em;
 text-transform: uppercase;
 color: var(--text-tertiary);
-margin-bottom: 6px;
-display: block;
+display: flex;
+align-items: center;
+gap: 6px;
 }
-.summary-value {
-font-size: 30px;
-font-weight: 800;
-letter-spacing: -0.03em;
+.sp-comment-count {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-width: 20px;
+height: 20px;
+padding: 0 6px;
+background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+border: 1px solid color-mix(in srgb, var(--accent-primary) 30%, transparent);
 color: var(--accent-primary);
-display: block;
+border-radius: var(--radius-full);
+font-size: 10px;
+font-weight: 700;
 }
 
-/* Submission cards — match teal theme */
-.submission-card {
-background: var(--surface-1);
+.sp-comment-loading,
+.sp-comment-error,
+.sp-comment-empty {
+padding: 24px 0;
+text-align: center;
+color: var(--text-tertiary);
+font-size: 13px;
+}
+.sp-comment-error p { color: #ef4444; margin-bottom: 10px; }
+.sp-comment-empty span { font-size: 28px; display: block; margin-bottom: 8px; opacity: 0.6; }
+.sp-comment-empty p { margin: 0; }
+
+/* Strip old comment-section background so it blends in */
+.sp-comment-section .comment-section {
+background: transparent;
+padding: 0;
+margin: 0;
+}
+.sp-comment-section .section-header { display: none; }
+
+/* Re-skin comment items to match theme */
+.sp-comment-section .comment-item {
+border-bottom-color: var(--surface-border);
+}
+.sp-comment-section .avatar {
+background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary));
+}
+.sp-comment-section .comment-author  { color: var(--text-primary); }
+.sp-comment-section .comment-text    { color: var(--text-secondary); }
+.sp-comment-section .comment-timestamp { color: var(--text-tertiary); }
+.sp-comment-section .action-btn:hover { color: var(--accent-primary); }
+.sp-comment-section .action-btn.delete:hover { color: #ef4444; }
+.sp-comment-section .toggle-replies {
+background: var(--surface-2);
+border-color: var(--surface-border);
+color: var(--text-secondary);
+}
+.sp-comment-section .toggle-replies:hover {
+border-color: var(--accent-primary);
+color: var(--accent-primary);
+background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+}
+.sp-comment-section .comment-item.reply {
+border-left-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
+}
+.sp-comment-section textarea {
+background: var(--surface-2);
 border: 1px solid var(--surface-border);
-border-radius: var(--radius-lg);
-padding: 20px;
-margin-bottom: 14px;
-transition: border-color 0.2s, box-shadow 0.2s;
+color: var(--text-primary);
+border-radius: var(--radius-md);
 }
-.submission-card:hover {
-border-color: color-mix(in srgb, var(--accent-primary) 35%, transparent);
-box-shadow: 0 4px 20px color-mix(in srgb, var(--accent-primary) 10%, transparent);
-transform: translateY(-1px);
+.sp-comment-section textarea:focus {
+border-color: var(--accent-primary);
+box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary) 12%, transparent);
+outline: none;
 }
-.submission-card.winner {
-border-color: #f59e0b;
-background: linear-gradient(135deg, rgba(245,158,11,0.06) 0%, var(--surface-1) 100%);
+.sp-comment-section .btn-save {
+background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary));
+color: #fff;
+border: none;
+border-radius: var(--radius-sm);
+}
+.sp-comment-section .btn-save:hover:not(:disabled) {
+background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-light));
+}
+.sp-comment-section .btn-cancel {
+background: var(--surface-2);
+border: 1px solid var(--surface-border);
+color: var(--text-secondary);
+border-radius: var(--radius-sm);
+}
+.sp-comment-section .btn-cancel:hover {
+border-color: var(--accent-primary);
+color: var(--accent-primary);
 }
 
 /* ═══════════════════════════════════════════════════════════

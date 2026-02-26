@@ -3,101 +3,150 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { useToast } from '../common/Toast';
 
-const VoteButton = ({ submissionId, initialVote, initialCounts, onVoteChange, submitterId, trackOwnerId }) => {
-    const { user } = useAuth();
-    const toast = useToast();
-    const [userVote, setUserVote] = useState(initialVote);
-    const [upvotes, setUpvotes] = useState(initialCounts?.upvotes || 0);
-    const [downvotes, setDownvotes] = useState(initialCounts?.downvotes || 0);
-    const [isLoading, setIsLoading] = useState(false);
+/**
+ * VoteButton — vertical upvote/downvote with score display.
+ *
+ * Voting rules (enforced on backend, reflected here):
+ * - Track owner cannot vote (they pick the winner)
+ * - Submitter cannot vote on their own submission
+ * - Clicking your active vote again → removes it (toggle off)
+ * - Clicking the other vote → switches it
+ * - Fully optimistic UI with rollback on error
+ */
+const VoteButton = ({
+submissionId,
+initialVote,
+initialCounts,
+onVoteChange,
+onCountsChange,
+submitterId,
+trackOwnerId,
+}) => {
+const { user } = useAuth();
+const toast = useToast();
 
-    // Work out if this user is blocked from voting
-    const isOwnSubmission = user && submitterId && user.id === submitterId;
-    const isTrackOwner = user && trackOwnerId && user.id === trackOwnerId;
-    const cannotVote = !user || isOwnSubmission || isTrackOwner;
+const [userVote, setUserVote]   = useState(initialVote || null);
+const [upvotes, setUpvotes]     = useState(initialCounts?.upvotes   || 0);
+const [downvotes, setDownvotes] = useState(initialCounts?.downvotes || 0);
+const [isLoading, setIsLoading] = useState(false);
 
-    const getBlockedReason = () => {
-        if (!user) return 'Sign in to vote';
-        if (isOwnSubmission) return "You can't vote on your own submission";
-        if (isTrackOwner) return "Track owners don't vote — you pick the winner";
-        return null;
-    };
+// Blocked-voter checks
+const isOwnSubmission = user && submitterId  && user.id === submitterId;
+const isTrackOwner    = user && trackOwnerId && user.id === trackOwnerId;
+const cannotVote      = !user || isOwnSubmission || isTrackOwner;
 
-    const handleVote = async (voteType) => {
-        if (isLoading) return;
+const getBlockedReason = () => {
+if (!user)            return 'Sign in to vote';
+if (isOwnSubmission)  return "You can't vote on your own submission";
+if (isTrackOwner)     return "Track owners pick the winner — voting not available";
+return null;
+};
 
-        if (cannotVote) {
-            toast.info(getBlockedReason());
-            return;
-        }
+const handleVote = async voteType => {
+if (isLoading) return;
 
-        setIsLoading(true);
-        const previousVote = userVote;
-        const previousUpvotes = upvotes;
-        const previousDownvotes = downvotes;
+if (cannotVote) {
+    toast.info(getBlockedReason());
+    return;
+}
 
-        try {
-            // Optimistic update
-            if (userVote === voteType) {
-                setUserVote(null);
-                if (voteType === 'upvote') setUpvotes(prev => prev - 1);
-                else setDownvotes(prev => prev - 1);
-            } else {
-                if (userVote) {
-                    if (userVote === 'upvote') { setUpvotes(prev => prev - 1); setDownvotes(prev => prev + 1); }
-                    else { setDownvotes(prev => prev - 1); setUpvotes(prev => prev + 1); }
-                } else {
-                    if (voteType === 'upvote') setUpvotes(prev => prev + 1);
-                    else setDownvotes(prev => prev + 1);
-                }
-                setUserVote(voteType);
-            }
+setIsLoading(true);
 
-            const response = await api.post(`/collaborations/submissions/${submissionId}/vote`, {
-                vote_type: voteType
-            });
+// Snapshot for rollback
+const prevVote      = userVote;
+const prevUpvotes   = upvotes;
+const prevDownvotes = downvotes;
 
-            if (onVoteChange) onVoteChange(response.data.vote);
-        } catch (error) {
-            console.error('Vote error:', error);
-            setUserVote(previousVote);
-            setUpvotes(previousUpvotes);
-            setDownvotes(previousDownvotes);
-            toast.error(error.response?.data?.error?.message || 'Failed to vote');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+try {
+    // ── Optimistic update ──
+    let newUp = upvotes, newDown = downvotes, newVote;
 
-    const score = upvotes - downvotes;
+    if (userVote === voteType) {
+    // Toggle off — remove vote
+    newVote = null;
+    if (voteType === 'upvote')   newUp   = newUp - 1;
+    else                         newDown = newDown - 1;
+    } else {
+    // Switch or fresh vote
+    if (userVote === 'upvote')   { newUp   = newUp - 1;   newDown = newDown + 1; }
+    else if (userVote === 'downvote') { newDown = newDown - 1; newUp = newUp + 1; }
+    else {
+        if (voteType === 'upvote') newUp   = newUp + 1;
+        else                       newDown = newDown + 1;
+    }
+    newVote = voteType;
+    }
 
-    return (
-        <div className="vote-buttons" title={cannotVote ? getBlockedReason() : undefined}>
-            <button
-                className={`vote-btn upvote ${userVote === 'upvote' ? 'active' : ''} ${cannotVote ? 'opacity-40 cursor-not-allowed' : ''}`}
-                onClick={() => handleVote('upvote')}
-                disabled={isLoading}
-            >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 14l5-5 5 5z"/>
-                </svg>
-                <span>{upvotes}</span>
-            </button>
+    setUserVote(newVote);
+    setUpvotes(newUp);
+    setDownvotes(newDown);
+    if (onCountsChange) onCountsChange({ upvotes: newUp, downvotes: newDown });
 
-            <div className="vote-score">{score > 0 ? '+' : ''}{score}</div>
+    // ── API call ──
+    const res = await api.post(`/collaborations/submissions/${submissionId}/vote`, {
+    vote_type: voteType,
+    });
 
-            <button
-                className={`vote-btn downvote ${userVote === 'downvote' ? 'active' : ''} ${cannotVote ? 'opacity-40 cursor-not-allowed' : ''}`}
-                onClick={() => handleVote('downvote')}
-                disabled={isLoading}
-            >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 10l5 5 5-5z"/>
-                </svg>
-                <span>{downvotes}</span>
-            </button>
-        </div>
-    );
+    // Sync with server truth
+    if (onVoteChange) onVoteChange(res.data.vote);
+} catch (err) {
+    // Rollback
+    setUserVote(prevVote);
+    setUpvotes(prevUpvotes);
+    setDownvotes(prevDownvotes);
+    if (onCountsChange) onCountsChange({ upvotes: prevUpvotes, downvotes: prevDownvotes });
+    toast.error(err.response?.data?.error?.message || 'Failed to vote — please try again');
+} finally {
+    setIsLoading(false);
+}
+};
+
+const score = upvotes - downvotes;
+const blocked = cannotVote;
+const blockedReason = getBlockedReason();
+
+return (
+<div
+    className="sp-vote-widget"
+    title={blocked ? blockedReason : undefined}
+>
+    {/* Upvote */}
+    <button
+    className={`sp-vote-up ${userVote === 'upvote' ? 'active' : ''} ${blocked ? 'blocked' : ''}`}
+    onClick={() => handleVote('upvote')}
+    disabled={isLoading}
+    aria-label="Upvote"
+    title={blocked ? blockedReason : userVote === 'upvote' ? 'Remove upvote' : 'Upvote'}
+    >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 4l8 8H4z"/>
+    </svg>
+    <span className="sp-vote-count">{upvotes}</span>
+    </button>
+
+    {/* Score */}
+    <div className={`sp-vote-score ${score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral'}`}>
+    {score > 0 ? `+${score}` : score}
+    </div>
+
+    {/* Downvote */}
+    <button
+    className={`sp-vote-down ${userVote === 'downvote' ? 'active' : ''} ${blocked ? 'blocked' : ''}`}
+    onClick={() => handleVote('downvote')}
+    disabled={isLoading}
+    aria-label="Downvote"
+    title={blocked ? blockedReason : userVote === 'downvote' ? 'Remove downvote' : 'Downvote'}
+    >
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 20l-8-8h16z"/>
+    </svg>
+    <span className="sp-vote-count">{downvotes}</span>
+    </button>
+
+    {/* Loading spinner overlay */}
+    {isLoading && <div className="sp-vote-loading"/>}
+</div>
+);
 };
 
 export default VoteButton;
