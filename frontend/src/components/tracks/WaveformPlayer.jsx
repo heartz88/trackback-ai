@@ -1,216 +1,305 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
-/**
- * WaveformPlayer — Fixed issues:
- *
- * 1. NO SOUND on first play:
- *    - WaveSurfer was being destroyed/recreated every render because
- *      onPlay/onPause callbacks were in the useEffect dependency array.
- *      Each recreation lost the play state, causing the "press twice" bug.
- *    - Fix: Store callbacks in refs so the effect never needs to re-run
- *      when parent re-renders. Effect only runs when audioUrl or height changes.
- *
- * 2. Volume not applied on init:
- *    - WaveSurfer default volume is 1 (100%) but our UI showed 75.
- *    - Fix: Call setVolume(0.75) immediately after instance creation.
- */
-const WaveformPlayer = ({ audioUrl, height = 128, onReady, onPlay, onPause }) => {
-const waveformRef  = useRef(null);
-const wavesurfer   = useRef(null);
+const WaveformPlayer = ({ audioUrl, height = 128, onReady, onPlay, onPause, onAnalyserReady }) => {
+const waveformRef = useRef(null);
+const waveformWrapRef = useRef(null);
+const oscCanvasRef = useRef(null);
+const wavesurfer = useRef(null);
+const analyserNode = useRef(null);
+const audioCtx = useRef(null);
+const animFrameRef = useRef(null);
+const isPlayingRef = useRef(false);
+const analyserConnected = useRef(false);
 
-// Store callbacks in refs — so the effect never needs callbacks in its dep array
-const onReadyRef  = useRef(onReady);
-const onPlayRef   = useRef(onPlay);
-const onPauseRef  = useRef(onPause);
-useEffect(() => { onReadyRef.current  = onReady;  }, [onReady]);
-useEffect(() => { onPlayRef.current   = onPlay;   }, [onPlay]);
-useEffect(() => { onPauseRef.current  = onPause;  }, [onPause]);
+const [isPlaying, setIsPlaying] = useState(false);
+const [isLoading, setIsLoading] = useState(true);
+const [currentTime, setCurrentTime] = useState(0);
+const [duration, setDuration] = useState(0);
+const [volume, setVolume] = useState(75);
+const [beatScale, setBeatScale] = useState(1);
 
-const [isPlaying,    setIsPlaying]    = useState(false);
-const [isLoading,    setIsLoading]    = useState(true);
-const [currentTime,  setCurrentTime]  = useState(0);
-const [duration,     setDuration]     = useState(0);
-const [volume,       setVolume]       = useState(75);
-const [isMuted,      setIsMuted]      = useState(false);
-const prevVolume = useRef(75);
+const lastBeatTime = useRef(0);
+const energyHistory = useRef(new Array(43).fill(0));
 
-// ── Create / recreate WaveSurfer only when audioUrl or height changes ──
+const tryConnectAnalyser = useCallback(() => {
+if (analyserConnected.current) return;
+try {
+    const ws = wavesurfer.current;
+    if (!ws) return;
+    const mediaEl = ws.getMediaElement();
+    if (!mediaEl) return;
+
+    if (!audioCtx.current) {
+    audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ac = audioCtx.current;
+    if (ac.state === 'suspended') ac.resume();
+
+    const source = ac.createMediaElementSource(mediaEl);
+    const analyser = ac.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.75;
+
+    source.connect(analyser);
+    analyser.connect(ac.destination);
+
+    analyserNode.current = analyser;
+    analyserConnected.current = true;
+
+    const canvas = oscCanvasRef.current;
+    const wrap = waveformWrapRef.current;
+    if (canvas && wrap) {
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    }
+
+    if (onAnalyserReady) onAnalyserReady(analyser);
+} catch (e) {
+    console.warn('WaveformPlayer: analyser connect failed:', e.message);
+}
+}, [onAnalyserReady]);
+
+const drawOscilloscope = useCallback(() => {
+const canvas = oscCanvasRef.current;
+const analyser = analyserNode.current;
+if (!canvas || !analyser) return;
+
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+
+const bufferLength = analyser.fftSize;
+const dataArray = new Float32Array(bufferLength);
+analyser.getFloatTimeDomainData(dataArray);
+
+ctx.clearRect(0, 0, W, H);
+
+// Beat detection from bass frequencies
+const freqData = new Uint8Array(analyser.frequencyBinCount);
+analyser.getByteFrequencyData(freqData);
+const bassEnd = Math.floor(freqData.length * 0.06);
+let bassEnergy = 0;
+for (let i = 0; i < bassEnd; i++) bassEnergy += freqData[i];
+bassEnergy /= bassEnd;
+
+energyHistory.current.push(bassEnergy);
+energyHistory.current.shift();
+const avgEnergy = energyHistory.current.reduce((a, b) => a + b, 0) / energyHistory.current.length;
+
+const now = performance.now();
+if (bassEnergy > avgEnergy * 1.45 && bassEnergy > 55 && now - lastBeatTime.current > 220) {
+    lastBeatTime.current = now;
+    setBeatScale(1.12);
+    setTimeout(() => setBeatScale(1), 120);
+}
+
+// Draw oscilloscope waveform
+const accent = getComputedStyle(document.documentElement)
+    .getPropertyValue('--accent-primary').trim() || '#14B8A6';
+
+const sliceW = W / bufferLength;
+
+// Outer glow pass
+ctx.beginPath();
+ctx.strokeStyle = accent;
+ctx.lineWidth = 3;
+ctx.globalAlpha = 0.2;
+ctx.shadowBlur = 24;
+ctx.shadowColor = accent;
+let x = 0;
+for (let i = 0; i < bufferLength; i++) {
+    const y = H / 2 + dataArray[i] * H * 0.42;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    x += sliceW;
+}
+ctx.stroke();
+
+// Core line
+ctx.beginPath();
+ctx.strokeStyle = accent;
+ctx.lineWidth = 1.5;
+ctx.globalAlpha = 0.9;
+ctx.shadowBlur = 8;
+x = 0;
+for (let i = 0; i < bufferLength; i++) {
+    const y = H / 2 + dataArray[i] * H * 0.42;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    x += sliceW;
+}
+ctx.stroke();
+
+ctx.globalAlpha = 1;
+ctx.shadowBlur = 0;
+
+if (isPlayingRef.current) {
+    animFrameRef.current = requestAnimationFrame(drawOscilloscope);
+}
+}, []);
+
+const startVisualizer = useCallback(() => {
+if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+animFrameRef.current = requestAnimationFrame(drawOscilloscope);
+}, [drawOscilloscope]);
+
+const stopVisualizer = useCallback(() => {
+if (animFrameRef.current) {
+    cancelAnimationFrame(animFrameRef.current);
+    animFrameRef.current = null;
+}
+const canvas = oscCanvasRef.current;
+if (canvas) {
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+}, []);
+
 useEffect(() => {
-if (!waveformRef.current || !audioUrl) return;
+if (!waveformRef.current) return;
 
-// Reset UI state for new track
-setIsPlaying(false);
-setIsLoading(true);
-setCurrentTime(0);
-setDuration(0);
+const cs = getComputedStyle(document.documentElement);
+const accentColor = cs.getPropertyValue('--accent-primary').trim() || '#14B8A6';
+const textSecondary = cs.getPropertyValue('--text-secondary').trim() || '#cbd5e1';
 
-const computedStyle  = getComputedStyle(document.documentElement);
-const accentColor    = computedStyle.getPropertyValue('--accent-primary').trim()    || '#14B8A6';
-const textSecondary  = computedStyle.getPropertyValue('--text-secondary').trim()    || '#cbd5e1';
-const surfaceColor   = computedStyle.getPropertyValue('--surface-2').trim()         || 'rgba(255,255,255,0.06)';
-
-const ws = WaveSurfer.create({
-    container:     waveformRef.current,
-    waveColor:     textSecondary,
+wavesurfer.current = WaveSurfer.create({
+    container: waveformRef.current,
+    waveColor: textSecondary,
     progressColor: accentColor,
-    cursorColor:   accentColor,
-    barWidth:      2,
-    barRadius:     3,
-    cursorWidth:   2,
-    height:        height,
-    barGap:        2,
-    normalize:     true,
-    backend:       'MediaElement',
-    // Set volume at creation — fixes "no sound on first play"
-    volume:        0.75,
+    cursorColor: accentColor,
+    barWidth: 2,
+    barRadius: 3,
+    cursorWidth: 2,
+    height: height,
+    barGap: 2,
+    normalize: true,
 });
 
-wavesurfer.current = ws;
+wavesurfer.current.load(audioUrl);
 
-// Apply initial volume immediately after creation
-ws.setVolume(0.75);
+wavesurfer.current.on('ready', () => {
+    setIsLoading(false);
+    setDuration(wavesurfer.current.getDuration());
+    if (onReady) onReady();
+});
 
-ws.load(audioUrl);
+wavesurfer.current.on('play', () => {
+    isPlayingRef.current = true;
+    setIsPlaying(true);
+    tryConnectAnalyser();
+    if (audioCtx.current?.state === 'suspended') audioCtx.current.resume();
+    startVisualizer();
+    if (onPlay) onPlay();
+});
 
-// Force WaveSurfer to redraw when container width changes
-// (fixes cut-off waveform when parent panel finishes animating in)
+wavesurfer.current.on('pause', () => {
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+    stopVisualizer();
+    if (onPause) onPause();
+});
+
+wavesurfer.current.on('finish', () => {
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+    stopVisualizer();
+});
+
+wavesurfer.current.on('audioprocess', () => {
+    setCurrentTime(wavesurfer.current.getCurrentTime());
+});
+
+wavesurfer.current.on('seek', () => {
+    setCurrentTime(wavesurfer.current.getCurrentTime());
+});
+
 const ro = new ResizeObserver(() => {
-    if (ws && !ws.isDestroyed) {
-    try { ws.drawBuffer(); } catch {}
+    const canvas = oscCanvasRef.current;
+    const wrap = waveformWrapRef.current;
+    if (canvas && wrap) {
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
     }
 });
-if (waveformRef.current) ro.observe(waveformRef.current);
-
-ws.on('ready', () => {
-    setIsLoading(false);
-    setDuration(ws.getDuration());
-    // Re-apply volume after ready (some browsers reset it)
-    ws.setVolume(prevVolume.current / 100);
-    if (onReadyRef.current) onReadyRef.current();
-});
-
-ws.on('play', () => {
-    setIsPlaying(true);
-    if (onPlayRef.current) onPlayRef.current();
-});
-
-ws.on('pause', () => {
-    setIsPlaying(false);
-    if (onPauseRef.current) onPauseRef.current();
-});
-
-ws.on('finish', () => {
-    setIsPlaying(false);
-    if (onPauseRef.current) onPauseRef.current();
-});
-
-ws.on('audioprocess', () => {
-    setCurrentTime(ws.getCurrentTime());
-});
-
-ws.on('seek', () => {
-    setCurrentTime(ws.getCurrentTime());
-});
-
-ws.on('error', err => {
-    console.error('WaveSurfer error:', err);
-    setIsLoading(false);
-});
+if (waveformWrapRef.current) ro.observe(waveformWrapRef.current);
 
 return () => {
+    isPlayingRef.current = false;
+    stopVisualizer();
     ro.disconnect();
-    ws.destroy();
+    if (wavesurfer.current) wavesurfer.current.destroy();
+    if (audioCtx.current) { audioCtx.current.close(); audioCtx.current = null; }
+    analyserConnected.current = false;
 };
-// Only audioUrl and height should trigger recreation — NOT callbacks
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [audioUrl, height]);
+}, [audioUrl, height, onReady, onPlay, onPause, tryConnectAnalyser, startVisualizer, stopVisualizer]);
 
-const togglePlay = () => {
-if (wavesurfer.current && !isLoading) {
-    wavesurfer.current.playPause();
-}
-};
+const togglePlay = () => { if (wavesurfer.current) wavesurfer.current.playPause(); };
 
-const handleVolumeChange = e => {
-const val = parseInt(e.target.value);
-setVolume(val);
-prevVolume.current = val;
-setIsMuted(val === 0);
-if (wavesurfer.current) wavesurfer.current.setVolume(val / 100);
+const handleVolumeChange = (e) => {
+const v = parseInt(e.target.value);
+setVolume(v);
+if (wavesurfer.current) wavesurfer.current.setVolume(v / 100);
 };
 
-const toggleMute = () => {
-if (!wavesurfer.current) return;
-if (isMuted) {
-    const restore = prevVolume.current || 75;
-    setVolume(restore);
-    setIsMuted(false);
-    wavesurfer.current.setVolume(restore / 100);
-} else {
-    prevVolume.current = volume;
-    setVolume(0);
-    setIsMuted(true);
-    wavesurfer.current.setVolume(0);
-}
+const formatTime = (s) => {
+const m = Math.floor(s / 60);
+return `${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
 };
-
-const handleProgressClick = e => {
-if (!wavesurfer.current || !duration) return;
-const rect = e.currentTarget.getBoundingClientRect();
-const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-wavesurfer.current.seekTo(pct);
-};
-
-const formatTime = secs => {
-const m = Math.floor(secs / 60);
-const s = Math.floor(secs % 60);
-return `${m}:${s.toString().padStart(2, '0')}`;
-};
-
-const progressPct = duration ? (currentTime / duration) * 100 : 0;
 
 return (
 <div className="waveform-player glass">
 
-    {/* Waveform canvas — must be full-width with no side padding so WaveSurfer
-        measures the correct container width and renders all bars */}
-    <div className="waveform-section">
-    <div
-        ref={waveformRef}
-        className={`waveform-canvas ${isLoading ? 'loading' : ''}`}
-        style={{ width: '100%', boxSizing: 'border-box' }}
+    {/* Waveform + oscilloscope overlay */}
+    <div ref={waveformWrapRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={waveformRef} className={`waveform-canvas ${isLoading ? 'loading' : ''}`} />
+    <canvas
+        ref={oscCanvasRef}
+        style={{
+        position: 'absolute',
+        top: 0, left: 0,
+        width: '100%', height: '100%',
+        pointerEvents: 'none',
+        opacity: isPlaying ? 1 : 0,
+        transition: 'opacity 0.6s ease',
+        zIndex: 10,
+        }}
     />
     </div>
 
-    {/* Loading overlay */}
+    {/* Loading state */}
     {isLoading && (
     <div className="waveform-loading">
         <div className="music-loader">
-        {[...Array(5)].map((_,i) => <div key={i} className="music-loader-bar"/>)}
+        {[...Array(5)].map((_, i) => <div key={i} className="music-loader-bar" />)}
         </div>
-        <span style={{ color:'var(--text-secondary)', fontSize:13 }}>Loading audio…</span>
+        <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Loading audio...</span>
     </div>
     )}
 
     {/* Controls */}
     <div className="waveform-controls">
 
-    {/* Play / Pause */}
+    {/* Play/pause — beat-reactive */}
     <button
         className="play-btn"
         onClick={togglePlay}
         disabled={isLoading}
-        aria-label={isPlaying ? 'Pause' : 'Play'}
+        style={{
+        transform: `scale(${beatScale})`,
+        transition: beatScale > 1
+            ? 'transform 0.05s ease-out, box-shadow 0.05s ease-out'
+            : 'transform 0.18s ease-in, box-shadow 0.18s ease-in',
+        boxShadow: beatScale > 1
+            ? '0 0 20px 6px color-mix(in srgb, var(--accent-primary) 60%, transparent)'
+            : undefined,
+        }}
     >
         {isPlaying ? (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <rect x="6" y="4" width="4" height="16" rx="1"/>
-            <rect x="14" y="4" width="4" height="16" rx="1"/>
+            <rect x="6" y="4" width="4" height="16" rx="1" />
+            <rect x="14" y="4" width="4" height="16" rx="1" />
         </svg>
         ) : (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
+            <path d="M8 5v14l11-7z" />
         </svg>
         )}
     </button>
@@ -218,37 +307,50 @@ return (
     {/* Timeline */}
     <div className="timeline">
         <span className="current-time">{formatTime(currentTime)}</span>
-        <div className="progress-bar-container" onClick={handleProgressClick} role="slider"
-        aria-label="Seek" aria-valuenow={Math.round(progressPct)} aria-valuemin={0} aria-valuemax={100}>
-        <div className="progress-bar" style={{ width: `${progressPct}%` }}/>
+        <div
+        className="progress-bar-container"
+        onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pct = (e.clientX - rect.left) / rect.width;
+            if (wavesurfer.current) wavesurfer.current.seekTo(pct);
+        }}
+        >
+        <div
+            className="progress-bar"
+            style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+        />
         </div>
         <span className="total-time">{formatTime(duration)}</span>
     </div>
 
     {/* Volume */}
     <div className="volume-control">
-        <button className="volume-icon" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'}>
-        {isMuted || volume === 0 ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+        <button className="volume-icon" onClick={() => {
+        const newVol = volume === 0 ? 75 : 0;
+        setVolume(newVol);
+        if (wavesurfer.current) wavesurfer.current.setVolume(newVol / 100);
+        }}>
+        {volume === 0 ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
             </svg>
         ) : volume < 50 ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M7 9v6h4l5 5V4l-5 5H7z"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M7 9v6h4l5 5V4l-5 5H7z" />
             </svg>
         ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
             </svg>
         )}
         </button>
         <input
         type="range"
         className="volume-slider"
-        min="0" max="100"
+        min="0"
+        max="100"
         value={volume}
         onChange={handleVolumeChange}
-        aria-label="Volume"
         />
     </div>
     </div>

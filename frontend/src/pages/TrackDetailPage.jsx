@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
@@ -10,8 +9,6 @@ const TrackDetailPage = () => {
 const { trackId } = useParams();
 const { user } = useAuth();
 const navigate = useNavigate();
-const toast = useToast();
-const confirm = useConfirm();
 const [track, setTrack] = useState(null);
 const [owner, setOwner] = useState(null);
 const [collaboration, setCollaboration] = useState(null);
@@ -48,20 +45,14 @@ try {
     const r = await api.post('/collaborations/request', { track_id: trackId, message: collabMessage || `I'd like to collaborate on "${track.title}"` });
     setCollaboration(r.data.request);
     setShowMessageInput(false);
-    toast.success('Collaboration request sent!');
-} catch (err) { toast.error(err.response?.data?.error?.message || 'Failed to send request'); }
+} catch (err) { alert(err.response?.data?.error?.message || 'Failed to send request'); }
 finally { setRequestingCollab(false); }
 };
 
 const handleCompleteTrack = async () => {
-const ok = await confirm({
-    title: 'Mark as completed?',
-    message: 'The highest voted submission will be selected as the final version.',
-    confirmText: 'Complete Track',
-});
-if (!ok) return;
-try { await api.post(`/collaborations/${trackId}/complete`); fetchTrackDetails(); toast.success('Track marked as completed!'); }
-catch (err) { toast.error(err.response?.data?.error?.message || 'Failed to complete track'); }
+if (!window.confirm('Mark this track as completed?')) return;
+try { await api.post(`/collaborations/${trackId}/complete`); fetchTrackDetails(); }
+catch (err) { alert(err.response?.data?.error?.message || 'Failed'); }
 };
 
 const handlePlay  = useCallback(() => setIsPlaying(true), []);
@@ -88,7 +79,7 @@ if (error || !track) return (
 return (
 <div className="track-detail-page animate-fade-in">
 
-    {/* Breadcrumb to make it easier for the user to go back to discover */}
+    {/* Breadcrumb */}
     <nav className="breadcrumb animate-slide-up">
     <Link to="/discover">Discover</Link>
     <span className="breadcrumb-sep">›</span>
@@ -103,7 +94,7 @@ return (
     {/* Two-column grid */}
     <div className="tdp-grid">
 
-    {/* Info */}
+    {/* INFO */}
     <div className="tdp-info animate-slide-up stagger-2">
         <div className="tdp-title-row">
         <h1 className="tdp-title">{track.title}</h1>
@@ -155,7 +146,7 @@ return (
         </>)}
     </div>
 
-    {/* Actions */}
+    {/* ACTIONS */}
     <div className="tdp-actions-panel animate-slide-up stagger-3">
         <div className="tdp-action-card">
         <div className="section-label">Collaborate</div>
