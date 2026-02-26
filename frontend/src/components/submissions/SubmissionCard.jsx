@@ -8,34 +8,19 @@ import VoteButton from './VoteButton';
 
 const SubmissionCard = ({ submission, isWinner = false, rank }) => {
 const { user } = useAuth();
-const [commentCount, setCommentCount]   = useState(submission.comment_count || 0);
-const [userVote, setUserVote]           = useState(null);
-const [voteCounts, setVoteCounts]       = useState({ upvotes: submission.upvotes || 0, downvotes: submission.downvotes || 0 });
-const [showComments, setShowComments]   = useState(false);
-const [isPlaying, setIsPlaying]         = useState(false);
+const [commentCount,  setCommentCount]  = useState(0);
+const [userVote,      setUserVote]      = useState(submission.user_vote || null);
+const [upvotes,       setUpvotes]       = useState(parseInt(submission.upvotes) || 0);
+const [showComments,  setShowComments]  = useState(false);
 const commentSectionRef = useRef(null);
 
+// Sync if parent refetches the submissions array
 useEffect(() => {
-fetchUserVote();
-// If upvotes/downvotes not on submission object, fetch them
-if (submission.upvotes === undefined) fetchVotes();
-fetchCommentCount();
-}, [submission.id]);
+setUserVote(submission.user_vote || null);
+setUpvotes(parseInt(submission.upvotes) || 0);
+}, [submission.id, submission.user_vote, submission.upvotes]);
 
-const fetchVotes = async () => {
-try {
-    const res = await api.get(`/votes/submission/${submission.id}`);
-    setVoteCounts({ upvotes: res.data.upvotes || 0, downvotes: res.data.downvotes || 0 });
-} catch {}
-};
-
-const fetchUserVote = async () => {
-if (!user) return;
-try {
-    const res = await api.get(`/votes/submission/${submission.id}/user`);
-    setUserVote(res.data.vote || null);
-} catch {}
-};
+useEffect(() => { fetchCommentCount(); }, [submission.id]);
 
 const fetchCommentCount = async () => {
 try {
@@ -47,154 +32,128 @@ try {
 const handleCommentToggle = () => {
 setShowComments(prev => {
     if (!prev) {
-    setTimeout(() => {
-        commentSectionRef.current?.scrollIntoView({ behavior:'smooth', block:'nearest' });
-    }, 100);
+    setTimeout(() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
     }
     return !prev;
 });
 };
 
 const formatDate = dateString => {
-const d = new Date(dateString);
-const diff = Math.floor((Date.now() - d) / 1000);
+const diff = Math.floor((Date.now() - new Date(dateString)) / 1000);
 if (diff < 60)     return 'just now';
-if (diff < 3600)   return `${Math.floor(diff/60)}m ago`;
-if (diff < 86400)  return `${Math.floor(diff/3600)}h ago`;
-if (diff < 604800) return `${Math.floor(diff/86400)}d ago`;
-return d.toLocaleDateString();
+if (diff < 3600)   return `${Math.floor(diff / 60)}m ago`;
+if (diff < 86400)  return `${Math.floor(diff / 3600)}h ago`;
+if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+return new Date(dateString).toLocaleDateString();
 };
 
-const score = (voteCounts.upvotes || 0) - (voteCounts.downvotes || 0);
-
-// Medal for rank
-const rankMedal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+const versionNum = parseInt(submission.version_number) || 1;
 
 return (
-<div className={`sp-card ${isWinner ? 'sp-card-winner' : ''} animate-fade-in`}>
-
-    {/* Winner banner */}
+<div className={`submission-card ${isWinner ? 'winner' : ''}`}>
     {isWinner && (
-    <div className="sp-winner-banner">
-        <span>👑</span>
+    <div className="winner-badge">
+        <span className="crown">👑</span>
         <span>Winning Submission</span>
-        <span>👑</span>
     </div>
     )}
 
-    <div className="sp-card-body">
-
-    {/* ── Left: vote column ── */}
-    <div className="sp-vote-col">
-        {rankMedal && !isWinner && (
-        <span className="sp-rank-medal" title={`Ranked #${rank}`}>{rankMedal}</span>
-        )}
-        <VoteButton
-        submissionId={submission.id}
-        initialVote={userVote}
-        initialCounts={voteCounts}
-        onVoteChange={vote => setUserVote(vote)}
-        onCountsChange={counts => setVoteCounts(counts)}
-        submitterId={submission.collaborator_id}
-        trackOwnerId={submission.track_owner_id}
-        />
+    <div className="submission-content">
+    {/* Waveform Player */}
+    <div className="submission-player">
+        <WaveformPlayer audioUrl={submission.audio_url} height={100}/>
     </div>
 
-    {/* ── Right: content ── */}
-    <div className="sp-card-content">
-
-        {/* Header row */}
-        <div className="sp-card-header">
-        <Link to={`/profile/${submission.collaborator_id}`} className="sp-author-link">
-            <div className="sp-author-avatar">
+    {/* Info */}
+    <div className="submission-info">
+        {/* Author row */}
+        <div className="user-header">
+        <Link to={`/profile/${submission.collaborator_id}`} className="flex items-center gap-3 group">
+            <div className="avatar group-hover:scale-105 transition-transform">
             {submission.collaborator_name?.charAt(0).toUpperCase()}
             </div>
             <div>
-            <div className="sp-author-name">@{submission.collaborator_name}</div>
-            <div className="sp-timestamp">{formatDate(submission.created_at)}</div>
+            <h3 className="username group-hover:text-primary-400 transition-colors">
+                {submission.collaborator_name}
+            </h3>
+            <span className="timestamp">{formatDate(submission.created_at)}</span>
             </div>
         </Link>
 
-        {/* Score pill */}
-        <div className={`sp-score-pill ${score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral'}`}>
-            {score > 0 ? `+${score}` : score}
-        </div>
-
-        {/* Message button */}
         {user && user.id !== submission.collaborator_id && (
             <Link
             to={`/messages/new?userId=${submission.collaborator_id}`}
-            className="tdp-message-btn"
-            style={{ marginLeft:'auto' }}
+            className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-tertiary)] hover:text-primary-400 rounded-lg text-xs transition-all border border-[var(--border-color)]"
             >
-            <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
             Message
             </Link>
         )}
         </div>
 
-        {/* Title */}
-        <div className="tdp-title-row">
-        <h3 className="sp-card-title">{submission.title}</h3>
-        {isPlaying && <div className="eq-indicator" aria-label="Now playing"><span/><span/><span/><span/><span/></div>}
-        </div>
+        {/* Title + version badge + rank medal */}
+        <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:4 }}>
+        <h4 className="submission-title" style={{ margin:0 }}>{submission.title}</h4>
 
-        {/* Description */}
-        {submission.description && (
-        <p className="sp-card-description">{submission.description}</p>
+        {/* Version badge — always shown so users know which version this is */}
+        <span style={{
+            fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:9999,
+            background:'rgba(20,184,166,0.12)', color:'var(--accent-primary)',
+            border:'1px solid rgba(20,184,166,0.25)', fontFamily:'monospace',
+            letterSpacing:'0.05em'
+        }}>
+            v{versionNum}
+        </span>
+
+        {rank && rank <= 3 && (
+            <span style={{ fontSize:16 }}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}</span>
         )}
-
-        {/* Waveform player */}
-        <div className="sp-player">
-        <WaveformPlayer
-            audioUrl={submission.audio_url}
-            height={70}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-        />
         </div>
 
-        {/* Action bar */}
-        <div className="sp-action-bar">
-        {/* Comments toggle */}
+        {submission.description && <p className="description">{submission.description}</p>}
+
+        {/* Actions row */}
+        <div className="submission-actions">
         <button
-            className={`sp-action-btn ${showComments ? 'active' : ''}`}
+            className={`action-btn flex items-center gap-1.5 transition-all ${
+            showComments
+                ? 'text-primary-400 bg-primary-500/10 border-primary-500/30'
+                : 'text-[var(--text-secondary)] hover:text-primary-400'
+            }`}
             onClick={handleCommentToggle}
         >
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
             {commentCount} {commentCount === 1 ? 'Comment' : 'Comments'}
             {showComments
-            ? <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7"/></svg>
-            : <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+            ? <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7"/></svg>
+            : <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
             }
         </button>
-
-        {/* Vote summary text */}
-        <span className="sp-vote-summary">
-            <span className="sp-votes-up">↑ {voteCounts.upvotes || 0}</span>
-            <span className="sp-votes-sep">·</span>
-            <span className="sp-votes-down">↓ {voteCounts.downvotes || 0}</span>
-        </span>
         </div>
+    </div>
+
+    {/* Like button */}
+    <div className="submission-voting">
+        <VoteButton
+        submissionId={submission.id}
+        initialVote={userVote}
+        initialCounts={{ upvotes }}
+        onVoteChange={setUserVote}
+        onCountsChange={({ upvotes: u }) => setUpvotes(u)}
+        submitterId={submission.collaborator_id}
+        trackOwnerId={submission.track_owner_id}
+        />
     </div>
     </div>
 
     {/* Inline comments */}
     {showComments && (
-    <div
-        ref={commentSectionRef}
-        className="sp-comments-panel animate-slide-down"
-    >
-        <CommentSection
-        submissionId={submission.id}
-        onCommentCountChange={setCommentCount}
-        />
+    <div ref={commentSectionRef} className="mt-4 border-t border-[var(--border-color)] pt-4 animate-slide-down">
+        <CommentSection submissionId={submission.id} onCommentCountChange={setCommentCount}/>
     </div>
     )}
 </div>

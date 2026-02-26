@@ -79,7 +79,7 @@ await db.query(
     ]
 );
 
-// AUTO-CREATE MESSAGING CONVERSATION WHEN COLLABORATION IS REQUESTED
+
 try {
     // Check if conversation already exists between these users
     const convCheck = await db.query(
@@ -127,28 +127,6 @@ res.status(201).json({
 } catch (error) {
 console.error('Request collaboration error:', error);
 res.status(500).json({ error: { message: 'Failed to send request' } });
-}
-});
-
-// Get current user's collaboration status for a specific track
-router.get('/track/:trackId', authMiddleware, async (req, res) => {
-try {
-const { trackId } = req.params;
-const userId = req.user.id;
-
-const result = await db.query(
-    `SELECT cr.*, t.title as track_title, t.user_id as owner_id
-    FROM collaboration_requests cr
-    JOIN tracks t ON cr.track_id = t.id
-    WHERE cr.track_id = $1 AND cr.collaborator_id = $2`,
-    [trackId, userId]
-);
-
-if (result.rows.length === 0) return res.json({ collaboration: null });
-res.json({ collaboration: result.rows[0] });
-} catch (error) {
-console.error('Get collaboration status error:', error);
-res.status(500).json({ error: { message: 'Failed to fetch collaboration status' } });
 }
 });
 
@@ -435,24 +413,27 @@ if (!isOwner && isCollaborator.rows.length === 0) {
 }
 
 const result = await db.query(
-    `SELECT s.*, 
+    `SELECT s.*,
             u.username as collaborator_name,
-            t.user_id as track_owner_id,
-            (SELECT COUNT(*) FROM votes WHERE submission_id = s.id AND vote_type = 'upvote') as upvotes,
-            (SELECT COUNT(*) FROM votes WHERE submission_id = s.id AND vote_type = 'downvote') as downvotes
+            t.user_id  as track_owner_id,
+            (SELECT COUNT(*) FROM votes WHERE submission_id = s.id AND vote_type = 'upvote')   AS upvotes,
+            (SELECT COUNT(*) FROM votes WHERE submission_id = s.id AND vote_type = 'downvote') AS downvotes,
+            (SELECT vote_type FROM votes WHERE submission_id = s.id AND user_id = $2 LIMIT 1)  AS user_vote,
+            COALESCE(s.version_number, 1) AS version_number
     FROM submissions s
     JOIN users u ON s.collaborator_id = u.id
     JOIN tracks t ON s.track_id = t.id
     WHERE s.track_id = $1
     ORDER BY s.created_at DESC`,
-    [trackId]
+    [trackId, userId]
 );
 
 const submissions = result.rows.map(sub => ({
     ...sub,
-    audio_url: getSignedUrl(sub.s3_key),
-    can_vote: !isOwner && sub.collaborator_id !== userId,
-    user_vote: null // Would need separate query for this
+    audio_url:      getSignedUrl(sub.s3_key),
+    can_vote:       !isOwner && sub.collaborator_id !== userId,
+    user_vote:      sub.user_vote || null,
+    version_number: parseInt(sub.version_number) || 1,
 }));
 
 res.json({ submissions });
@@ -462,18 +443,13 @@ res.status(500).json({ error: { message: 'Failed to fetch submissions' } });
 }
 });
 
-// Vote on submission
+// Vote on submission — upvote only, toggles on second click
 router.post('/submissions/:submissionId/vote', authMiddleware, async (req, res) => {
 try {
 const { submissionId } = req.params;
-const { vote_type } = req.body; // 'upvote' or 'downvote'
 const userId = req.user.id;
 
-if (!['upvote', 'downvote'].includes(vote_type)) {
-    return res.status(400).json({ error: { message: 'Invalid vote type' } });
-}
-
-// Get submission details
+// Get submission + track owner
 const submissionResult = await db.query(
     `SELECT s.*, t.user_id as track_owner_id
     FROM submissions s
@@ -488,71 +464,52 @@ if (submissionResult.rows.length === 0) {
 
 const submission = submissionResult.rows[0];
 
-// Check if user can vote (not the owner and not the submitter)
+// Block owner and self-votes
 if (userId === submission.track_owner_id) {
-    return res.status(403).json({ 
-    error: { message: 'Track owner cannot vote on submissions' } 
-    });
+    return res.status(403).json({ error: { message: 'Track owners choose the winner — voting not available' } });
 }
-
 if (userId === submission.collaborator_id) {
-    return res.status(403).json({ 
-    error: { message: 'Cannot vote on your own submission' } 
-    });
+    return res.status(403).json({ error: { message: 'You cannot vote on your own submission' } });
 }
 
-// Check if user already voted
+// Check for existing vote
 const existingVote = await db.query(
-    'SELECT id, vote_type FROM votes WHERE submission_id = $1 AND user_id = $2',
+    'SELECT id FROM votes WHERE submission_id = $1 AND user_id = $2',
     [submissionId, userId]
 );
 
+let vote = null;
+
 if (existingVote.rows.length > 0) {
-    if (existingVote.rows[0].vote_type === vote_type) {
-    // Remove vote
-    await db.query(
-        'DELETE FROM votes WHERE id = $1',
-        [existingVote.rows[0].id]
-    );
-    res.json({ 
-        message: 'Vote removed',
-        vote: null 
-    });
-    } else {
-    // Update vote
-    await db.query(
-        'UPDATE votes SET vote_type = $1, created_at = NOW() WHERE id = $2',
-        [vote_type, existingVote.rows[0].id]
-    );
-    res.json({ 
-        message: 'Vote updated',
-        vote: vote_type 
-    });
-    }
+    // Toggle off — remove the like
+    await db.query('DELETE FROM votes WHERE id = $1', [existingVote.rows[0].id]);
+    vote = null;
 } else {
-    // Create new vote
+    // Insert upvote
     await db.query(
-    `INSERT INTO votes (submission_id, user_id, vote_type)
-        VALUES ($1, $2, $3)`,
-    [submissionId, userId, vote_type]
+    `INSERT INTO votes (submission_id, user_id, vote_type) VALUES ($1, $2, 'upvote')`,
+    [submissionId, userId]
     );
+    vote = 'upvote';
 
-    // Create notification for submitter
+    // Notify submitter
     await db.query(
-    `INSERT INTO notifications (user_id, type, content, related_id)
-        VALUES ($1, 'vote', $2, $3)`,
-    [
-        submission.collaborator_id,
-        `Someone ${vote_type}d your submission`,
-        submissionId
-    ]
+    `INSERT INTO notifications (user_id, type, content, related_id) VALUES ($1, 'vote', $2, $3)`,
+    [submission.collaborator_id, 'Someone liked your submission', submissionId]
     );
-
-    res.json({
-    message: 'Vote recorded',
-    vote: vote_type
-    });
 }
+
+// Return fresh count
+const countResult = await db.query(
+    `SELECT COUNT(*)::int AS upvotes FROM votes WHERE submission_id = $1`,
+    [submissionId]
+);
+
+res.json({
+    message: vote ? 'Vote recorded' : 'Vote removed',
+    vote,
+    upvotes: countResult.rows[0].upvotes
+});
 } catch (error) {
 console.error('Vote error:', error);
 res.status(500).json({ error: { message: 'Failed to vote' } });

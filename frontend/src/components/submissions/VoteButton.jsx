@@ -3,16 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { useToast } from '../common/Toast';
 
-/**
- * VoteButton — vertical upvote/downvote with score display.
- *
- * Voting rules (enforced on backend, reflected here):
- * - Track owner cannot vote (they pick the winner)
- * - Submitter cannot vote on their own submission
- * - Clicking your active vote again → removes it (toggle off)
- * - Clicking the other vote → switches it
- * - Fully optimistic UI with rollback on error
- */
+
 const VoteButton = ({
 submissionId,
 initialVote,
@@ -23,129 +14,98 @@ submitterId,
 trackOwnerId,
 }) => {
 const { user } = useAuth();
-const toast = useToast();
+const toast    = useToast();
 
-const [userVote, setUserVote]   = useState(initialVote || null);
-const [upvotes, setUpvotes]     = useState(initialCounts?.upvotes   || 0);
-const [downvotes, setDownvotes] = useState(initialCounts?.downvotes || 0);
-const [isLoading, setIsLoading] = useState(false);
+const [liked,    setLiked]   = useState(initialVote === 'upvote');
+const [upvotes,  setUpvotes] = useState(Number(initialCounts?.upvotes) || 0);
+const [loading,  setLoading] = useState(false);
 
-// Blocked-voter checks
-const isOwnSubmission = user && submitterId  && user.id === submitterId;
-const isTrackOwner    = user && trackOwnerId && user.id === trackOwnerId;
-const cannotVote      = !user || isOwnSubmission || isTrackOwner;
+const isOwnSubmission = user && submitterId  && user.id === Number(submitterId);
+const isTrackOwner    = user && trackOwnerId && user.id === Number(trackOwnerId);
+const blocked         = !user || isOwnSubmission || isTrackOwner;
 
 const getBlockedReason = () => {
-if (!user)            return 'Sign in to vote';
-if (isOwnSubmission)  return "You can't vote on your own submission";
-if (isTrackOwner)     return "Track owners pick the winner — voting not available";
+if (!user)           return 'Sign in to like submissions';
+if (isOwnSubmission) return "You can't like your own submission";
+if (isTrackOwner)    return 'Track owners pick the winner — liking not available';
 return null;
 };
 
-const handleVote = async voteType => {
-if (isLoading) return;
+const handleClick = async () => {
+if (loading) return;
 
-if (cannotVote) {
+if (blocked) {
     toast.info(getBlockedReason());
     return;
 }
 
-setIsLoading(true);
+// Optimistic update
+const prevLiked   = liked;
+const prevUpvotes = upvotes;
+const newLiked    = !liked;
+const newUpvotes  = newLiked ? upvotes + 1 : upvotes - 1;
 
-// Snapshot for rollback
-const prevVote      = userVote;
-const prevUpvotes   = upvotes;
-const prevDownvotes = downvotes;
+setLiked(newLiked);
+setUpvotes(newUpvotes);
+if (onCountsChange) onCountsChange({ upvotes: newUpvotes });
+if (onVoteChange)   onVoteChange(newLiked ? 'upvote' : null);
 
+setLoading(true);
 try {
-    // ── Optimistic update ──
-    let newUp = upvotes, newDown = downvotes, newVote;
-
-    if (userVote === voteType) {
-    // Toggle off — remove vote
-    newVote = null;
-    if (voteType === 'upvote')   newUp   = newUp - 1;
-    else                         newDown = newDown - 1;
-    } else {
-    // Switch or fresh vote
-    if (userVote === 'upvote')   { newUp   = newUp - 1;   newDown = newDown + 1; }
-    else if (userVote === 'downvote') { newDown = newDown - 1; newUp = newUp + 1; }
-    else {
-        if (voteType === 'upvote') newUp   = newUp + 1;
-        else                       newDown = newDown + 1;
-    }
-    newVote = voteType;
-    }
-
-    setUserVote(newVote);
-    setUpvotes(newUp);
-    setDownvotes(newDown);
-    if (onCountsChange) onCountsChange({ upvotes: newUp, downvotes: newDown });
-
-    // ── API call ──
     const res = await api.post(`/collaborations/submissions/${submissionId}/vote`, {
-    vote_type: voteType,
+    vote_type: 'upvote',
     });
 
-    // Sync with server truth
-    if (onVoteChange) onVoteChange(res.data.vote);
+    // Sync with server's authoritative count
+    const serverUpvotes = res.data.upvotes ?? newUpvotes;
+    const serverVote    = res.data.vote;     // 'upvote' | null
+
+    setLiked(serverVote === 'upvote');
+    setUpvotes(serverUpvotes);
+    if (onCountsChange) onCountsChange({ upvotes: serverUpvotes });
+    if (onVoteChange)   onVoteChange(serverVote);
 } catch (err) {
     // Rollback
-    setUserVote(prevVote);
+    setLiked(prevLiked);
     setUpvotes(prevUpvotes);
-    setDownvotes(prevDownvotes);
-    if (onCountsChange) onCountsChange({ upvotes: prevUpvotes, downvotes: prevDownvotes });
-    toast.error(err.response?.data?.error?.message || 'Failed to vote — please try again');
+    if (onCountsChange) onCountsChange({ upvotes: prevUpvotes });
+    if (onVoteChange)   onVoteChange(prevLiked ? 'upvote' : null);
+    toast.error(err.response?.data?.error?.message || 'Failed to like — try again');
 } finally {
-    setIsLoading(false);
+    setLoading(false);
 }
 };
 
-const score = upvotes - downvotes;
-const blocked = cannotVote;
 const blockedReason = getBlockedReason();
 
 return (
-<div
-    className="sp-vote-widget"
-    title={blocked ? blockedReason : undefined}
+<button
+    className={`sp-like-btn ${liked ? 'liked' : ''} ${blocked ? 'blocked' : ''} ${loading ? 'loading' : ''}`}
+    onClick={handleClick}
+    disabled={loading}
+    aria-label={liked ? 'Unlike' : 'Like'}
+    title={blocked ? blockedReason : liked ? 'Remove like' : 'Like this submission'}
 >
-    {/* Upvote */}
-    <button
-    className={`sp-vote-up ${userVote === 'upvote' ? 'active' : ''} ${blocked ? 'blocked' : ''}`}
-    onClick={() => handleVote('upvote')}
-    disabled={isLoading}
-    aria-label="Upvote"
-    title={blocked ? blockedReason : userVote === 'upvote' ? 'Remove upvote' : 'Upvote'}
+    {/* Heart icon — filled when liked */}
+    <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill={liked ? 'currentColor' : 'none'}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="sp-heart-icon"
     >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 4l8 8H4z"/>
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
     </svg>
-    <span className="sp-vote-count">{upvotes}</span>
-    </button>
 
-    {/* Score */}
-    <div className={`sp-vote-score ${score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral'}`}>
-    {score > 0 ? `+${score}` : score}
-    </div>
+    <span className="sp-like-count">{upvotes > 0 ? upvotes : ''}</span>
 
-    {/* Downvote */}
-    <button
-    className={`sp-vote-down ${userVote === 'downvote' ? 'active' : ''} ${blocked ? 'blocked' : ''}`}
-    onClick={() => handleVote('downvote')}
-    disabled={isLoading}
-    aria-label="Downvote"
-    title={blocked ? blockedReason : userVote === 'downvote' ? 'Remove downvote' : 'Downvote'}
-    >
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 20l-8-8h16z"/>
-    </svg>
-    <span className="sp-vote-count">{downvotes}</span>
-    </button>
-
-    {/* Loading spinner overlay */}
-    {isLoading && <div className="sp-vote-loading"/>}
-</div>
+    {/* Tiny loading ring */}
+    {loading && <span className="sp-like-spinner"/>}
+</button>
 );
 };
 

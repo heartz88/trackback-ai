@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useConfirm, useToast } from '../components/common/Toast';
+import SubmissionCard from '../components/submissions/SubmissionCard';
 import SubmissionForm from '../components/submissions/SubmissionForm';
-import SubmissionList from '../components/submissions/SubmissionList';
+import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -12,33 +13,41 @@ const { user } = useAuth();
 const navigate = useNavigate();
 const toast = useToast();
 const confirm = useConfirm();
-const [track, setTrack] = useState(null);
-const [owner, setOwner] = useState(null);
-const [collaboration, setCollaboration] = useState(null);
+
+const [track, setTrack]                   = useState(null);
+const [owner, setOwner]                   = useState(null);
+const [collaboration, setCollaboration]   = useState(null);
+const [submissions, setSubmissions]       = useState([]);
 const [showSubmitForm, setShowSubmitForm] = useState(false);
-const [isLoading, setIsLoading] = useState(true);
-const [error, setError] = useState('');
-const [refreshKey, setRefreshKey] = useState(0);
-const [votingStats, setVotingStats] = useState({ totalVotes: 0, activeSubmissions: 0, featured: 0 });
-const [submissionsCount, setSubmissionsCount] = useState(0);
+const [isLoading, setIsLoading]           = useState(true);
+const [submissionsLoading, setSubmissionsLoading] = useState(true);
+const [error, setError]                   = useState('');
+const [refreshKey, setRefreshKey]         = useState(0);
+const [isPlaying, setIsPlaying]           = useState(false);
 
-useEffect(() => {
-fetchTrack();
-fetchCollaboration();
-fetchVotingStats();
-fetchSubmissionsCount();
-}, [trackId]);
+// Derived stats — upvote-only model
+const totalVotes    = submissions.reduce((acc, s) => acc + (parseInt(s.upvotes) || 0), 0);
+const topSubmission = submissions.length > 0
+? submissions.reduce((best, s) => (parseInt(s.upvotes) || 0) > (parseInt(best.upvotes) || 0) ? s : best)
+: null;
+const topScore = topSubmission ? parseInt(topSubmission.upvotes) || 0 : 0;
+// My submissions so we show "submit another version" instead of blocking
+const mySubmissions = user ? submissions.filter(s => s.collaborator_id === user.id) : [];
 
-const fetchTrack = async () => {
+useEffect(() => { fetchTrackDetails(); fetchCollaboration(); }, [trackId]);
+useEffect(() => { fetchSubmissions(); }, [trackId, refreshKey, user]);
+
+const fetchTrackDetails = async () => {
+setIsLoading(true);
+setError('');
 try {
-    const response = await api.get(`/tracks/${trackId}`);
-    setTrack(response.data.track);
-    // Fetch owner info
+    const res = await api.get(`/tracks/${trackId}`);
+    setTrack(res.data.track);
     try {
-    const ownerRes = await api.get(`/users/${response.data.track.user_id}`);
+    const ownerRes = await api.get(`/users/${res.data.track.user_id}`);
     setOwner(ownerRes.data.user);
     } catch {}
-} catch (error) {
+} catch {
     setError('Failed to load track');
 } finally {
     setIsLoading(false);
@@ -48,32 +57,36 @@ try {
 const fetchCollaboration = async () => {
 if (!user) return;
 try {
-    const response = await api.get(`/collaborations/track/${trackId}`);
-    if (response.data.collaboration) setCollaboration(response.data.collaboration);
+    const res = await api.get(`/collaborations/track/${trackId}`);
+    if (res.data.collaboration) setCollaboration(res.data.collaboration);
 } catch {}
 };
 
-const fetchVotingStats = async () => {
+const fetchSubmissions = async () => {
+if (!user) { setSubmissionsLoading(false); return; }
+setSubmissionsLoading(true);
 try {
-    const response = await api.get(`/submissions/track/${trackId}/stats`);
-    setVotingStats(response.data.stats || { totalVotes: 0, activeSubmissions: 0, featured: 0 });
-} catch {}
-};
-
-const fetchSubmissionsCount = async () => {
-try {
-    const response = await api.get(`/submissions/track/${trackId}`);
-    setSubmissionsCount(response.data.submissions?.length || 0);
+    // /collaborations/:trackId/submissions returns track_owner_id on each row,
+    // which VoteButton needs to correctly block owner voting client-side
+    const res = await api.get(`/collaborations/${trackId}/submissions`);
+    setSubmissions(res.data.submissions || []);
 } catch {
-    setSubmissionsCount(0);
+    // Fallback for non-collaborators who can still see a public list
+    try {
+    const res = await api.get(`/submissions/track/${trackId}`);
+    setSubmissions(res.data.submissions || []);
+    } catch {
+    setSubmissions([]);
+    }
+} finally {
+    setSubmissionsLoading(false);
 }
 };
 
 const handleSubmissionSuccess = () => {
 setShowSubmitForm(false);
-setRefreshKey((prev) => prev + 1);
-fetchVotingStats();
-fetchSubmissionsCount();
+setRefreshKey(k => k + 1);
+toast.success('Submission uploaded! 🎵');
 };
 
 const handleCompleteTrack = async () => {
@@ -92,195 +105,239 @@ try {
 }
 };
 
-const canSubmit = collaboration && collaboration.status === 'approved';
-const isOwner = user && track && user.id === track.user_id;
+const handlePlay  = useCallback(() => setIsPlaying(true),  []);
+const handlePause = useCallback(() => setIsPlaying(false), []);
 
-if (isLoading) {
+const isOwner   = user && track && user.id === track.user_id;
+const canSubmit = collaboration?.status === 'approved';
+
+const energyClass = e =>
+e === 'high'   ? 'tdp-tag tdp-tag-energy-high' :
+e === 'medium' ? 'tdp-tag tdp-tag-energy-med'  :
+                    'tdp-tag tdp-tag-energy-low';
+
+/* ── Loading ── */
+if (isLoading) return (
+<div className="page-loading">
+    <div className="music-loader">
+    {[...Array(5)].map((_,i) => <div key={i} className="music-loader-bar"/>)}
+    </div>
+    <p style={{ color:'var(--text-tertiary)', marginTop:16 }} className="animate-pulse">Loading submissions…</p>
+</div>
+);
+
+/* ── Error ── */
+if (error || !track) return (
+<div className="page-error animate-fade-in">
+    <h2>Track Not Found</h2>
+    <p>{error || 'This track does not exist'}</p>
+    <Link to="/discover" className="btn-primary">Browse Tracks</Link>
+</div>
+);
+
 return (
-    <div className="submissions-page">
-    <div className="page-loading">
-        <div className="music-loader">
-        {[...Array(5)].map((_, i) => <div key={i} className="music-loader-bar"></div>)}
+<div className="sp-page animate-fade-in">
+
+    {/* Breadcrumb — matches TrackDetailPage */}
+    <nav className="breadcrumb animate-slide-up">
+    <Link to="/discover">Discover</Link>
+    <span className="breadcrumb-sep">›</span>
+    <Link to={`/tracks/${trackId}`}>{track.title}</Link>
+    <span className="breadcrumb-sep">›</span>
+    <span className="breadcrumb-current">Submissions</span>
+    </nav>
+
+    {/* Full-width player block — identical to TDP */}
+    <div className="tdp-player-block animate-slide-up stagger-1">
+    <WaveformPlayer
+        audioUrl={track.audio_url}
+        height={80}
+        onPlay={handlePlay}
+        onPause={handlePause}
+    />
+    </div>
+
+    {/* Two-column grid — mirrors TrackDetailPage */}
+    <div className="tdp-grid">
+
+    {/* ── LEFT: Track info panel ── */}
+    <div className="tdp-info animate-slide-up stagger-2">
+
+        {/* Title row */}
+        <div className="tdp-title-row">
+        <h1 className="tdp-title">{track.title}</h1>
+        {isPlaying && (
+            <div className="eq-indicator" aria-label="Now playing">
+            <span/><span/><span/><span/><span/>
+            </div>
+        )}
         </div>
-        <p className="mt-4 text-secondary animate-pulse">Loading submissions...</p>
-    </div>
-    </div>
-);
-}
 
-if (error || !track) {
-return (
-    <div className="submissions-page">
-    <div className="page-error animate-fade-in">
-        <h2>Track Not Found</h2>
-        <p>{error || 'This track does not exist'}</p>
-        <Link to="/discover" className="btn-primary">Browse Tracks</Link>
-    </div>
-    </div>
-);
-}
-
-return (
-<div className="submissions-page animate-fade-in">
-    {/* Header */}
-    <div className="page-header">
-    {/* Breadcrumb nav */}
-    <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)] mb-4">
-        <Link to="/discover" className="hover:text-primary-400 transition-colors">Discover</Link>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        <Link to={`/tracks/${trackId}`} className="hover:text-primary-400 transition-colors truncate max-w-[140px]">
-        {track.title}
+        {/* Owner */}
+        <div className="tdp-owner-row">
+        <Link to={`/profile/${owner?.id}`} style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
+            <div className="tdp-owner-avatar">{owner?.username?.charAt(0).toUpperCase()}</div>
+            <div>
+            <div className="tdp-owner-name">@{owner?.username}</div>
+            <div className="tdp-owner-date">{new Date(track.created_at).toLocaleDateString()}</div>
+            </div>
         </Link>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-        <span>Submissions</span>
+        {user && !isOwner && (
+            <Link to={`/messages/new?userId=${owner?.id}`} className="tdp-message-btn">
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            Message
+            </Link>
+        )}
+        </div>
+
+        {/* Live stats from submissions */}
+        <div className="tdp-stats">
+        {[
+            { l: 'Submissions', v: submissions.length },
+            { l: 'Total Votes',  v: totalVotes },
+            { l: 'Top Score',    v: topSubmission ? `+${topScore}` : '—' },
+        ].map(s => (
+            <div key={s.l} className="tdp-stat">
+            <span className="tdp-stat-value">{s.v}</span>
+            <span className="tdp-stat-label">{s.l}</span>
+            </div>
+        ))}
+        </div>
+
+        {/* MIR tags */}
+        <div className="tdp-tags">
+        {track.bpm          && <span className="tdp-tag tdp-tag-bpm">🎵 {Math.round(track.bpm)} BPM</span>}
+        {track.musical_key  && <span className="tdp-tag tdp-tag-key">🎹 {track.musical_key}</span>}
+        {track.energy_level && <span className={energyClass(track.energy_level)}>⚡ {track.energy_level}</span>}
+        {track.genre        && <span className="tdp-tag tdp-tag-genre">🎸 {track.genre}</span>}
+        </div>
+
+        {track.description && (<>
+        <hr className="tdp-divider"/>
+        <div className="section-label">About</div>
+        <p className="tdp-description">{track.description}</p>
+        </>)}
+
+        {track.desired_skills?.length > 0 && (<>
+        <hr className="tdp-divider"/>
+        <div className="section-label">🎯 Looking For</div>
+        <div className="tdp-skills">
+            {track.desired_skills.map((s,i) => <span key={i} className="tdp-skill">{s}</span>)}
+        </div>
+        </>)}
     </div>
 
-    <Link to={`/tracks/${trackId}`} className="back-link">
-        <svg className="back-icon" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-        </svg>
-        Back to Track
-    </Link>
+    {/* ── RIGHT: Actions panel ── */}
+    <div className="tdp-actions-panel animate-slide-up stagger-3">
 
-    <div className="header-content">
-        <div>
-        <h1 className="animate-slide-up">Submissions</h1>
-        <div className="flex items-center gap-3 flex-wrap mt-1">
-            <p className="track-title animate-slide-up stagger-1">for "{track.title}"</p>
-            {owner && (
-            <span className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
-                by{' '}
-                <Link to={`/profile/${owner.id}`} className="text-primary-400 hover:text-primary-300 font-medium">
-                @{owner.username}
-                </Link>
-                {user && !isOwner && (
-                <Link
-                    to={`/messages/new?userId=${owner.id}`}
-                    className="ml-1 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-tertiary)] hover:text-primary-400 rounded text-xs transition-all border border-[var(--border-color)]"
-                >
-                    Message
-                </Link>
-                )}
-            </span>
+        {/* Live leaderboard card */}
+        {submissions.length > 0 && (
+        <div className="tdp-action-card sp-leaderboard-card">
+            <div className="section-label">🏆 Leaderboard</div>
+            <div className="sp-leaderboard">
+            {[...submissions]
+                .sort((a,b) => (parseInt(b.upvotes)||0) - (parseInt(a.upvotes)||0))
+                .slice(0, 3)
+                .map((s, i) => {
+                const score = parseInt(s.upvotes) || 0;
+                const medals = ['🥇','🥈','🥉'];
+                return (
+                    <div key={s.id} className="sp-leaderboard-row">
+                    <span className="sp-medal">{medals[i]}</span>
+                    <span className="sp-lb-name">{s.collaborator_name}</span>
+                    <span style={{ fontSize:13, fontWeight:700, color:'var(--accent-primary)', display:'flex', alignItems:'center', gap:3 }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        {score}
+                    </span>
+                    </div>
+                );
+                })}
+            </div>
+        </div>
+        )}
+
+        {/* Submit action card */}
+        <div className="tdp-action-card">
+        <div className="section-label">Your Submission</div>
+
+        {!user && (
+            <Link to="/login" className="btn-primary" style={{ textAlign:'center' }}>
+            Login to Submit
+            </Link>
+        )}
+
+        {user && !isOwner && !canSubmit && (
+            <>
+            <p style={{ fontSize:13, color:'var(--text-secondary)', margin:0, lineHeight:1.6 }}>
+                You need an <strong style={{ color:'var(--text-primary)' }}>approved collaboration</strong> to submit a version.
+            </p>
+            <Link to={`/tracks/${trackId}`} className="btn-secondary" style={{ textAlign:'center' }}>
+                Request Collaboration →
+            </Link>
+            </>
+        )}
+
+        {canSubmit && !showSubmitForm && (
+            <>
+            {mySubmissions.length > 0 && (
+                <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:8, lineHeight:1.5 }}>
+                You have <strong style={{ color:'var(--accent-primary)' }}>{mySubmissions.length}</strong> version{mySubmissions.length > 1 ? 's' : ''} submitted.
+                Upload a new version to improve your entry.
+                </div>
             )}
+            <button onClick={() => setShowSubmitForm(true)} className="btn-primary" style={{ width:'100%' }}>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd"/>
+                </svg>
+                {mySubmissions.length > 0 ? `Submit v${mySubmissions.length + 1}` : 'Submit Your Version'}
+            </button>
+            </>
+        )}
+
+        {canSubmit && showSubmitForm && (
+            <button onClick={() => setShowSubmitForm(false)} className="btn-secondary" style={{ width:'100%' }}>
+            ✕ Cancel
+            </button>
+        )}
+
+        {isOwner && (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <Link to={`/tracks/${trackId}`} className="btn-secondary" style={{ textAlign:'center' }}>
+                ← Back to Track
+            </Link>
+            {submissions.length > 0 && (
+                <button onClick={handleCompleteTrack} className="btn-primary" style={{ width:'100%' }}>
+                ✅ Mark as Completed
+                </button>
+            )}
+            </div>
+        )}
         </div>
+
+        {/* Guidelines — only shown to eligible submitters */}
+        {canSubmit && !showSubmitForm && (
+        <div className="tdp-action-card sp-guidelines">
+            <div className="section-label">📋 Guidelines</div>
+            <ul className="sp-guidelines-list">
+            <li>✅ Submit only your own work</li>
+            <li>✅ Describe what you changed</li>
+            <li>✅ Max file size: 50 MB</li>
+            <li>✅ MP3, WAV or FLAC only</li>
+            <li>⭐ Top voted gets featured</li>
+            </ul>
         </div>
-
-        <div className="track-info animate-slide-up stagger-2">
-        <span className="info-item">
-            <span className="info-label">BPM</span>
-            <span className="info-value">{track.bpm ? Math.round(track.bpm) : '—'}</span>
-        </span>
-        <span className="info-item">
-            <span className="info-label">Key</span>
-            <span className="info-value">{track.musical_key || '—'}</span>
-        </span>
-        <span className="info-item">
-            <span className="info-label">Energy</span>
-            <span className="info-value">{track.energy_level || '—'}</span>
-        </span>
-        <span className="info-item">
-            <span className="info-label">Genre</span>
-            <span className="info-value">{track.genre || '—'}</span>
-        </span>
-        </div>
+        )}
     </div>
     </div>
 
-    {/* Voting Summary */}
-    <div className="voting-summary glass animate-slide-up stagger-3">
-    <h3>🏆 Community Voting</h3>
-    <div className="summary-stats">
-        <div className="summary-item">
-        <span className="summary-label">Total Votes</span>
-        <span className="summary-value">{votingStats.totalVotes}</span>
-        </div>
-        <div className="summary-item">
-        <span className="summary-label">Active Submissions</span>
-        <span className="summary-value">{votingStats.activeSubmissions}</span>
-        </div>
-        <div className="summary-item">
-        <span className="summary-label">Featured</span>
-        <span className="summary-value">{votingStats.featured}</span>
-        </div>
-    </div>
-    </div>
-
-    {/* Owner: Complete Track */}
-    {isOwner && submissionsCount > 0 && (
-    <div className="flex justify-between items-center mb-6 gap-3 flex-wrap">
-        <p className="text-sm text-[var(--text-secondary)]">
-        You have {submissionsCount} submission{submissionsCount !== 1 ? 's' : ''}. Ready to select a winner?
-        </p>
-        <button
-        onClick={handleCompleteTrack}
-        className="px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all"
-        >
-        ✅ Mark Track as Completed
-        </button>
-    </div>
-    )}
-
-    {/* Not a collaborator — explain */}
-    {!canSubmit && !isOwner && user && (
-    <div className="glass-panel p-5 rounded-2xl border border-[var(--border-color)] mb-6 animate-slide-up stagger-4">
-        <p className="text-[var(--text-secondary)] text-sm">
-        You need an <strong className="text-[var(--text-primary)]">approved collaboration</strong> to submit a version.{' '}
-        <Link to={`/tracks/${trackId}`} className="text-primary-400 hover:text-primary-300 font-medium">
-            Request to collaborate on this track →
-        </Link>
-        </p>
-    </div>
-    )}
-
-    {/* Not logged in */}
-    {!user && (
-    <div className="glass-panel p-5 rounded-2xl border border-[var(--border-color)] mb-6 text-center animate-slide-up stagger-4">
-        <p className="text-[var(--text-secondary)] mb-3">Sign in to submit your version and vote on submissions</p>
-        <div className="flex gap-3 justify-center">
-        <Link to="/login" className="px-5 py-2 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all text-sm">
-            Sign In
-        </Link>
-        <Link to="/register" className="px-5 py-2 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl transition-all text-sm border border-[var(--border-color)]">
-            Register
-        </Link>
-        </div>
-    </div>
-    )}
-
-    {/* Guidelines */}
-    {canSubmit && !showSubmitForm && (
-    <div className="guidelines-card animate-slide-up stagger-4">
-        <h3>📋 Submission Guidelines</h3>
-        <ul className="guidelines-list">
-        <li>✅ Submit only your own work</li>
-        <li>✅ Include a clear description of what you added</li>
-        <li>✅ Max file size: 50MB</li>
-        <li>✅ Supported formats: MP3, WAV, FLAC</li>
-        <li>⭐ Top voted submissions get featured</li>
-        </ul>
-    </div>
-    )}
-
-    {/* Submit Button */}
-    {canSubmit && !showSubmitForm && (
-    <div className="submit-section animate-slide-up stagger-5">
-        <button onClick={() => setShowSubmitForm(true)} className="btn-submit">
-        <svg className="btn-icon" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-        </svg>
-        Submit Your Version
-        </button>
-    </div>
-    )}
-
-    {/* Submission Form */}
+    {/* Inline submission form */}
     {showSubmitForm && (
-    <div className="form-container animate-slide-up">
+    <div className="tdp-submissions animate-slide-down" style={{ marginBottom:20 }}>
+        <div className="tdp-section-head">
+        <h2 className="tdp-section-title">➕ New Submission</h2>
+        </div>
         <SubmissionForm
         trackId={trackId}
         collaborationId={collaboration?.id}
@@ -290,9 +347,61 @@ return (
     </div>
     )}
 
-    {/* Submissions List */}
-    <div className="submissions-container animate-slide-up stagger-6">
-    <SubmissionList trackId={trackId} collaborationId={collaboration?.id} key={refreshKey} />
+    {/* Submissions list */}
+    <div className="tdp-submissions animate-slide-up stagger-4">
+    <div className="tdp-section-head">
+        <h2 className="tdp-section-title">
+        🎵 All Submissions
+        {submissions.length > 0 && (
+            <span className="sp-count-badge">{submissions.length}</span>
+        )}
+        </h2>
+        {isOwner && submissions.length > 0 && (
+        <button
+            onClick={handleCompleteTrack}
+            className="btn-primary"
+            style={{ fontSize:13, padding:'7px 14px' }}
+        >
+            ✅ Pick Winner
+        </button>
+        )}
+    </div>
+
+    {submissionsLoading ? (
+        <div style={{ textAlign:'center', padding:'40px 0' }}>
+        <div className="music-loader" style={{ justifyContent:'center' }}>
+            {[...Array(5)].map((_,i) => <div key={i} className="music-loader-bar"/>)}
+        </div>
+        </div>
+    ) : submissions.length === 0 ? (
+        <div className="sp-empty">
+        <span className="sp-empty-icon">🎵</span>
+        <p className="sp-empty-title">No submissions yet</p>
+        <p className="sp-empty-sub">
+            {canSubmit
+            ? 'Be the first to drop your version!'
+            : 'Approved collaborators can submit their versions here.'}
+        </p>
+        {canSubmit && (
+            <button onClick={() => setShowSubmitForm(true)} className="btn-primary" style={{ marginTop:16 }}>
+            Submit Your Version
+            </button>
+        )}
+        </div>
+    ) : (
+        <div className="sp-submissions-list">
+        {[...submissions]
+            .sort((a,b) => (parseInt(b.upvotes)||0) - (parseInt(a.upvotes)||0))
+            .map((submission, idx) => (
+            <SubmissionCard
+                key={submission.id}
+                submission={submission}
+                isWinner={track.completed_submission_id === submission.id}
+                rank={idx + 1}
+            />
+            ))}
+        </div>
+    )}
     </div>
 </div>
 );

@@ -5070,6 +5070,107 @@ color: var(--accent-primary);
 }
 
 /* ═══════════════════════════════════════════════════════════
+LIKE BUTTON — replaces old upvote/downvote widget
+═══════════════════════════════════════════════════════════ */
+
+.sp-like-btn {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+padding: 8px 14px;
+border-radius: var(--radius-lg);
+background: rgba(255,255,255,0.04);
+border: 1px solid var(--surface-border);
+color: var(--text-tertiary);
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.18s ease;
+position: relative;
+user-select: none;
+white-space: nowrap;
+}
+
+.sp-like-btn:hover:not(.blocked):not(:disabled) {
+background: rgba(244, 63, 94, 0.08);
+border-color: rgba(244, 63, 94, 0.35);
+color: #f43f5e;
+transform: translateY(-1px);
+}
+
+/* Liked state — filled heart, pink tint */
+.sp-like-btn.liked {
+background: rgba(244, 63, 94, 0.1);
+border-color: rgba(244, 63, 94, 0.4);
+color: #f43f5e;
+}
+
+.sp-like-btn.liked:hover:not(:disabled) {
+background: rgba(244, 63, 94, 0.18);
+}
+
+/* Blocked state (owner / self) */
+.sp-like-btn.blocked {
+opacity: 0.45;
+cursor: not-allowed;
+}
+
+/* Loading state */
+.sp-like-btn.loading {
+pointer-events: none;
+}
+
+.sp-heart-icon {
+flex-shrink: 0;
+transition: transform 0.15s ease;
+}
+
+.sp-like-btn.liked .sp-heart-icon {
+transform: scale(1.15);
+}
+
+.sp-like-count {
+font-variant-numeric: tabular-nums;
+min-width: 14px;
+text-align: left;
+}
+
+/* Tiny spinner for loading state */
+.sp-like-spinner {
+position: absolute;
+inset: 0;
+border-radius: inherit;
+background: rgba(0,0,0,0.15);
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.sp-like-spinner::after {
+content: '';
+width: 12px;
+height: 12px;
+border: 2px solid rgba(244,63,94,0.3);
+border-top-color: #f43f5e;
+border-radius: 50%;
+animation: spin 0.6s linear infinite;
+}
+
+/* Heart pop animation on like */
+@keyframes heart-pop {
+0%   { transform: scale(1); }
+40%  { transform: scale(1.35); }
+100% { transform: scale(1.15); }
+}
+
+.sp-like-btn.liked .sp-heart-icon {
+animation: heart-pop 0.25s ease forwards;
+}
+
+/* Stats bar — update label from "Total Votes" */
+.sp-stats-upvote-label::before { content: '❤️ '; }
+
+/* ═══════════════════════════════════════════════════════════
 GLOBAL BTN UPGRADES
 ═══════════════════════════════════════════════════════════ */
 
