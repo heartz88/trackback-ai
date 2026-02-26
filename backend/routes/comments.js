@@ -4,7 +4,9 @@ const db = require('../config/database');
 
 const router = express.Router();
 
-
+// ─────────────────────────────────────────────────────────────────
+// POST / — Add a comment (or reply) to a submission
+// ─────────────────────────────────────────────────────────────────
 router.post('/', authMiddleware, async (req, res) => {
 try {
 const { submission_id, content, parent_id } = req.body;
@@ -80,6 +82,10 @@ res.status(500).json({ error: { message: 'Failed to add comment' } });
 }
 });
 
+// ─────────────────────────────────────────────────────────────────
+// GET /submission/:submissionId — Fetch nested comments tree
+// Also returns whether the requesting user has liked each comment
+// ─────────────────────────────────────────────────────────────────
 router.get('/submission/:submissionId', async (req, res) => {
 try {
 const { submissionId } = req.params;
@@ -137,7 +143,9 @@ res.status(500).json({ error: { message: 'Failed to fetch comments' } });
 }
 });
 
-
+// ─────────────────────────────────────────────────────────────────
+// PUT /:commentId — Edit a comment (owner only)
+// ─────────────────────────────────────────────────────────────────
 router.put('/:commentId', authMiddleware, async (req, res) => {
 try {
 const { commentId } = req.params;
@@ -168,7 +176,9 @@ res.status(500).json({ error: { message: 'Failed to update comment' } });
 }
 });
 
-
+// ─────────────────────────────────────────────────────────────────
+// DELETE /:commentId — Delete a comment (owner only, cascades replies)
+// ─────────────────────────────────────────────────────────────────
 router.delete('/:commentId', authMiddleware, async (req, res) => {
 try {
 const { commentId } = req.params;
@@ -190,6 +200,11 @@ res.status(500).json({ error: { message: 'Failed to delete comment' } });
 }
 });
 
+// ─────────────────────────────────────────────────────────────────
+// POST /:commentId/like — Toggle like on a comment
+// Uses comment_likes table: one row per (comment, user)
+// Hitting it twice = unlike
+// ─────────────────────────────────────────────────────────────────
 router.post('/:commentId/like', authMiddleware, async (req, res) => {
 try {
 const { commentId } = req.params;

@@ -79,7 +79,7 @@ await db.query(
     ]
 );
 
-
+// AUTO-CREATE MESSAGING CONVERSATION WHEN COLLABORATION IS REQUESTED
 try {
     // Check if conversation already exists between these users
     const convCheck = await db.query(
@@ -590,70 +590,6 @@ res.json({
 } catch (error) {
 console.error('Complete track error:', error);
 res.status(500).json({ error: { message: 'Failed to complete track' } });
-}
-});
-
-
-// Returns the current user's collaboration request for a specific track (if any)
-router.get('/track/:trackId', authMiddleware, async (req, res) => {
-try {
-const { trackId } = req.params;
-const userId = req.user.id;
-
-const result = await db.query(
-    `SELECT cr.*
-    FROM collaboration_requests cr
-    WHERE cr.track_id = $1 AND cr.collaborator_id = $2
-    ORDER BY cr.created_at DESC
-    LIMIT 1`,
-    [trackId, userId]
-);
-
-// Return null (not 404) when none exists — frontend checks for null
-res.json({ collaboration: result.rows[0] || null });
-} catch (error) {
-console.error('Get track collaboration error:', error);
-res.status(500).json({ error: { message: 'Failed to fetch collaboration' } });
-}
-});
-
-// GET /collaborations/track/:trackId/active
-// Returns all approved collaborators for a track (public)
-router.get('/track/:trackId/active', async (req, res) => {
-try {
-const { trackId } = req.params;
-
-const result = await db.query(
-    `SELECT u.id, u.username, u.profile_picture, cr.created_at, cr.message,
-            COALESCE(ac.role, 'Collaborator') AS role
-    FROM collaboration_requests cr
-    JOIN users u ON cr.collaborator_id = u.id
-    LEFT JOIN active_collaborations ac
-        ON ac.track_id = cr.track_id AND ac.collaborator_id = cr.collaborator_id
-    WHERE cr.track_id = $1 AND cr.status = 'approved'
-    ORDER BY cr.updated_at DESC`,
-    [trackId]
-);
-
-res.json({ collaborators: result.rows });
-} catch (error) {
-console.error('Get active collaborators error:', error);
-// active_collaborations table may not exist — fallback without join
-if (error.code === '42P01') {
-    try {
-    const fallback = await db.query(
-        `SELECT u.id, u.username, u.profile_picture, cr.created_at, cr.message,
-                'Collaborator' AS role
-        FROM collaboration_requests cr
-        JOIN users u ON cr.collaborator_id = u.id
-        WHERE cr.track_id = $1 AND cr.status = 'approved'
-        ORDER BY cr.updated_at DESC`,
-        [trackId]
-    );
-    return res.json({ collaborators: fallback.rows });
-    } catch { return res.json({ collaborators: [] }); }
-}
-res.status(500).json({ error: { message: 'Failed to fetch collaborators' } });
 }
 });
 
