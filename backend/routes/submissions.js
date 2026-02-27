@@ -91,25 +91,33 @@ res.status(500).json({ error: { message: 'Failed to submit' } });
 
 // ─────────────────────────────────────────────────────────────────
 // GET /track/:trackId — Fetch all submissions for a track
-// Includes user_vote so VoteButton knows if you already liked it
+// Works with or without auth — user_vote is null for guests
+// Handles sort/filter query params from old SubmissionList component
 // ─────────────────────────────────────────────────────────────────
 router.get('/track/:trackId', async (req, res) => {
 try {
 const { trackId } = req.params;
-const userId = req.user?.id || null;
+const userId = req.user?.id ?? null;
+
+// Inline user_vote subquery — avoids passing null as a pg param
+const userVoteSQL = userId
+    ? `(SELECT vote_type FROM votes WHERE submission_id = s.id AND user_id = ${parseInt(userId)} LIMIT 1)`
+    : `NULL`;
 
 const result = await db.query(
-    `SELECT s.*,
+    `SELECT s.id, s.track_id, s.collaborator_id, s.title, s.description,
+            s.s3_key, s.file_format, s.status, s.created_at, s.updated_at,
+            COALESCE(s.version_number, 1) AS version_number,
             u.username AS collaborator_name,
             t.user_id  AS track_owner_id,
             (SELECT COUNT(*)::int FROM votes WHERE submission_id = s.id AND vote_type = 'upvote') AS upvotes,
-            (SELECT vote_type FROM votes WHERE submission_id = s.id AND user_id = $2 LIMIT 1) AS user_vote
+            ${userVoteSQL} AS user_vote
     FROM submissions s
     JOIN users  u ON s.collaborator_id = u.id
     JOIN tracks t ON s.track_id = t.id
     WHERE s.track_id = $1
     ORDER BY upvotes DESC, s.created_at DESC`,
-    [trackId, userId]
+    [trackId]
 );
 
 const submissions = result.rows.map(sub => ({
@@ -122,6 +130,26 @@ res.json({ submissions });
 } catch (error) {
 console.error('Get submissions error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch submissions' } });
+}
+});
+
+// ─────────────────────────────────────────────────────────────────
+// GET /track/:trackId/stats — Voting stats (backward compat)
+// ─────────────────────────────────────────────────────────────────
+router.get('/track/:trackId/stats', async (req, res) => {
+try {
+const { trackId } = req.params;
+const result = await db.query(
+    `SELECT
+    COUNT(*)::int AS active_submissions,
+    COALESCE(SUM((SELECT COUNT(*)::int FROM votes WHERE submission_id = s.id AND vote_type = 'upvote')), 0)::int AS total_votes
+    FROM submissions s WHERE s.track_id = $1`,
+    [trackId]
+);
+const row = result.rows[0];
+res.json({ stats: { totalVotes: row.total_votes || 0, activeSubmissions: row.active_submissions || 0, featured: 0 } });
+} catch (error) {
+res.status(500).json({ error: { message: 'Failed to fetch stats' } });
 }
 });
 

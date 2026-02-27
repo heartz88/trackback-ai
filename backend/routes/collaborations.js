@@ -130,6 +130,51 @@ res.status(500).json({ error: { message: 'Failed to send request' } });
 }
 });
 
+// Get current user's collaboration status for a specific track
+// Used by SubmissionsPage and TrackDetailPage
+router.get('/track/:trackId', authMiddleware, async (req, res) => {
+try {
+const { trackId } = req.params;
+const userId = req.user.id;
+
+const result = await db.query(
+    `SELECT cr.*, t.title as track_title, t.user_id as owner_id
+    FROM collaboration_requests cr
+    JOIN tracks t ON cr.track_id = t.id
+    WHERE cr.track_id = $1 AND cr.collaborator_id = $2`,
+    [trackId, userId]
+);
+
+if (result.rows.length === 0) return res.json({ collaboration: null });
+res.json({ collaboration: result.rows[0] });
+} catch (error) {
+console.error('Get collaboration status error:', error);
+res.status(500).json({ error: { message: 'Failed to fetch collaboration status' } });
+}
+});
+
+// Get active collaborators for a track (used by TrackDetailPage + MyTracksPage)
+// Returns list of approved collaborators so the UI can show collaborator count/avatars
+router.get('/track/:trackId/active', async (req, res) => {
+try {
+const { trackId } = req.params;
+
+const result = await db.query(
+    `SELECT cr.*, u.username as collaborator_name, u.id as collaborator_id
+    FROM collaboration_requests cr
+    JOIN users u ON cr.collaborator_id = u.id
+    WHERE cr.track_id = $1 AND cr.status = 'approved'
+    ORDER BY cr.updated_at DESC`,
+    [trackId]
+);
+
+res.json({ collaborators: result.rows, count: result.rows.length });
+} catch (error) {
+console.error('Get active collaborators error:', error);
+res.status(500).json({ error: { message: 'Failed to fetch collaborators' } });
+}
+});
+
 // Get collaboration requests for user's tracks
 router.get('/requests/received', authMiddleware, async (req, res) => {
 try {
