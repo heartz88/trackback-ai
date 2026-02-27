@@ -2,18 +2,6 @@ import AudioMotionAnalyzer from 'audiomotion-analyzer';
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
-/**
- * WaveformPlayer
- * ──────────────
- * Top half  → audioMotion-analyzer rainbow spectrum (plays live while audio runs)
- * Bottom    → WaveSurfer teal waveform + seek bar + play/pause + volume
- *
- * Key fixes carried over:
- * • Callbacks stored in refs → WaveSurfer never recreated on parent re-render
- * • Volume set at creation AND in ready event → sound works on first press
- * • ResizeObserver → waveform always fills full width
- * • audioMotion connected to the same <audio> MediaElement WaveSurfer uses
- */
 const WaveformPlayer = ({ audioUrl, height = 100, onReady, onPlay, onPause }) => {
 const waveformRef   = useRef(null);   // WaveSurfer container div
 const spectrumRef   = useRef(null);   // audioMotion container div
