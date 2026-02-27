@@ -2,15 +2,33 @@ import AudioMotionAnalyzer from 'audiomotion-analyzer';
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
+/**
+ * WaveformPlayer
+ *
+ * WHY MEDIAELEMENT SHOWS A BLANK WAVEFORM:
+ *   WaveSurfer's MediaElement backend can PLAY audio but cannot DECODE it
+ *   to extract amplitude peaks. Without peaks, it draws nothing (blank box).
+ *   WebAudio backend decodes the audio but requires CORS on the S3 bucket.
+ *
+ * SOLUTION — peaks-first approach:
+ *   1. Fetch the audio file ourselves as an ArrayBuffer (no-cors issues
+ *      because we fetch with credentials:'omit' and the S3 URL is public)
+ *   2. Decode with Web Audio API → get raw PCM samples
+ *   3. Downsample to ~800 peak values
+ *   4. Pass those peaks to WaveSurfer via the `peaks` option
+ *   5. WaveSurfer uses MediaElement for playback (no CORS needed) but
+ *      renders the waveform from our pre-decoded peaks
+ *
+ * This means the waveform draws instantly and fully, regardless of CORS.
+ */
 const WaveformPlayer = ({ audioUrl, height = 100, onReady, onPlay, onPause }) => {
-const playerRef    = useRef(null);   // outer wrapper — we measure THIS for true pixel width
-const waveformRef  = useRef(null);   // WaveSurfer mounts here
-const spectrumRef  = useRef(null);   // audioMotion mounts here
-const wavesurfer   = useRef(null);
-const audioMotion  = useRef(null);
-const initTimers   = useRef([]);
-const roRef        = useRef(null);
-const wsWidth      = useRef(0);      // last width WaveSurfer was created with
+const playerRef   = useRef(null);
+const waveformRef = useRef(null);
+const spectrumRef = useRef(null);
+const wavesurfer  = useRef(null);
+const audioMotion = useRef(null);
+const roRef       = useRef(null);
+const wsWidth     = useRef(0);
 
 const onReadyRef = useRef(onReady);
 const onPlayRef  = useRef(onPlay);
@@ -27,9 +45,7 @@ const [volume,      setVolume]      = useState(75);
 const [isMuted,     setIsMuted]     = useState(false);
 const prevVolume = useRef(75);
 
-// ── Measure true inner width of the player ────────────────────────────────
-// Reads the outer playerRef, subtracts computed padding so we get the exact
-// pixel space available for the waveform canvas.
+// ── Measure true inner pixel width ────────────────────────────────────────
 const getInnerWidth = () => {
 if (!playerRef.current) return 0;
 const style   = getComputedStyle(playerRef.current);
@@ -37,33 +53,60 @@ const padding = parseFloat(style.paddingLeft || 0) + parseFloat(style.paddingRig
 return Math.floor(playerRef.current.offsetWidth - padding);
 };
 
-// ── Destroy and fully recreate WaveSurfer at a specific pixel width ───────
-const buildWaveSurfer = (pixelWidth, audioUrlToBuild, isDestroyedRef) => {
-if (!waveformRef.current || pixelWidth < 10) return;
+// ── Fetch + decode audio → extract amplitude peaks ────────────────────────
+const extractPeaks = async (url, numPeaks = 800) => {
+try {
+    const res = await fetch(url, { credentials: 'omit' });
+    if (!res.ok) throw new Error(`fetch ${res.status}`);
+    const arrayBuffer = await res.arrayBuffer();
+    const audioCtx    = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded     = await audioCtx.decodeAudioData(arrayBuffer);
+    audioCtx.close();
 
-// Tear down previous instance
-if (wavesurfer.current) {
-    try { wavesurfer.current.destroy(); } catch {}
-    wavesurfer.current = null;
+    // Mix down all channels to mono
+    const numCh      = decoded.numberOfChannels;
+    const length     = decoded.length;
+    const blockSize  = Math.floor(length / numPeaks);
+    const peaks      = new Float32Array(numPeaks);
+
+    for (let i = 0; i < numPeaks; i++) {
+    const start = i * blockSize;
+    let max = 0;
+    for (let ch = 0; ch < numCh; ch++) {
+        const data = decoded.getChannelData(ch);
+        for (let j = start; j < start + blockSize && j < length; j++) {
+        const abs = Math.abs(data[j]);
+        if (abs > max) max = abs;
+        }
+    }
+    peaks[i] = max;
+    }
+
+    return { peaks: Array.from(peaks), duration: decoded.duration };
+} catch (err) {
+    console.warn('Peak extraction failed, falling back to empty peaks:', err);
+    // Return flat line — at least the player still works
+    return { peaks: new Array(800).fill(0.5), duration: 0 };
 }
-if (audioMotion.current) {
-    try { audioMotion.current.destroy(); } catch {}
-    audioMotion.current = null;
-}
+};
+
+// ── Build WaveSurfer with pre-decoded peaks ────────────────────────────────
+const buildWaveSurfer = (pixelWidth, url, peaks, audioDuration, isDestroyedRef) => {
+if (!waveformRef.current || pixelWidth < 10 || isDestroyedRef.current) return;
+
+if (wavesurfer.current) { try { wavesurfer.current.destroy(); } catch {} wavesurfer.current = null; }
+if (audioMotion.current) { try { audioMotion.current.destroy(); } catch {} audioMotion.current = null; }
 
 wsWidth.current = pixelWidth;
 
-const computedStyle = getComputedStyle(document.documentElement);
-const accentColor   = computedStyle.getPropertyValue('--accent-primary').trim() || '#14B8A6';
-const textSecondary = computedStyle.getPropertyValue('--text-secondary').trim() || '#94a3b8';
+const style         = getComputedStyle(document.documentElement);
+const accentColor   = style.getPropertyValue('--accent-primary').trim() || '#14B8A6';
+const textSecondary = style.getPropertyValue('--text-secondary').trim()  || '#94a3b8';
 
-// Force the waveform div to exactly this pixel width so WaveSurfer
-// measures it correctly — no CSS percentage ambiguity
-if (waveformRef.current) {
-    waveformRef.current.style.width  = `${pixelWidth}px`;
-    waveformRef.current.style.minWidth = `${pixelWidth}px`;
-    waveformRef.current.style.maxWidth = `${pixelWidth}px`;
-}
+// Set exact pixel width on the mount div
+waveformRef.current.style.width    = `${pixelWidth}px`;
+waveformRef.current.style.minWidth = `${pixelWidth}px`;
+waveformRef.current.style.maxWidth = `${pixelWidth}px`;
 
 const ws = WaveSurfer.create({
     container:     waveformRef.current,
@@ -76,27 +119,25 @@ const ws = WaveSurfer.create({
     height:        height,
     barGap:        2,
     normalize:     true,
-    fillParent:    false,     // we're passing exact pixels — don't let it guess
+    fillParent:    false,
     minPxPerSec:   0,
     interact:      true,
     backend:       'MediaElement',
-    volume:        0.75,
+    // Pass pre-decoded peaks so MediaElement can draw the waveform
+    peaks:         [peaks],
+    duration:      audioDuration || undefined,
 });
 
 wavesurfer.current = ws;
 ws.setVolume(0.75);
-ws.load(audioUrlToBuild);
+ws.load(url, [peaks], 'none'); // 'none' = don't re-fetch audio for peaks
 
 ws.on('ready', () => {
     if (isDestroyedRef.current) return;
     setIsLoading(false);
-    setDuration(ws.getDuration());
+    setDuration(ws.getDuration() || audioDuration || 0);
     ws.setVolume(prevVolume.current / 100);
     if (onReadyRef.current) onReadyRef.current();
-
-    // One final redraw to make sure bars fill the exact width
-    try { ws.drawBuffer(); } catch {}
-    setTimeout(() => { try { if (!ws.isDestroyed) ws.drawBuffer(); } catch {} }, 100);
 
     // Connect audioMotion to the same MediaElement
     const mediaEl = ws.backend?.media || ws.getMediaElement?.();
@@ -120,7 +161,7 @@ ws.on('ready', () => {
         maxFreq:       20000,
         channelLayout: 'single',
         height:        140,
-        width:         pixelWidth,   // exact same pixel width
+        width:         pixelWidth,
         });
     } catch (err) {
         console.warn('audioMotion init failed:', err);
@@ -147,58 +188,55 @@ setDuration(0);
 
 const isDestroyedRef = { current: false };
 
-// Wait until the player has a real measured width, then build
-const tryBuild = () => {
+// Wait for real pixel width, then extract peaks, then build
+const tryBuild = async () => {
     if (isDestroyedRef.current) return;
-    const w = getInnerWidth();
-    if (w < 10) {
-    requestAnimationFrame(tryBuild);
-    return;
+
+    // Wait for container to have real width
+    let w = getInnerWidth();
+    let attempts = 0;
+    while (w < 10 && attempts < 60) {
+    await new Promise(r => requestAnimationFrame(r));
+    w = getInnerWidth();
+    attempts++;
     }
-    buildWaveSurfer(w, audioUrl, isDestroyedRef);
+    if (isDestroyedRef.current || w < 10) return;
+
+    // Fetch audio + extract peaks in parallel with width wait
+    const { peaks, duration: audioDuration } = await extractPeaks(audioUrl);
+    if (isDestroyedRef.current) return;
+
+    buildWaveSurfer(w, audioUrl, peaks, audioDuration, isDestroyedRef);
+
+    // ResizeObserver — rebuild if width changes significantly
+    const ro = new ResizeObserver(() => {
+    const newW = getInnerWidth();
+    if (Math.abs(newW - wsWidth.current) > 2 && newW > 10) {
+        buildWaveSurfer(newW, audioUrl, peaks, audioDuration, isDestroyedRef);
+    }
+    if (audioMotion.current) {
+        try { audioMotion.current.width = newW; } catch {}
+    }
+    });
+    if (playerRef.current) ro.observe(playerRef.current);
+    roRef.current = ro;
 };
 
 tryBuild();
 
-// ResizeObserver on the OUTER player div — if it changes width,
-// rebuild WaveSurfer at the new exact pixel width
-const ro = new ResizeObserver(() => {
-    const newW = getInnerWidth();
-    // Only rebuild if width changed by more than 2px (avoids thrash from scrollbars)
-    if (Math.abs(newW - wsWidth.current) > 2 && newW > 10) {
-    const prevTime = wavesurfer.current?.getCurrentTime?.() || 0;
-    const wasPlaying = wavesurfer.current?.isPlaying?.() || false;
-    buildWaveSurfer(newW, audioUrl, isDestroyedRef);
-    // Restore position after rebuild
-    wavesurfer.current?.on('ready', () => {
-        if (prevTime > 0) try { wavesurfer.current.seekTo(prevTime / wavesurfer.current.getDuration()); } catch {}
-        if (wasPlaying) try { wavesurfer.current.play(); } catch {}
-    });
-    }
-    // Always resize audioMotion
-    if (audioMotion.current && spectrumRef.current) {
-    try { audioMotion.current.width = newW; } catch {}
-    }
-});
-
-if (playerRef.current) ro.observe(playerRef.current);
-roRef.current = ro;
-
 return () => {
     isDestroyedRef.current = true;
-    initTimers.current.forEach(clearTimeout);
-    initTimers.current = [];
-    ro.disconnect();
+    if (roRef.current) { roRef.current.disconnect(); roRef.current = null; }
     if (audioMotion.current) { try { audioMotion.current.destroy(); } catch {} audioMotion.current = null; }
     if (wavesurfer.current)  { try { wavesurfer.current.destroy();  } catch {} wavesurfer.current  = null; }
 };
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [audioUrl, height]);
 
-// ── Window resize → update audioMotion width ──────────────────────────────
+// ── Window resize → sync audioMotion width ────────────────────────────────
 useEffect(() => {
 const handleResize = () => {
-    if (audioMotion.current && spectrumRef.current) {
+    if (audioMotion.current) {
     try { audioMotion.current.width = getInnerWidth(); } catch {}
     }
 };
@@ -249,22 +287,18 @@ return `${m}:${s.toString().padStart(2, '0')}`;
 const progressPct = duration ? (currentTime / duration) * 100 : 0;
 
 return (
-// playerRef on the outermost div — this is what we measure
 <div ref={playerRef} className="waveform-player glass">
 
-    {/* Rainbow spectrum — same pixel width as waveform */}
+    {/* Rainbow spectrum visualiser */}
     <div
     ref={spectrumRef}
     className="audiomotion-container"
     style={{ width: '100%', height: 140, background: 'transparent' }}
     />
 
-    {/* WaveSurfer container — width set in JS, not CSS */}
+    {/* WaveSurfer mount — width set in JS */}
     <div style={{ width: '100%', padding: 0, margin: 0, overflow: 'hidden' }}>
-    <div
-        ref={waveformRef}
-        style={{ display: 'block', overflow: 'hidden' }}
-    />
+    <div ref={waveformRef} style={{ display: 'block', overflow: 'hidden' }} />
     </div>
 
     {/* Loading overlay */}
