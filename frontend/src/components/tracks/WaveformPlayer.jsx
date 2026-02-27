@@ -86,6 +86,12 @@ ws.on('ready', () => {
     ws.setVolume(prevVolume.current / 100);
     if (onReadyRef.current) onReadyRef.current();
 
+    // Force full-width redraw — WaveSurfer measures container before layout
+    // is complete, so bars render short. Two passes: one on next animation
+    // frame and one after 150ms catches slower layout reflows.
+    requestAnimationFrame(() => { try { ws.drawBuffer(); } catch {} });
+    setTimeout(() => { try { ws.drawBuffer(); } catch {} }, 150);
+
     // Get the underlying <audio> element WaveSurfer created
     const mediaEl = ws.backend?.media || ws.getMediaElement?.();
 
@@ -212,11 +218,11 @@ return (
     />
 
     {/* ── WaveSurfer teal waveform ── */}
-    <div className="waveform-section">
+    <div className="waveform-section" style={{ padding: 0, margin: 0 }}>
     <div
         ref={waveformRef}
         className={`waveform-canvas ${isLoading ? 'loading' : ''}`}
-        style={{ width: '100%', boxSizing: 'border-box' }}
+        style={{ width: '100%', boxSizing: 'border-box', display: 'block' }}
     />
     </div>
 
