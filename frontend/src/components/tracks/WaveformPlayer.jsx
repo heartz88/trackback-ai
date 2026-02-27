@@ -2,31 +2,20 @@ import AudioMotionAnalyzer from 'audiomotion-analyzer';
 import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
-/**
- * WaveformPlayer
- * ──────────────
- * Top half  → audioMotion-analyzer rainbow spectrum (plays live while audio runs)
- * Bottom    → WaveSurfer teal waveform + seek bar + play/pause + volume
- *
- * Key fixes carried over:
- * • Callbacks stored in refs → WaveSurfer never recreated on parent re-render
- * • Volume set at creation AND in ready event → sound works on first press
- * • ResizeObserver → waveform always fills full width
- * • audioMotion connected to the same <audio> MediaElement WaveSurfer uses
- */
 const WaveformPlayer = ({ audioUrl, height = 100, onReady, onPlay, onPause }) => {
-const waveformRef   = useRef(null);   // WaveSurfer container div
-const spectrumRef   = useRef(null);   // audioMotion container div
-const wavesurfer    = useRef(null);
-const audioMotion   = useRef(null);
+const waveformRef  = useRef(null);
+const spectrumRef  = useRef(null);
+const wavesurfer   = useRef(null);
+const audioMotion  = useRef(null);
+const initTimers   = useRef([]);
+const roRef        = useRef(null);
 
-// Stable callback refs — prevents WaveSurfer recreation on parent re-renders
-const onReadyRef  = useRef(onReady);
-const onPlayRef   = useRef(onPlay);
-const onPauseRef  = useRef(onPause);
-useEffect(() => { onReadyRef.current  = onReady;  }, [onReady]);
-useEffect(() => { onPlayRef.current   = onPlay;   }, [onPlay]);
-useEffect(() => { onPauseRef.current  = onPause;  }, [onPause]);
+const onReadyRef = useRef(onReady);
+const onPlayRef  = useRef(onPlay);
+const onPauseRef = useRef(onPause);
+useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
+useEffect(() => { onPlayRef.current  = onPlay;  }, [onPlay]);
+useEffect(() => { onPauseRef.current = onPause; }, [onPause]);
 
 const [isPlaying,   setIsPlaying]   = useState(false);
 const [isLoading,   setIsLoading]   = useState(true);
@@ -36,7 +25,16 @@ const [volume,      setVolume]      = useState(75);
 const [isMuted,     setIsMuted]     = useState(false);
 const prevVolume = useRef(75);
 
-// ── Main effect: create WaveSurfer + audioMotion, only when URL/height changes ──
+const forceRedraw = (ws) => {
+initTimers.current.forEach(clearTimeout);
+initTimers.current = [];
+const draw = () => { try { if (ws && !ws.isDestroyed) ws.drawBuffer(); } catch {} };
+requestAnimationFrame(draw);
+[50, 150, 300, 600, 1200].forEach(ms => {
+    initTimers.current.push(setTimeout(draw, ms));
+});
+};
+
 useEffect(() => {
 if (!waveformRef.current || !audioUrl) return;
 
@@ -47,10 +45,21 @@ setDuration(0);
 
 const computedStyle = getComputedStyle(document.documentElement);
 const accentColor   = computedStyle.getPropertyValue('--accent-primary').trim() || '#14B8A6';
-const textSecondary = computedStyle.getPropertyValue('--text-secondary').trim() || '#cbd5e1';
+const textSecondary = computedStyle.getPropertyValue('--text-secondary').trim() || '#94a3b8';
 
-// ── WaveSurfer ──
-const ws = WaveSurfer.create({
+let ws = null;
+let destroyed = false;
+
+// Wait for container to have real pixel width before creating WaveSurfer
+const tryCreate = () => {
+    if (destroyed) return;
+    const containerWidth = waveformRef.current?.offsetWidth || 0;
+    if (containerWidth < 10) {
+    requestAnimationFrame(tryCreate);
+    return;
+    }
+
+    ws = WaveSurfer.create({
     container:     waveformRef.current,
     waveColor:     textSecondary,
     progressColor: accentColor,
@@ -61,99 +70,103 @@ const ws = WaveSurfer.create({
     height:        height,
     barGap:        2,
     normalize:     true,
+    fillParent:    true,    // stretch canvas to fill 100% of container
+    minPxPerSec:   0,       // don't enforce a minimum zoom level
+    interact:      true,
     backend:       'MediaElement',
     volume:        0.75,
-});
+    });
 
-wavesurfer.current = ws;
-ws.setVolume(0.75);
-ws.load(audioUrl);
+    wavesurfer.current = ws;
+    ws.setVolume(0.75);
+    ws.load(audioUrl);
 
-// ResizeObserver — force redraw when container width changes
-const ro = new ResizeObserver(() => {
+    // ResizeObserver — redraw on every container resize
+    const ro = new ResizeObserver(() => {
     if (ws && !ws.isDestroyed) {
-    try { ws.drawBuffer(); } catch {}
+        try { ws.drawBuffer(); } catch {}
     }
-});
-if (waveformRef.current) ro.observe(waveformRef.current);
+    if (audioMotion.current && spectrumRef.current) {
+        try { audioMotion.current.width = spectrumRef.current.offsetWidth; } catch {}
+    }
+    });
+    if (waveformRef.current) ro.observe(waveformRef.current);
+    roRef.current = ro;
 
-// ── audioMotion-analyzer ──
-// We wait for WaveSurfer's ready event to get the <audio> MediaElement,
-// then connect audioMotion to that same element so they stay in sync.
-ws.on('ready', () => {
+    ws.on('ready', () => {
     setIsLoading(false);
     setDuration(ws.getDuration());
     ws.setVolume(prevVolume.current / 100);
     if (onReadyRef.current) onReadyRef.current();
 
-    // Force full-width redraw — WaveSurfer measures container before layout
-    // is complete, so bars render short. Two passes: one on next animation
-    // frame and one after 150ms catches slower layout reflows.
-    requestAnimationFrame(() => { try { ws.drawBuffer(); } catch {} });
-    setTimeout(() => { try { ws.drawBuffer(); } catch {} }, 150);
+    // Staggered redraws to catch every layout reflow stage
+    forceRedraw(ws);
 
-    // Get the underlying <audio> element WaveSurfer created
+    // Connect audioMotion to the same audio element
     const mediaEl = ws.backend?.media || ws.getMediaElement?.();
-
     if (mediaEl && spectrumRef.current) {
-    try {
-        // Destroy any previous instance first
+        try {
         if (audioMotion.current) {
-        try { audioMotion.current.destroy(); } catch {}
-        audioMotion.current = null;
+            try { audioMotion.current.destroy(); } catch {}
+            audioMotion.current = null;
         }
-
         audioMotion.current = new AudioMotionAnalyzer(spectrumRef.current, {
-        source:          mediaEl,
-        mode:            10,           // Octave bands — looks like the screenshot
-        gradient:        'rainbow',
-        showBgColor:     true,
-        bgAlpha:         0,            // transparent background
-        overlay:         true,
-        showScaleX:      false,
-        showScaleY:      false,
-        reflexRatio:     0.4,          // mirrored reflection at bottom
-        reflexAlpha:     0.25,
-        reflexFit:       true,
-        barSpace:        0.3,
-        smoothing:       0.75,
-        minFreq:         30,
-        maxFreq:         20000,
-        channelLayout:   'single',
-        height:          140,          // spectrum panel height in px
-        width:           spectrumRef.current.offsetWidth || 800,
+            source:        mediaEl,
+            mode:          10,
+            gradient:      'rainbow',
+            showBgColor:   true,
+            bgAlpha:       0,
+            overlay:       true,
+            showScaleX:    false,
+            showScaleY:    false,
+            reflexRatio:   0.4,
+            reflexAlpha:   0.25,
+            reflexFit:     true,
+            barSpace:      0.3,
+            smoothing:     0.75,
+            minFreq:       30,
+            maxFreq:       20000,
+            channelLayout: 'single',
+            height:        140,
+            width:         spectrumRef.current.offsetWidth || containerWidth || 800,
         });
-    } catch (err) {
+        } catch (err) {
         console.warn('audioMotion init failed:', err);
+        }
     }
-    }
-});
+    });
 
-ws.on('play',  () => { setIsPlaying(true);  if (onPlayRef.current)  onPlayRef.current();  });
-ws.on('pause', () => { setIsPlaying(false); if (onPauseRef.current) onPauseRef.current(); });
-ws.on('finish',() => { setIsPlaying(false); if (onPauseRef.current) onPauseRef.current(); });
-ws.on('audioprocess', () => setCurrentTime(ws.getCurrentTime()));
-ws.on('seek',          () => setCurrentTime(ws.getCurrentTime()));
-ws.on('error', err => { console.error('WaveSurfer error:', err); setIsLoading(false); });
+    ws.on('play',         () => { setIsPlaying(true);  if (onPlayRef.current)  onPlayRef.current();  });
+    ws.on('pause',        () => { setIsPlaying(false); if (onPauseRef.current) onPauseRef.current(); });
+    ws.on('finish',       () => { setIsPlaying(false); if (onPauseRef.current) onPauseRef.current(); });
+    ws.on('audioprocess', () => setCurrentTime(ws.getCurrentTime()));
+    ws.on('seek',         () => setCurrentTime(ws.getCurrentTime()));
+    ws.on('error',        err => { console.error('WaveSurfer error:', err); setIsLoading(false); });
+};
+
+tryCreate();
 
 return () => {
-    ro.disconnect();
+    destroyed = true;
+    initTimers.current.forEach(clearTimeout);
+    initTimers.current = [];
+    if (roRef.current) { roRef.current.disconnect(); roRef.current = null; }
     if (audioMotion.current) {
     try { audioMotion.current.destroy(); } catch {}
     audioMotion.current = null;
     }
-    ws.destroy();
+    if (wavesurfer.current) {
+    wavesurfer.current.destroy();
+    wavesurfer.current = null;
+    }
 };
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [audioUrl, height]);
 
-// ── Resize audioMotion when window resizes ──
 useEffect(() => {
 const handleResize = () => {
     if (audioMotion.current && spectrumRef.current) {
-    try {
-        audioMotion.current.width = spectrumRef.current.offsetWidth;
-    } catch {}
+    try { audioMotion.current.width = spectrumRef.current.offsetWidth; } catch {}
     }
 };
 window.addEventListener('resize', handleResize);
@@ -205,28 +218,23 @@ const progressPct = duration ? (currentTime / duration) * 100 : 0;
 return (
 <div className="waveform-player glass">
 
-    {/* ── Rainbow spectrum visualiser ── */}
+    {/* Rainbow spectrum visualiser */}
     <div
     ref={spectrumRef}
     className="audiomotion-container"
-    style={{
-        width: '100%',
-        height: 140,
-        background: 'transparent',
-        // Hidden until audio plays — audioMotion keeps itself invisible when silent
-    }}
+    style={{ width: '100%', height: 140, background: 'transparent' }}
     />
 
-    {/* ── WaveSurfer teal waveform ── */}
-    <div className="waveform-section" style={{ padding: 0, margin: 0 }}>
+    {/* WaveSurfer waveform — zero padding, explicit 100% width */}
+    <div className="waveform-section" style={{ padding: 0, margin: 0, width: '100%' }}>
     <div
         ref={waveformRef}
         className={`waveform-canvas ${isLoading ? 'loading' : ''}`}
-        style={{ width: '100%', boxSizing: 'border-box', display: 'block' }}
+        style={{ width: '100%', boxSizing: 'border-box', display: 'block', minWidth: 0 }}
     />
     </div>
 
-    {/* ── Loading overlay ── */}
+    {/* Loading overlay */}
     {isLoading && (
     <div className="waveform-loading">
         <div className="music-loader">
@@ -236,10 +244,8 @@ return (
     </div>
     )}
 
-    {/* ── Controls bar ── */}
+    {/* Controls */}
     <div className="waveform-controls">
-
-    {/* Play / Pause */}
     <button
         className="play-btn"
         onClick={togglePlay}
@@ -258,7 +264,6 @@ return (
         )}
     </button>
 
-    {/* Seek timeline */}
     <div className="timeline">
         <span className="current-time">{formatTime(currentTime)}</span>
         <div
@@ -275,7 +280,6 @@ return (
         <span className="total-time">{formatTime(duration)}</span>
     </div>
 
-    {/* Volume */}
     <div className="volume-control">
         <button className="volume-icon" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'}>
         {isMuted || volume === 0 ? (
