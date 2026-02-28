@@ -3776,20 +3776,42 @@ flex-shrink: 0;
 min-width: 34px;
 }
 .progress-bar-container {
-flex: 1;
-height: 4px;
-background: var(--surface-2);
-border-radius: 2px;
-overflow: hidden;
-cursor: pointer;
-position: relative;
+  flex: 1;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
 }
-.progress-bar-container:hover { height: 6px; }
+.progress-bar-container::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%; transform: translateY(-50%);
+  height: 4px;
+  background: var(--surface-2, rgba(255,255,255,0.08));
+  border-radius: 3px;
+  transition: height 0.15s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.progress-bar-container:hover::before {
+  height: 6px;
+}
 .progress-bar {
-height: 100%;
-background: linear-gradient(90deg, var(--accent-primary-dark), var(--accent-primary-light));
-border-radius: 2px;
-transition: width 0.1s linear;
+  position: absolute;
+  left: 0;
+  top: 50%; transform: translateY(-50%);
+  height: 4px;
+  min-width: 0;
+  background: linear-gradient(90deg, var(--accent-primary-dark, #0d9488), var(--accent-primary-light, #2dd4bf));
+  border-radius: 3px;
+  transition: width 0.08s linear, height 0.15s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.progress-bar-container:hover .progress-bar {
+  height: 6px;
 }
 
 /* volume */
