@@ -1,16 +1,16 @@
 import AudioMotionAnalyzer from 'audiomotion-analyzer';
 import { useEffect, useRef, useState } from 'react';
 
+
 const WaveformPlayer = ({ audioUrl, height = 80, onReady, onPlay, onPause }) => {
-const containerRef = useRef(null);  // outer .waveform-player — source of truth for width
-const canvasRef    = useRef(null);  // grey base bars
-const progressRef  = useRef(null);  // teal progress overlay
-const spectrumRef  = useRef(null);  // audioMotion container
+const containerRef = useRef(null);
+const canvasRef    = useRef(null);   // single canvas for everything
+const spectrumRef  = useRef(null);
 const audioRef     = useRef(null);
 const audioMotion  = useRef(null);
 const animFrame    = useRef(null);
 const peaksRef     = useRef(null);
-const drawnWidth   = useRef(0);     // last width we drew at — skip redraw if unchanged
+const drawnWidth   = useRef(0);
 
 const onReadyRef = useRef(onReady);
 const onPlayRef  = useRef(onPlay);
@@ -19,79 +19,76 @@ useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
 useEffect(() => { onPlayRef.current  = onPlay;  }, [onPlay]);
 useEffect(() => { onPauseRef.current = onPause; }, [onPause]);
 
-const [isPlaying,   setIsPlaying]   = useState(false);
-const [isLoading,   setIsLoading]   = useState(true);
-const [currentTime, setCurrentTime] = useState(0);
-const [duration,    setDuration]    = useState(0);
-const [volume,      setVolume]      = useState(75);
-const [isMuted,     setIsMuted]     = useState(false);
-const [usingSynth,  setUsingSynth]  = useState(false);
+const [isPlaying,  setIsPlaying]  = useState(false);
+const [isLoading,  setIsLoading]  = useState(true);
+const [currentTime,setCurrentTime]= useState(0);
+const [duration,   setDuration]   = useState(0);
+const [volume,     setVolume]     = useState(75);
+const [isMuted,    setIsMuted]    = useState(false);
+const [usingSynth, setUsingSynth] = useState(false);
 const prevVolume = useRef(75);
 
-// ── Draw bars onto both canvas layers ───────────────────────────────────
+// ── Single-canvas draw ───────────────────────────────────────────────────
+// All coordinates are in CSS pixels. DPR scaling is applied via setTransform
+// at the start of each draw call so it never accumulates.
 const drawWaveform = (peaks, progress = 0) => {
-const base    = canvasRef.current;
-const overlay = progressRef.current;
-if (!base || !overlay || !peaks) return;
+const canvas = canvasRef.current;
+if (!canvas || !peaks) return;
 
-const W    = base.width;
-const H    = base.height;
-if (W === 0 || H === 0) return;
+const dpr = window.devicePixelRatio || 1;
+// CSS pixel dimensions
+const W = canvas.width  / dpr;
+const H = canvas.height / dpr;
+if (W < 10 || H < 4) return;
 
-const dpr  = window.devicePixelRatio || 1;
+const ctx = canvas.getContext('2d');
+// Reset transform to identity then apply dpr scale — never accumulates
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+ctx.clearRect(0, 0, W, H);
+
 const mid  = H / 2;
-const barW = 3 * dpr;
-const gap  = 1 * dpr;
+const barW = 3;
+const gap  = 1;
 const step = barW + gap;
 const bars = Math.floor(W / step);
 
-// Grey base
-const ctx = base.getContext('2d');
-ctx.clearRect(0, 0, W, H);
+// ── Pass 1: all bars in grey ──
 ctx.fillStyle = 'rgba(148,163,184,0.35)';
 for (let i = 0; i < bars; i++) {
-    const idx  = Math.floor((i / bars) * peaks.length);
-    const amp  = Math.max(peaks[idx] || 0, 0.02);
-    const barH = amp * mid * 0.9;
-    const x    = i * step;
+    const amp  = Math.max(peaks[Math.floor((i / bars) * peaks.length)] || 0, 0.025);
+    const barH = amp * mid * 0.92;
     ctx.beginPath();
-    ctx.roundRect(x, mid - barH, barW, barH * 2, 2 * dpr);
+    ctx.roundRect(i * step, mid - barH, barW, barH * 2, 2);
     ctx.fill();
 }
 
-// Teal progress clip
+// ── Pass 2: bars to the left of playhead in teal (clipped) ──
 const progressX = progress * W;
-const octx = overlay.getContext('2d');
-octx.clearRect(0, 0, W, H);
-if (progressX > 0) {
-    octx.save();
-    octx.beginPath();
-    octx.rect(0, 0, progressX, H);
-    octx.clip();
-    octx.fillStyle = '#14B8A6';
+if (progressX > 1) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, progressX, H);
+    ctx.clip();
+    ctx.fillStyle = '#14B8A6';
     for (let i = 0; i < bars; i++) {
-    const idx  = Math.floor((i / bars) * peaks.length);
-    const amp  = Math.max(peaks[idx] || 0, 0.02);
-    const barH = amp * mid * 0.9;
-    const x    = i * step;
-    octx.beginPath();
-    octx.roundRect(x, mid - barH, barW, barH * 2, 2 * dpr);
-    octx.fill();
+    const amp  = Math.max(peaks[Math.floor((i / bars) * peaks.length)] || 0, 0.025);
+    const barH = amp * mid * 0.92;
+    ctx.beginPath();
+    ctx.roundRect(i * step, mid - barH, barW, barH * 2, 2);
+    ctx.fill();
     }
-    octx.restore();
+    ctx.restore();
 }
 };
 
-// ── Synthetic peaks fallback (CORS blocks fetch decode) ─────────────────
+// ── Synthetic peaks for CORS fallback ───────────────────────────────────
 const makeSyntheticPeaks = (count = 2000) => {
 const peaks = new Float32Array(count);
 for (let i = 0; i < count; i++) {
-    const t   = i / count;
-    const env = Math.sin(Math.PI * t);
-    peaks[i]  = Math.min(1,
-    env * (Math.abs(Math.sin(t * 60))
-            + Math.abs(Math.sin(t * 23 + 1))
-            + Math.random() * 0.3) * 0.55
+    const t  = i / count;
+    peaks[i] = Math.min(1,
+    Math.sin(Math.PI * t) *
+    (Math.abs(Math.sin(t * 60)) + Math.abs(Math.sin(t * 23 + 1)) + Math.random() * 0.3) * 0.55
     );
 }
 const max = Math.max(...peaks);
@@ -99,34 +96,29 @@ if (max > 0) for (let i = 0; i < count; i++) peaks[i] /= max;
 return peaks;
 };
 
-// ── Resize canvases — measured from containerRef, retries until W > 0 ───
-const resizeCanvases = (callback) => {
+// ── Size canvas to container width ──────────────────────────────────────
+const resizeCanvas = (callback) => {
 const container = containerRef.current;
-if (!container) return;
+const canvas    = canvasRef.current;
+if (!container || !canvas) return;
 
-const tryResize = (attempts = 0) => {
+const attempt = (tries = 0) => {
     const W = container.getBoundingClientRect().width;
-    if (W <= 10 && attempts < 10) {
-    // Container not laid out yet — retry with backoff
-    setTimeout(() => tryResize(attempts + 1), 30 * (attempts + 1));
+    if (W <= 10 && tries < 10) {
+    setTimeout(() => attempt(tries + 1), 30 * (tries + 1));
     return;
     }
-    if (W <= 10) return; // give up
+    if (W <= 10) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    [canvasRef.current, progressRef.current].forEach(c => {
-    if (!c) return;
-    c.width        = W * dpr;
-    c.height       = height * dpr;
-    c.style.width  = W + 'px';
-    c.style.height = height + 'px';
-    // Note: do NOT call ctx.scale here — drawWaveform uses dpr-scaled coords
-    });
-
-    drawnWidth.current = W;
+    const dpr    = window.devicePixelRatio || 1;
+    canvas.width        = Math.round(W * dpr);
+    canvas.height       = Math.round(height * dpr);
+    canvas.style.width  = `${W}px`;
+    canvas.style.height = `${height}px`;
+    drawnWidth.current  = W;
 
     if (peaksRef.current) {
-    const prog = audioRef.current && duration
+    const prog = audioRef.current
         ? audioRef.current.currentTime / (audioRef.current.duration || 1) : 0;
     drawWaveform(peaksRef.current, prog);
     }
@@ -138,10 +130,10 @@ const tryResize = (attempts = 0) => {
     if (callback) callback();
 };
 
-tryResize();
+attempt();
 };
 
-// ── rAF 60fps progress loop ──────────────────────────────────────────────
+// ── 60fps loop ───────────────────────────────────────────────────────────
 const startLoop = () => {
 const tick = () => {
     const audio = audioRef.current;
@@ -158,7 +150,7 @@ const stopLoop = () => {
 if (animFrame.current) { cancelAnimationFrame(animFrame.current); animFrame.current = null; }
 };
 
-// ── Init audioMotion ─────────────────────────────────────────────────────
+// ── audioMotion ──────────────────────────────────────────────────────────
 const initAudioMotion = (audioEl) => {
 if (!spectrumRef.current) return;
 try {
@@ -178,10 +170,9 @@ try {
 } catch (e) { console.warn('audioMotion failed:', e); }
 };
 
-// ── After peaks ready: resize then draw ─────────────────────────────────
 const finishSetup = (peaks, dur) => {
 peaksRef.current = peaks;
-resizeCanvases(() => {
+resizeCanvas(() => {
     drawWaveform(peaks, 0);
     setIsLoading(false);
     if (dur) setDuration(dur);
@@ -198,7 +189,7 @@ setIsLoading(true);
 setUsingSynth(false);
 setCurrentTime(0);
 setDuration(0);
-peaksRef.current  = null;
+peaksRef.current   = null;
 drawnWidth.current = 0;
 stopLoop();
 
@@ -208,10 +199,8 @@ audio.src    = audioUrl;
 audio.volume = 0.75;
 audioRef.current = audio;
 
-// Wire audioMotion — retry after a tick so spectrumRef is mounted
 setTimeout(() => initAudioMotion(audio), 50);
 
-// Try real decode; fall back to synthetic on CORS error
 const ac = new (window.AudioContext || window.webkitAudioContext)();
 
 fetch(audioUrl, { mode: 'cors' })
@@ -234,18 +223,13 @@ fetch(audioUrl, { mode: 'cors' })
     try { ac.close(); } catch {}
     })
     .catch(err => {
-    console.warn('Waveform decode failed (likely S3 CORS) — using synthetic:', err);
+    console.warn('Waveform decode failed (likely CORS) — using synthetic:', err);
     setUsingSynth(true);
     const synth = makeSyntheticPeaks();
-    if (audio.readyState >= 1) {
-        finishSetup(synth, audio.duration);
-    } else {
-        audio.addEventListener('loadedmetadata', () => finishSetup(synth, audio.duration), { once: true });
-        // Timeout safety — show waveform even if metadata is slow
-        setTimeout(() => {
-        if (isLoading) finishSetup(synth, audio.duration || 0);
-        }, 3000);
-    }
+    const go = () => finishSetup(synth, audio.duration || 0);
+    if (audio.readyState >= 1) go();
+    else audio.addEventListener('loadedmetadata', go, { once: true });
+    setTimeout(() => { if (isLoading) go(); }, 3000);
     try { ac.close(); } catch {}
     });
 
@@ -268,35 +252,35 @@ return () => {
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [audioUrl]);
 
-// ── ResizeObserver on the outer container ────────────────────────────────
+// ── ResizeObserver ───────────────────────────────────────────────────────
 useEffect(() => {
 const ro = new ResizeObserver(() => {
     const W = containerRef.current?.getBoundingClientRect().width || 0;
-    // Only redraw if width actually changed meaningfully
-    if (Math.abs(W - drawnWidth.current) > 2) resizeCanvases();
+    if (Math.abs(W - drawnWidth.current) > 2) resizeCanvas();
 });
 if (containerRef.current) ro.observe(containerRef.current);
 return () => ro.disconnect();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
-// ── Seek ─────────────────────────────────────────────────────────────────
-const seek = (pct) => {
+// ── Controls ─────────────────────────────────────────────────────────────
+const seek = pct => {
 const audio = audioRef.current;
 if (!audio || !duration) return;
-audio.currentTime = pct * duration;
-setCurrentTime(pct * duration);
-if (peaksRef.current) drawWaveform(peaksRef.current, pct);
+const c = Math.max(0, Math.min(1, pct));
+audio.currentTime = c * duration;
+setCurrentTime(c * duration);
+if (peaksRef.current) drawWaveform(peaksRef.current, c);
 };
 
 const handleWaveformClick = e => {
 const rect = e.currentTarget.getBoundingClientRect();
-seek(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
+seek((e.clientX - rect.left) / rect.width);
 };
 
 const handleProgressClick = e => {
 const rect = e.currentTarget.getBoundingClientRect();
-seek(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
+seek((e.clientX - rect.left) / rect.width);
 };
 
 const togglePlay = () => {
@@ -322,8 +306,8 @@ if (isMuted) {
 }
 };
 
-const formatTime = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-const progressPct = duration ? (currentTime / duration) * 100 : 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const pct = duration ? (currentTime / duration) * 100 : 0;
 
 return (
 <div ref={containerRef} className="waveform-player glass">
@@ -331,23 +315,20 @@ return (
     {/* Rainbow spectrum */}
     <div ref={spectrumRef} className="audiomotion-container" />
 
-    {/* Waveform canvas — two stacked layers */}
+    {/* Single canvas — click anywhere to seek */}
     <div
     className="waveform-section"
     onClick={handleWaveformClick}
-    style={{ cursor: 'pointer', position: 'relative', userSelect: 'none' }}
+    style={{ position: 'relative', cursor: 'pointer', userSelect: 'none', lineHeight: 0 }}
     >
-    <canvas ref={canvasRef}    style={{ display: 'block', width: '100%' }} />
-    <canvas ref={progressRef}  style={{
-        display: 'block', width: '100%',
-        position: 'absolute', top: 0, left: 0,
-        pointerEvents: 'none',
-    }} />
+    <canvas
+        ref={canvasRef}
+        style={{ display: 'block', width: '100%', height: `${height}px` }}
+    />
     {usingSynth && (
         <span style={{
         position: 'absolute', bottom: 4, right: 8,
-        fontSize: 10, color: 'rgba(148,163,184,0.35)',
-        pointerEvents: 'none', userSelect: 'none',
+        fontSize: 10, color: 'rgba(148,163,184,0.35)', pointerEvents: 'none',
         }}>≈ estimated</span>
     )}
     </div>
@@ -370,14 +351,38 @@ return (
         }
     </button>
 
+    {/* Seek bar — teal fill + draggable thumb */}
     <div className="timeline">
-        <span className="current-time">{formatTime(currentTime)}</span>
-        <div className="progress-bar-container" onClick={handleProgressClick}
-        role="slider" aria-label="Seek"
-        aria-valuenow={Math.round(progressPct)} aria-valuemin={0} aria-valuemax={100}>
-        <div className="progress-bar" style={{ width: `${progressPct}%` }} />
+        <span className="current-time">{fmt(currentTime)}</span>
+        <div
+        className="progress-bar-container"
+        onClick={handleProgressClick}
+        role="slider"
+        aria-label="Seek"
+        aria-valuenow={Math.round(pct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        style={{ cursor: 'pointer', position: 'relative' }}
+        >
+        {/* Filled teal track */}
+        <div className="progress-bar" style={{ width: `${pct}%` }} />
+        {/* Thumb dot — only show when audio is loaded */}
+        {duration > 0 && (
+            <div style={{
+            position: 'absolute',
+            left: `clamp(6px, ${pct}%, calc(100% - 6px))`,
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 12, height: 12,
+            borderRadius: '50%',
+            background: 'var(--accent-primary, #14B8A6)',
+            boxShadow: '0 0 0 3px rgba(20,184,166,0.3)',
+            pointerEvents: 'none',
+            zIndex: 2,
+            }} />
+        )}
         </div>
-        <span className="total-time">{formatTime(duration)}</span>
+        <span className="total-time">{fmt(duration)}</span>
     </div>
 
     <div className="volume-control">
