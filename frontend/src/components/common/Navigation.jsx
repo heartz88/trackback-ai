@@ -328,7 +328,8 @@ return (
             </>
         ) : (
             <>
-            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
+            {/*<MenuItem to="/discover" onClick={closeMenu}>Discover</MenuItem>*/}
+            {/* Mobile Menu Overlay <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>*/}
             <MenuItem to="/login" onClick={closeMenu}>Sign In</MenuItem>
             <MenuItem to="/register" onClick={closeMenu}>Join Now</MenuItem>
             </>
