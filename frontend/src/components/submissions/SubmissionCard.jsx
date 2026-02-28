@@ -8,13 +8,13 @@ import VoteButton from './VoteButton';
 
 const SubmissionCard = ({ submission, isWinner = false, rank }) => {
 const { user } = useAuth();
-const [commentCount,  setCommentCount]  = useState(0);
-const [userVote,      setUserVote]      = useState(submission.user_vote || null);
-const [upvotes,       setUpvotes]       = useState(parseInt(submission.upvotes) || 0);
-const [showComments,  setShowComments]  = useState(false);
+const [commentCount, setCommentCount] = useState(0);
+const [userVote,     setUserVote]     = useState(submission.user_vote || null);
+const [upvotes,      setUpvotes]      = useState(parseInt(submission.upvotes) || 0);
+const [showComments, setShowComments] = useState(false);
 const commentSectionRef = useRef(null);
 
-// Sync if parent refetches the submissions array
+// Sync if parent refetches submissions array
 useEffect(() => {
 setUserVote(submission.user_vote || null);
 setUpvotes(parseInt(submission.upvotes) || 0);
@@ -57,15 +57,15 @@ return (
         <span>Winning Submission</span>
     </div>
     )}
-
     <div className="submission-content">
     {/* Waveform Player */}
     <div className="submission-player">
-        <WaveformPlayer audioUrl={submission.audio_url} height={100}/>
+        <WaveformPlayer audioUrl={submission.audio_url} height={80}/>
     </div>
 
     {/* Info */}
     <div className="submission-info">
+
         {/* Author row */}
         <div className="user-header">
         <Link to={`/profile/${submission.collaborator_id}`} className="flex items-center gap-3 group">
@@ -96,8 +96,6 @@ return (
         {/* Title + version badge + rank medal */}
         <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:4 }}>
         <h4 className="submission-title" style={{ margin:0 }}>{submission.title}</h4>
-
-        {/* Version badge — always shown so users know which version this is */}
         <span style={{
             fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:9999,
             background:'rgba(20,184,166,0.12)', color:'var(--accent-primary)',
@@ -106,7 +104,6 @@ return (
         }}>
             v{versionNum}
         </span>
-
         {rank && rank <= 3 && (
             <span style={{ fontSize:16 }}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}</span>
         )}
@@ -136,7 +133,7 @@ return (
         </div>
     </div>
 
-    {/* Like button */}
+    {/* Vote button — fixed: onCountsChange now wired so count updates after voting */}
     <div className="submission-voting">
         <VoteButton
         submissionId={submission.id}
