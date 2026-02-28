@@ -124,6 +124,7 @@ return (
                 <NavLink to="/upload">Upload</NavLink>
                 <NavLink to="/my-tracks">My Tracks</NavLink>
                 <NavLink to="/collaborations">Collabs</NavLink>
+                <NavLink to="/community">Community</NavLink>
                 <NavLink to="/messages" badge={unreadCount}>Messages</NavLink>
             </div>
             )}
@@ -308,6 +309,7 @@ return (
             <MenuItem to="/upload" onClick={closeMenu}>Upload Track</MenuItem>
             <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
             <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
+            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
             <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
             <MenuItem to={`/profile/${user.id}`} onClick={closeMenu}>Profile</MenuItem>
             <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
