@@ -115,7 +115,7 @@ return (
         <div className={`relative border-2 border-dashed ${file ? 'border-primary-500' : 'border-[var(--border-color)]'} rounded-xl p-8 hover:border-primary-500 transition-colors`}>
             <input
             type="file"
-            accept="audio/*"
+            accept=".mp3,.wav,.flac,.m4a,.aac,audio/mpeg,audio/wav,audio/flac,audio/x-wav,audio/x-m4a,audio/mp4,audio/aac"
             onChange={(e) => {
                 const selectedFile = e.target.files[0];
                 if (selectedFile) {
