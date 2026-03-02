@@ -3,11 +3,6 @@ import { Link } from 'react-router-dom';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import api from '../services/api';
 
-/* ─────────────────────────────────────────────
-CommunityPage — Featured & Completed Tracks
-Maps to PPRS UC3: Community Reviews & Votes
-"highest-voted submission becomes featured/promoted"
-───────────────────────────────────────────── */
 
 const TABS = ['Featured', 'Recently Completed', 'Most Voted'];
 
@@ -73,7 +68,7 @@ return (
         alignItems: 'center',
         gap: 6,
     }}>
-        ⭐ Featured Track
+        Featured Track
     </div>
     )}
 
@@ -112,9 +107,9 @@ return (
             border: '1px solid var(--surface-border)',
             minWidth: 56,
         }}>
-            <span style={{ fontSize: 18 }}>❤️</span>
+            <span style={{ fontSize: 18 }}></span>
             <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--accent-primary)', lineHeight: 1.2 }}>{winner.upvotes || 0}</span>
-            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>votes</span>
+            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Votes</span>
         </div>
         )}
     </div>
@@ -133,7 +128,7 @@ return (
         padding: '3px 10px', borderRadius: 'var(--radius-full, 999px)', fontSize: 11, fontWeight: 600,
         background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e',
         }}>
-        ✅ Completed
+        Completed
         </span>
     </div>
 
@@ -159,7 +154,7 @@ return (
         {winner?.audio_url && (
             <>
             <div style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '10px 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                ✅ Winning Submission — v{winner.version_number || 1}
+                Winning Submission — v{winner.version_number || 1}
             </div>
             <WaveformPlayer audioUrl={winner.audio_url} height={56} />
             </>
@@ -292,9 +287,9 @@ return (
     }}
     >
     {[
-        { icon: '✅', value: stats.completed, label: 'Completed Tracks' },
-        { icon: '🤝', value: stats.collaborators, label: 'Collaborators' },
-        { icon: '❤️', value: stats.votes, label: 'Community Votes' },
+        { value: stats.completed, label: 'Completed Tracks' },
+        { value: stats.collaborators, label: 'Collaborators' },
+        { value: stats.votes, label: 'Community Votes' },
     ].map(s => (
         <div key={s.label} style={{ flex: '1 1 120px', textAlign: 'center' }}>
         <div style={{ fontSize: 22, marginBottom: 2 }}>{s.icon}</div>
