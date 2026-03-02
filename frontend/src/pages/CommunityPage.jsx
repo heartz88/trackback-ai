@@ -165,8 +165,8 @@ return (
     {/* Footer actions */}
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid var(--surface-border)' }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <StatPill icon="🤝" label="collaborators" value={track.collaborator_count || 1} />
-        <StatPill icon="📋" label="submissions" value={track.submissions_count || 1} />
+        <StatPill label="collaborators" value={track.collaborator_count || 1} />
+        <StatPill label="submissions" value={track.submissions_count || 1} />
         </div>
         <Link
         to={`/tracks/${track.id}`}
