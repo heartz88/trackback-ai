@@ -136,12 +136,6 @@ return (
                     {track.genre}
                 </div>
             )}
-            
-            {track.duration && (
-                <div className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-xs text-[var(--text-secondary)] font-medium">
-                    {formatDuration(track.duration)}
-                </div>
-            )}
         </div>
 
         {/* Desired Skills */}
