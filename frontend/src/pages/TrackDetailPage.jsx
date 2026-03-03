@@ -128,7 +128,7 @@ return (
 
         <div className="tdp-stats">
         {[{l:'Submissions',v:submissionsCount},{l:'Collaborators',v:collaborators.length}].map(s=>(
-            <div key={s.l} className="tdp-stat">
+            <div>
             <span className="tdp-stat-value">{s.v}</span>
             <span className="tdp-stat-label">{s.l}</span>
             </div>
