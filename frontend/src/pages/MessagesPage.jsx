@@ -312,7 +312,14 @@ try {
     const newConversation = response.data.conversation;
     console.log('✅ New conversation created:', newConversation);
 
-    setConversations(prev => [newConversation, ...prev]);
+    // Replace existing entry if conversation already existed, otherwise prepend
+    setConversations(prev => {
+        const exists = prev.some(c => c.id === newConversation.id);
+        if (exists) {
+            return prev.map(c => c.id === newConversation.id ? newConversation : c);
+        }
+        return [newConversation, ...prev];
+    });
     setSelectedConversation(newConversation);
     setShowUserSearch(false);
     hasJoinedConversation.current = false; // Reset join flag
