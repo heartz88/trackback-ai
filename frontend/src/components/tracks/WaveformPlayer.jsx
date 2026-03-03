@@ -1,4 +1,4 @@
-import AudioMotionAnalyzer from 'audiomotion-analyzer';
+import { AudioMotionAnalyzer } from 'audiomotion-analyzer';
 import { useEffect, useRef, useState } from 'react';
 
 
