@@ -5148,6 +5148,147 @@ flex-direction: column;
 }
 
 /* ═══════════════════════════════════════════════════════════
+MESSAGES PAGE — MOBILE RESPONSIVE
+═══════════════════════════════════════════════════════════ */
+
+/* ── Full-height chat container on all screen sizes ── */
+.messages-page-root {
+  padding: 16px !important;
+}
+
+/* Make the sidebar + chat fill the screen properly on mobile */
+@media (max-width: 1023px) {
+
+  /* Outer container: full viewport height minus nav */
+  .messages-page-root > .max-w-7xl {
+    height: calc(100dvh - 72px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header row (title + buttons) — shrink so chat gets all the space */
+  .messages-page-root > .max-w-7xl > .mb-8 {
+    margin-bottom: 12px !important;
+    flex-shrink: 0;
+  }
+
+  /* The flex row that holds sidebar + chat panel */
+  .messages-page-root > .max-w-7xl > div:last-of-type {
+    flex: 1;
+    min-height: 0;
+    height: 100% !important;    /* override the inline h-[calc(100vh-200px)] */
+  }
+
+  /* Sidebar: take full width when shown, full height */
+  .messages-sidebar-panel {
+    width: 100% !important;
+    height: 100%;
+    border-radius: 16px;
+  }
+
+  /* Chat panel: full width, full height */
+  .messages-chat-panel {
+    width: 100% !important;
+    height: 100%;
+    border-radius: 16px;
+  }
+
+  /* New Message search panel */
+  .messages-search-panel {
+    border-radius: 16px;
+    margin-bottom: 12px !important;
+    padding: 16px !important;
+  }
+
+  /* Conversation list items — bigger tap targets */
+  .messages-conv-item {
+    padding: 12px 10px !important;
+    min-height: 64px;
+  }
+
+  /* Message bubbles: reduce max-width so they don't overflow */
+  .messages-bubble-row > div > div {
+    max-width: 88% !important;
+  }
+
+  /* Message input row — keep above keyboard */
+  .messages-input-form {
+    padding: 10px 12px !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .messages-input-form input {
+    font-size: 16px !important; /* prevents iOS zoom on focus */
+    padding: 12px 14px !important;
+  }
+
+  /* Chat header — compact on mobile */
+  .messages-chat-header {
+    padding: 10px 12px !important;
+  }
+}
+
+/* ── Small phones (< 480px) ── */
+@media (max-width: 479px) {
+
+  .messages-page-root {
+    padding: 8px !important;
+  }
+
+  .messages-page-root > .max-w-7xl > .mb-8 h1 {
+    font-size: 22px !important;
+  }
+
+  /* Status line: wrap neatly */
+  .messages-page-root > .max-w-7xl > .mb-8 .flex {
+    flex-wrap: wrap;
+    gap: 6px !important;
+  }
+
+  /* New Message button — full width on tiny screens */
+  .messages-page-root .new-message-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  /* Tighter conversation list */
+  .messages-conv-item {
+    padding: 10px 8px !important;
+  }
+
+  /* Avatar sizes */
+  .messages-conv-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+  }
+
+  /* Message area padding */
+  .messages-area {
+    padding: 10px 8px !important;
+  }
+
+  /* Bubbles narrower on tiny screens */
+  .messages-bubble-row > div > div {
+    max-width: 92% !important;
+  }
+
+  /* Send button — icon only, no text overflow */
+  .messages-send-btn {
+    padding: 12px 14px !important;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Safe area for notch phones (iOS) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .messages-input-form {
+    padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
 NAVIGATION enhancements
 ═══════════════════════════════════════════════════════════ */
 
