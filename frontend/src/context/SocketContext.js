@@ -93,6 +93,42 @@ if (user && token) {
     setUnreadCount(prev => prev + 1);
     };
 
+    const handleNewSubmission = (data) => {
+    console.log('🎵 New submission in context:', data);
+    setNotifications(prev => [...prev, {
+        id: Date.now(),
+        type: 'submission',
+        data: { ...data, message: data.message || `${data.collaborator_name || 'Someone'} submitted a new version` },
+        read: false,
+        timestamp: new Date()
+    }]);
+    setUnreadCount(prev => prev + 1);
+    };
+
+    const handleNewVote = (data) => {
+    console.log('❤️ New vote in context:', data);
+    setNotifications(prev => [...prev, {
+        id: Date.now(),
+        type: 'vote',
+        data: { ...data, message: data.message || 'Someone liked your submission' },
+        read: false,
+        timestamp: new Date()
+    }]);
+    setUnreadCount(prev => prev + 1);
+    };
+
+    const handleNewComment = (data) => {
+    console.log('💬 New comment in context:', data);
+    setNotifications(prev => [...prev, {
+        id: Date.now(),
+        type: 'comment',
+        data: { ...data, message: data.message || `${data.username || 'Someone'} commented on your submission` },
+        read: false,
+        timestamp: new Date()
+    }]);
+    setUnreadCount(prev => prev + 1);
+    };
+
     // Handle online users properly
     const handleUsersOnline = (data) => {
     console.log('👥 Online users event received:', data);
@@ -131,6 +167,9 @@ if (user && token) {
     const unsubscribeNewMessage = socketService.on('message:new', handleNewMessage);
     const unsubscribeCollaborationRequest = socketService.on('collaboration:request', handleCollaborationRequest);
     const unsubscribeCollaborationResponse = socketService.on('collaboration:response', handleCollaborationResponse);
+    const unsubscribeNewSubmission = socketService.on('submission:new', handleNewSubmission);
+    const unsubscribeNewVote = socketService.on('vote:new', handleNewVote);
+    const unsubscribeNewComment = socketService.on('comment:new', handleNewComment);
     const unsubscribeUsersOnline = socketService.on('users:online', handleUsersOnline);
     const unsubscribeUserOnline = socketService.on('user:online', handleUserOnline);
     const unsubscribeUserOffline = socketService.on('user:offline', handleUserOffline);
@@ -152,6 +191,9 @@ if (user && token) {
     unsubscribeNewMessage();
     unsubscribeCollaborationRequest();
     unsubscribeCollaborationResponse();
+    unsubscribeNewSubmission();
+    unsubscribeNewVote();
+    unsubscribeNewComment();
     unsubscribeUsersOnline();
     unsubscribeUserOnline();
     unsubscribeUserOffline();
