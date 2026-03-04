@@ -83,10 +83,6 @@ const CommentForm = ({ submissionId, onCommentAdded }) => {
                 </div>
             </div>
             {error && <div className="error-message">{error}</div>}
-
-            <style jsx>{`
-                
-            `}</style>
         </form>
     );
 };

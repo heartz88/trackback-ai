@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react';
 
-// ─── Toast ───────────────────────────────────────────────────────────────────
-// Usage: import { useToast } from '../components/common/Toast';
-//        const toast = useToast();
-//        toast.success('Done!') / toast.error('Failed') / toast.info('Copied')
-
 let _addToast = null;
 
 export function useToast() {
@@ -72,12 +67,6 @@ return (
     </div>
 );
 }
-
-// ─── Confirm Modal ────────────────────────────────────────────────────────────
-// Usage: import { useConfirm, ConfirmModal } from '../components/common/Toast';
-//        const confirm = useConfirm();
-//        const ok = await confirm({ title: 'Delete?', message: 'This cannot be undone.', danger: true });
-
 let _setModal = null;
 
 export function useConfirm() {
