@@ -2,11 +2,6 @@ import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import CommentForm from './CommentForm';
 import CommentList from './CommentList';
-
-/**
- * CommentSection — redesigned to match the teal glass theme.
- * Sits inside SubmissionCard's collapsible panel.
- */
 const CommentSection = ({ submissionId, onCommentCountChange }) => {
 const [comments, setComments] = useState([]);
 const [isLoading, setIsLoading] = useState(true);
