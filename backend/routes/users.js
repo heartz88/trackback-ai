@@ -12,7 +12,8 @@ const userId = req.user.id;
 
 const result = await db.query(
 `SELECT id, username, email, bio, skills, 
-        social_links, looking_for_collab, last_active, created_at 
+        social_links, looking_for_collab, last_active, created_at,
+        email_notifications
     FROM users WHERE id = $1`,
 [userId]
 );
