@@ -13,20 +13,22 @@ const db = require('./config/database');
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-: ['http://localhost:3005'];
+// CORS configuration
+const allowedOrigins = [
+  'https://trackback-frontend-3ofn.onrender.com',
+  'http://localhost:3005',
+  'http://localhost:3000'
+];
 
 const corsOptions = {
-origin: (origin, callback) => {
-// Allow requests with no origin (mobile apps, curl)
-if (!origin) return callback(null, true);
-if (allowedOrigins.includes(origin)) return callback(null, true);
-callback(new Error(`CORS blocked: ${origin}`));
-},
-credentials: true,
-methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-allowedHeaders: ['Content-Type', 'Authorization']
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 app.use(cors(corsOptions));
@@ -55,11 +57,11 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Socket.IO setup
 const io = socketIo(server, {
-cors: {
-origin: allowedOrigins,
-credentials: true,
-methods: ['GET', 'POST']
-},
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST']
+  },
 transports: ['websocket', 'polling'],
 allowEIO3: true,
 pingTimeout: 60000,
