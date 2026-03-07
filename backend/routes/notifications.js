@@ -134,3 +134,20 @@ console.error('Update email prefs error:', error);
 res.status(500).json({ error: { message: 'Failed to update email preferences' } });
 }
 });
+
+// TEMPORARY TEST ROUTE — remove before submission
+router.get('/test-email', authMiddleware, async (req, res) => {
+const { triggerNotificationEmail } = require('../config/emailTrigger');
+await triggerNotificationEmail(
+db,
+req.user.id,
+'collaboration_request',
+{
+    senderName: 'TestUser',
+    trackTitle: 'My Unfinished Loop',
+}
+);
+res.json({ message: 'Test email sent — check your inbox' });
+});
+
+module.exports = router;
