@@ -13,9 +13,17 @@ const db = require('./config/database');
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+: ['http://localhost:3005'];
+
 const corsOptions = {
-origin: process.env.FRONTEND_URL || 'http://localhost:3005',
+origin: (origin, callback) => {
+// Allow requests with no origin (mobile apps, curl)
+if (!origin) return callback(null, true);
+if (allowedOrigins.includes(origin)) return callback(null, true);
+callback(new Error(`CORS blocked: ${origin}`));
+},
 credentials: true,
 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 allowedHeaders: ['Content-Type', 'Authorization']
@@ -48,7 +56,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Socket.IO setup
 const io = socketIo(server, {
 cors: {
-origin: process.env.FRONTEND_URL || 'http://localhost:3005',
+origin: allowedOrigins,
 credentials: true,
 methods: ['GET', 'POST']
 },
