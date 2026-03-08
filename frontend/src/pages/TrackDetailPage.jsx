@@ -217,10 +217,17 @@ return (
     </div>
     </div>
 
-    {/* Submissions */}
+    {/* Submissions — public voting zone */}
     <div className="tdp-submissions animate-slide-up stagger-4">
     <div className="tdp-section-head">
+        <div>
         <h2 className="tdp-section-title">🏆 Submissions</h2>
+        {user && !isOwner && submissionsCount > 0 && (
+            <p style={{fontSize:12,color:'var(--text-tertiary)',margin:'2px 0 0',lineHeight:1.4}}>
+            Like the submissions you enjoy — the most liked one wins
+            </p>
+        )}
+        </div>
         {submissionsCount > 0 && <Link to={`/tracks/${trackId}/submissions`} className="btn-view-all">View All ({submissionsCount}) →</Link>}
     </div>
     <SubmissionList trackId={trackId} limit={3} />

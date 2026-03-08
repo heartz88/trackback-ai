@@ -52,7 +52,7 @@ if (onVoteChange)   onVoteChange(newLiked ? 'upvote' : null);
 
 setLoading(true);
 try {
-    const res = await api.post(`/collaborations/submissions/${submissionId}/vote`, {
+    const res = await api.post(`/submissions/${submissionId}/vote`, {
     vote_type: 'upvote',
     });
 
