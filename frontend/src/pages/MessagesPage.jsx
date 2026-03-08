@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useToast } from '../components/common/Toast';
+import { useConfirm, useToast } from '../components/common/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
@@ -8,6 +8,7 @@ import socketService from '../services/socket';
 
 function MessagesPage() {
 const toast = useToast();
+const confirm = useConfirm();
 const { conversationId } = useParams();
 const navigate = useNavigate();
 const { user } = useAuth();
