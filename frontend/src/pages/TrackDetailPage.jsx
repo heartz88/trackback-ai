@@ -158,43 +158,76 @@ return (
     {/* Actions */}
     <div className="tdp-actions-panel animate-slide-up stagger-3">
         <div className="tdp-action-card">
-        <div className="section-label">Collaborate</div>
 
-        {!user && <Link to="/login" className="btn-primary" style={{textAlign:'center'}}>Login to Collaborate</Link>}
+        {/* ── Not logged in ── */}
+        {!user && (
+            <>
+            <div className="section-label">Join the community</div>
+            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <Link to="/login" className="btn-primary" style={{textAlign:'center'}}>🤝 Login to Collaborate</Link>
+            </>
+        )}
 
-        {canRequestCollab && (<>
+        {/* ── Logged in, not owner, no collab yet ── */}
+        {canRequestCollab && (
+            <>
+            <div className="section-label">What do you want to do?</div>
+            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <hr className="tdp-divider"/>
+            <div className="section-label" style={{fontSize:11,color:'var(--text-tertiary)'}}>Want to contribute?</div>
             {showMessageInput && (
-            <textarea value={collabMessage} onChange={e=>setCollabMessage(e.target.value)}
+                <textarea value={collabMessage} onChange={e=>setCollabMessage(e.target.value)}
                 placeholder={`Tell ${owner?.username} why you'd like to collaborate...`} rows={3}
                 style={{width:'100%',boxSizing:'border-box',padding:'10px 12px',background:'var(--surface-2)',border:'1px solid var(--surface-border)',borderRadius:'var(--radius-md)',color:'var(--text-primary)',fontSize:13,resize:'none',outline:'none',fontFamily:'inherit'}}
-            />
+                />
             )}
             <button onClick={handleRequestCollaboration} className="btn-primary" disabled={requestingCollab} style={{width:'100%'}}>
-            {requestingCollab ? 'Sending…' : showMessageInput ? '🤝 Send Request' : '🤝 Request Collaboration'}
+                {requestingCollab ? 'Sending…' : showMessageInput ? '🤝 Send Request' : '🤝 Request Collaboration'}
             </button>
             {showMessageInput && <button onClick={()=>setShowMessageInput(false)} style={{background:'none',border:'none',color:'var(--text-tertiary)',fontSize:12,cursor:'pointer',padding:0}}>Cancel</button>}
-        </>)}
+            </>
+        )}
 
-        {collaboration?.status === 'pending'  && <div className="tdp-status-pending">⏳ Request Pending</div>}
-        {collaboration?.status === 'rejected' && <div className="tdp-status-rejected">❌ Declined</div>}
-        {collaboration?.status === 'approved' && (<>
+        {/* ── Collab status ── */}
+        {collaboration?.status === 'pending' && (
+            <>
+            <div className="section-label">Your status</div>
+            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <div className="tdp-status-pending">⏳ Collaboration Request Pending</div>
+            </>
+        )}
+        {collaboration?.status === 'rejected' && (
+            <>
+            <div className="section-label">Your status</div>
+            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <div className="tdp-status-rejected">❌ Collaboration Declined</div>
+            </>
+        )}
+        {collaboration?.status === 'approved' && (
+            <>
+            <div className="section-label">Your status</div>
             <div className="tdp-status-approved">✅ Collaboration Approved</div>
             <Link to={`/tracks/${trackId}/submissions`} className="btn-primary" style={{textAlign:'center'}}>➕ Submit Your Version</Link>
-        </>)}
+            {track.audio_url && (
+                <a href={track.audio_url} download target="_blank" rel="noreferrer" className="btn-secondary" style={{textAlign:'center'}}>⬇ Download Track</a>
+            )}
+            </>
+        )}
 
+        {/* ── Owner ── */}
         {isOwner && (
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <div className="section-label">Your track</div>
             <Link to="/my-tracks" className="btn-secondary" style={{textAlign:'center'}}>✏️ Manage My Tracks</Link>
-            {submissionsCount > 0 && (<>
-                <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>📋 Submissions ({submissionsCount})</Link>
+            {submissionsCount > 0 && (
+                <>
+                <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>📋 Review Submissions ({submissionsCount})</Link>
                 <button onClick={handleCompleteTrack} className="btn-secondary">✅ Mark as Completed</button>
-            </>)}
+                </>
+            )}
             </div>
         )}
 
-        {hasApprovedCollab && track.audio_url && (
-            <a href={track.audio_url} download target="_blank" rel="noreferrer" className="btn-secondary" style={{textAlign:'center'}}>⬇ Download Track</a>
-        )}
         </div>
 
         {collaborators.length > 0 && (
