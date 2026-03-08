@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import CommentSection from '../components/comments/CommentSection';
+import { useToast } from '../components/common/Toast';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
+import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
-
 
 const TABS = ['Featured', 'Recently Completed', 'Most Voted'];
 
@@ -22,19 +24,70 @@ fontSize: 12, color: 'var(--text-secondary)',
 );
 
 const RankBadge = ({ rank }) => {
-const medals = { 1: { emoji: '🥇', color: '#FFD700' }, 2: { emoji: '🥈', color: '#C0C0C0' }, 3: { emoji: '🥉', color: '#CD7F32' } };
-const m = medals[rank];
-if (!m) return (
-<div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)' }}>
+const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
+if (medals[rank]) return <span style={{ fontSize: 22, lineHeight: 1 }}>{medals[rank]}</span>;
+return (
+<div style={{
+    width: 28, height: 28, borderRadius: '50%', background: 'var(--surface-2)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)',
+}}>
     #{rank}
 </div>
 );
-return <span style={{ fontSize: 22, lineHeight: 1 }}>{m.emoji}</span>;
 };
 
 const CompletedTrackCard = ({ track, rank, featured }) => {
+const { user } = useAuth();
+const toast = useToast();
+const commentSectionRef = useRef(null);
+
 const [expanded, setExpanded] = useState(false);
+const [showComments, setShowComments] = useState(false);
+const [commentCount, setCommentCount] = useState(0);
+const [liked, setLiked] = useState(track.winning_submission?.user_vote === 'upvote');
+const [likeCount, setLikeCount] = useState(parseInt(track.winning_submission?.upvotes) || 0);
+const [likeLoading, setLikeLoading] = useState(false);
+
 const winner = track.winning_submission;
+const isSubmitter = user && winner && user.id === Number(winner.collaborator_id);
+const isOwner = user && user.id === Number(track.user_id);
+
+const handleLike = async () => {
+if (!user) { toast.info('Sign in to like tracks'); return; }
+if (isSubmitter) { toast.info("You can't like your own submission"); return; }
+if (isOwner) { toast.info('Track owners pick the winner — liking not available'); return; }
+if (!winner || likeLoading) return;
+
+const prevLiked = liked;
+const prevCount = likeCount;
+const newLiked = !liked;
+setLiked(newLiked);
+setLikeCount(newLiked ? likeCount + 1 : likeCount - 1);
+setLikeLoading(true);
+
+try {
+    const url = '/submissions/' + winner.id + '/vote';
+    const res = await api.post(url, { vote_type: 'upvote' });
+    setLiked(res.data.vote === 'upvote');
+    setLikeCount(typeof res.data.upvotes === 'number' ? res.data.upvotes : (newLiked ? prevCount + 1 : prevCount - 1));
+} catch {
+    setLiked(prevLiked);
+    setLikeCount(prevCount);
+    toast.error('Failed to like — try again');
+} finally {
+    setLikeLoading(false);
+}
+};
+
+const handleCommentToggle = () => {
+setShowComments(prev => {
+    if (!prev) {
+    setTimeout(() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+    }
+    return !prev;
+});
+};
 
 return (
 <div
@@ -55,51 +108,46 @@ return (
     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
 >
-    {/* Featured ribbon */}
     {featured && (
     <div style={{
         background: 'var(--accent-primary, #7c3aed)',
-        padding: '4px 14px',
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
+        padding: '4px 14px', fontSize: 11, fontWeight: 700,
+        letterSpacing: '0.08em', textTransform: 'uppercase', color: '#fff',
+        display: 'flex', alignItems: 'center', gap: 6,
     }}>
         Featured Track
     </div>
     )}
 
     <div style={{ padding: '20px 24px' }}>
+
     {/* Header row */}
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
         <RankBadge rank={rank} />
         <div style={{ flex: 1, minWidth: 0 }}>
         <Link
-            to={`/tracks/${track.id}`}
+            to={'/tracks/' + track.id}
             style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 17, textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
         >
             {track.title}
         </Link>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
             by{' '}
-            <Link to={`/profile/${track.user_id}`} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 500 }}>
+            <Link to={'/profile/' + track.user_id} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 500 }}>
             @{track.owner_username}
             </Link>
             {winner && (
             <>
-                {' '}· completed by{' '}
-                <Link to={`/profile/${winner.collaborator_id}`} style={{ color: 'var(--accent-secondary, #06b6d4)', textDecoration: 'none', fontWeight: 500 }}>
+                {' · completed by '}
+                <Link to={'/profile/' + winner.collaborator_id} style={{ color: 'var(--accent-secondary, #06b6d4)', textDecoration: 'none', fontWeight: 500 }}>
                 @{winner.collaborator_name}
                 </Link>
             </>
             )}
         </div>
         </div>
-        {/* Vote score */}
+
+        {/* Like count badge */}
         {winner && (
         <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -108,28 +156,28 @@ return (
             border: '1px solid var(--surface-border)',
             minWidth: 56,
         }}>
-            <span style={{ fontSize: 18 }}></span>
-            <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--accent-primary)', lineHeight: 1.2 }}>{winner.upvotes || 0}</span>
-            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Votes</span>
+            <span style={{ fontSize: 18 }}>❤️</span>
+            <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--accent-primary)', lineHeight: 1.2 }}>{likeCount}</span>
+            <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Likes</span>
         </div>
         )}
     </div>
 
     {/* MIR tags */}
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-        {track.bpm && <span className="tdp-tag tdp-tag-bpm"> {Math.round(track.bpm)} BPM</span>}
-        {track.musical_key && <span className="tdp-tag tdp-tag-key"> {track.musical_key}</span>}
+        {track.bpm && <span className="tdp-tag tdp-tag-bpm">🎵 {Math.round(track.bpm)} BPM</span>}
+        {track.musical_key && <span className="tdp-tag tdp-tag-key">🎹 {track.musical_key}</span>}
         {track.energy_level && (
-        <span className={`tdp-tag ${track.energy_level === 'high' ? 'tdp-tag-energy-high' : track.energy_level === 'medium' ? 'tdp-tag-energy-med' : 'tdp-tag-energy-low'}`}>
+        <span className={'tdp-tag ' + (track.energy_level === 'high' ? 'tdp-tag-energy-high' : track.energy_level === 'medium' ? 'tdp-tag-energy-med' : 'tdp-tag-energy-low')}>
             ⚡ {track.energy_level}
         </span>
         )}
-        {track.genre && <span className="tdp-tag tdp-tag-genre">{track.genre}</span>}
+        {track.genre && <span className="tdp-tag tdp-tag-genre">🎸 {track.genre}</span>}
         <span style={{
         padding: '3px 10px', borderRadius: 'var(--radius-full, 999px)', fontSize: 11, fontWeight: 600,
         background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', color: '#22c55e',
         }}>
-        Completed
+        ✅ Completed
         </span>
     </div>
 
@@ -139,20 +187,21 @@ return (
         style={{
         display: 'flex', alignItems: 'center', gap: 8,
         background: 'none', border: 'none', cursor: 'pointer',
-        color: 'var(--accent-primary)', fontSize: 13, fontWeight: 600, padding: 0, marginBottom: expanded ? 12 : 0,
+        color: 'var(--accent-primary)', fontSize: 13, fontWeight: 600,
+        padding: 0, marginBottom: expanded ? 12 : 0,
         }}
     >
         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={expanded ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'} />
         </svg>
-        {expanded ? 'Hide' : 'Preview original loop'}
+        {expanded ? 'Hide preview' : 'Preview original loop'}
     </button>
 
     {expanded && (
         <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Original Loop</div>
         <WaveformPlayer audioUrl={track.audio_url} height={56} />
-        {winner?.audio_url && (
+        {winner && winner.audio_url && (
             <>
             <div style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: '10px 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 Winning Submission — v{winner.version_number || 1}
@@ -163,22 +212,85 @@ return (
         </div>
     )}
 
-    {/* Footer actions */}
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid var(--surface-border)' }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+    {/* Footer */}
+    <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        paddingTop: 12, borderTop: '1px solid var(--surface-border)',
+        flexWrap: 'wrap', gap: 10,
+    }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <StatPill label="collaborators" value={track.collaborator_count || 1} />
         <StatPill label="submissions" value={track.submissions_count || 1} />
         </div>
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+
+        {/* Like button */}
+        {winner && (
+            <button
+            onClick={handleLike}
+            disabled={likeLoading}
+            style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 'var(--radius-full, 999px)',
+                border: liked ? '1px solid rgba(239,68,68,0.4)' : '1px solid var(--surface-border)',
+                background: liked ? 'rgba(239,68,68,0.1)' : 'var(--surface-2)',
+                color: liked ? '#ef4444' : 'var(--text-secondary)',
+                cursor: likeLoading ? 'default' : 'pointer',
+                fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
+            }}
+            title={!user ? 'Sign in to like' : liked ? 'Remove like' : 'Like this track'}
+            >
+            <svg width="14" height="14" viewBox="0 0 24 24"
+                fill={liked ? 'currentColor' : 'none'}
+                stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round"
+            >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            {likeCount > 0 ? likeCount : ''}
+            </button>
+        )}
+
+        {/* Comment button */}
+        {winner && (
+            <button
+            onClick={handleCommentToggle}
+            style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 'var(--radius-full, 999px)',
+                border: showComments ? '1px solid rgba(99,102,241,0.4)' : '1px solid var(--surface-border)',
+                background: showComments ? 'rgba(99,102,241,0.1)' : 'var(--surface-2)',
+                color: showComments ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
+            }}
+            >
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            {commentCount > 0 ? commentCount : ''} {commentCount === 1 ? 'Comment' : 'Comments'}
+            </button>
+        )}
+
         <Link
-        to={`/tracks/${track.id}`}
-        style={{
+            to={'/tracks/' + track.id}
+            style={{
             fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)',
             textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4,
-        }}
+            }}
         >
-        View track →
+            View track →
         </Link>
+        </div>
     </div>
+
+    {/* Inline comments */}
+    {showComments && winner && (
+        <div ref={commentSectionRef} style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--surface-border)' }}>
+        <CommentSection submissionId={winner.id} onCommentCountChange={setCommentCount} />
+        </div>
+    )}
+
     </div>
 </div>
 );
@@ -197,7 +309,6 @@ const EmptyState = ({ tab }) => (
 </div>
 );
 
-/* ── Main page ── */
 const CommunityPage = () => {
 const [activeTab, setActiveTab] = useState(0);
 const [tracks, setTracks] = useState([]);
@@ -210,12 +321,9 @@ useEffect(() => {
 fetchCommunityData();
 }, [activeTab]);
 
-// Real-time: a track just got completed — refresh if on Featured or Recently Completed tabs
 useEffect(() => {
-const unsub = on('track:completed', (data) => {
-    if (activeTab === 0 || activeTab === 1) {
-    fetchCommunityData();
-    }
+const unsub = on('track:completed', () => {
+    if (activeTab === 0 || activeTab === 1) fetchCommunityData();
     setStats(prev => ({ ...prev, completed: prev.completed + 1 }));
 });
 return unsub;
@@ -225,26 +333,21 @@ const fetchCommunityData = async () => {
 setIsLoading(true);
 setError('');
 try {
-    // Sort strategy per tab
     const sortMap = ['featured', 'recent', 'votes'];
-    const sort = sortMap[activeTab];
-
-    // Fetch completed tracks — backend returns tracks where status = 'completed'
-    const res = await api.get(`/tracks/completed?sort=${sort}&limit=20`);
+    const res = await api.get('/tracks/completed?sort=' + sortMap[activeTab] + '&limit=20');
     const completedTracks = res.data.tracks || [];
 
-    // For each track, fetch its winning submission (highest voted)
     const enriched = await Promise.all(
     completedTracks.map(async (track) => {
         try {
-        const subRes = await api.get(`/submissions/track/${track.id}`);
+        const subRes = await api.get('/submissions/track/' + track.id);
         const subs = subRes.data.submissions || [];
         const winner = subs.length > 0
             ? subs.reduce((best, s) => (parseInt(s.upvotes) || 0) > (parseInt(best.upvotes) || 0) ? s : best)
             : null;
         return {
             ...track,
-            winning_submission: winner,
+            winning_submission: winner ? { ...winner, upvotes: parseInt(winner.upvotes) || 0 } : null,
             submissions_count: subs.length,
         };
         } catch {
@@ -255,13 +358,11 @@ try {
 
     setTracks(enriched);
 
-    // Platform stats (only load once)
     if (activeTab === 0) {
     try {
         const statsRes = await api.get('/tracks/stats/community');
         setStats(statsRes.data.stats || { completed: enriched.length, collaborators: 0, votes: 0 });
     } catch {
-        // Fallback: derive from loaded data
         const totalVotes = enriched.reduce((acc, t) => acc + (parseInt(t.winning_submission?.upvotes) || 0), 0);
         setStats({ completed: enriched.length, collaborators: enriched.length, votes: totalVotes });
     }
@@ -287,7 +388,7 @@ return (
     </p>
     </div>
 
-    {/* Platform stats bar */}
+    {/* Stats bar */}
     <div
     className="animate-slide-up stagger-1"
     style={{
@@ -305,7 +406,6 @@ return (
         { value: stats.votes, label: 'Community Votes' },
     ].map(s => (
         <div key={s.label} style={{ flex: '1 1 120px', textAlign: 'center' }}>
-        <div style={{ fontSize: 22, marginBottom: 2 }}>{s.icon}</div>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent-primary)', lineHeight: 1.2 }}>{s.value}</div>
         <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{s.label}</div>
         </div>
@@ -316,8 +416,7 @@ return (
     <div
     className="animate-slide-up stagger-2"
     style={{
-        display: 'flex', gap: 4,
-        padding: 4,
+        display: 'flex', gap: 4, padding: 4,
         background: 'var(--surface-1, rgba(255,255,255,0.03))',
         border: '1px solid var(--surface-border)',
         borderRadius: 'var(--radius-lg, 14px)',
@@ -369,7 +468,7 @@ return (
     </div>
     )}
 
-    {/* CTA for producers */}
+    {/* CTA */}
     {!isLoading && tracks.length > 0 && (
     <div
         className="animate-slide-up"
@@ -392,6 +491,7 @@ return (
         </div>
     </div>
     )}
+
 </div>
 );
 };
