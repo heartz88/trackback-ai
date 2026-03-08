@@ -39,7 +39,6 @@ const typingTimeoutRef = useRef(null);
 const [startingConversation, setStartingConversation] = useState(false);
 const [deletingMessageId, setDeletingMessageId] = useState(null);
 const [hoveredMessageId, setHoveredMessageId] = useState(null);
-const [deleteModalMessageId, setDeleteModalMessageId] = useState(null);
 
 const hasJoinedConversation = useRef(false);
 const lastNotificationCount = useRef(0);
@@ -60,17 +59,18 @@ return new Set();
 const currentOnlineUsers = onlineUsersSet();
 
 // Delete a message
-const handleDeleteMessage = (messageId) => {
-setDeleteModalMessageId(messageId);
-};
-
-const confirmDeleteMessage = async () => {
-const messageId = deleteModalMessageId;
-setDeleteModalMessageId(null);
+const handleDeleteMessage = async (messageId) => {
+const ok = await confirm({
+    title: 'Delete message?',
+    message: 'This message will be permanently removed.',
+    confirmText: 'Delete',
+});
+if (!ok) return;
 setDeletingMessageId(messageId);
 try {
     await api.delete(`/messages/${messageId}`);
     setMessages(prev => prev.filter(m => m.id !== messageId));
+    toast.success('Message deleted');
 } catch (err) {
     toast.error('Failed to delete message');
     console.error('Delete message error:', err);
