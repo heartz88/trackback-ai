@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
+import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 
@@ -203,10 +204,22 @@ const [tracks, setTracks] = useState([]);
 const [isLoading, setIsLoading] = useState(true);
 const [error, setError] = useState('');
 const [stats, setStats] = useState({ completed: 0, collaborators: 0, votes: 0 });
+const { on } = useSocket();
 
 useEffect(() => {
 fetchCommunityData();
 }, [activeTab]);
+
+// Real-time: a track just got completed — refresh if on Featured or Recently Completed tabs
+useEffect(() => {
+const unsub = on('track:completed', (data) => {
+    if (activeTab === 0 || activeTab === 1) {
+    fetchCommunityData();
+    }
+    setStats(prev => ({ ...prev, completed: prev.completed + 1 }));
+});
+return unsub;
+}, [on, activeTab]);
 
 const fetchCommunityData = async () => {
 setIsLoading(true);

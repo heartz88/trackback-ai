@@ -14,13 +14,13 @@ const [connectionError, setConnectionError] = useState(null);
 
 // Connect socket when user is authenticated
 useEffect(() => {
-if (user && token) { 
+if (user && token) {
     console.log('🔄 Connecting socket with token for user:', user.username);
     
     const connectSocket = async () => {
     try {
         setConnectionError(null);
-        await socketService.connect(token); 
+        await socketService.connect(token);
     } catch (error) {
         console.error('❌ Failed to connect socket:', error.message);
         setConnectionError(error.message);
@@ -129,6 +129,16 @@ if (user && token) {
     setUnreadCount(prev => prev + 1);
     };
 
+    const handleTrackNew = (data) => {
+    console.log('🎵 New track uploaded:', data);
+    // Pages listening to this event can update their track lists
+    };
+
+    const handleTrackCompleted = (data) => {
+    console.log('✅ Track completed:', data);
+    // Pages listening to this event can update their lists
+    };
+
     // Handle online users properly
     const handleUsersOnline = (data) => {
     console.log('👥 Online users event received:', data);
@@ -170,6 +180,8 @@ if (user && token) {
     const unsubscribeNewSubmission = socketService.on('submission:new', handleNewSubmission);
     const unsubscribeNewVote = socketService.on('vote:new', handleNewVote);
     const unsubscribeNewComment = socketService.on('comment:new', handleNewComment);
+    const unsubscribeTrackNew = socketService.on('track:new', handleTrackNew);
+    const unsubscribeTrackCompleted = socketService.on('track:completed', handleTrackCompleted);
     const unsubscribeUsersOnline = socketService.on('users:online', handleUsersOnline);
     const unsubscribeUserOnline = socketService.on('user:online', handleUserOnline);
     const unsubscribeUserOffline = socketService.on('user:offline', handleUserOffline);
@@ -194,6 +206,8 @@ if (user && token) {
     unsubscribeNewSubmission();
     unsubscribeNewVote();
     unsubscribeNewComment();
+    unsubscribeTrackNew();
+    unsubscribeTrackCompleted();
     unsubscribeUsersOnline();
     unsubscribeUserOnline();
     unsubscribeUserOffline();

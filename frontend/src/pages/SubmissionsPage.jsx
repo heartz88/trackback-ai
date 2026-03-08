@@ -5,11 +5,13 @@ import SubmissionCard from '../components/submissions/SubmissionCard';
 import SubmissionForm from '../components/submissions/SubmissionForm';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 const SubmissionsPage = () => {
 const { trackId } = useParams();
 const { user } = useAuth();
+const { on } = useSocket();
 const navigate = useNavigate();
 const toast = useToast();
 const confirm = useConfirm();
@@ -36,6 +38,28 @@ const mySubmissions = user ? submissions.filter(s => s.collaborator_id === user.
 
 useEffect(() => { fetchTrackDetails(); fetchCollaboration(); }, [trackId]);
 useEffect(() => { fetchSubmissions(); }, [trackId, refreshKey, user]);
+
+// Real-time: new submission on this track
+useEffect(() => {
+const unsubSubmission = on('submission:new', (data) => {
+    if (data.trackId?.toString() !== trackId?.toString()) return;
+    // Refresh submissions list so we get the full record with audio URL
+    setRefreshKey(k => k + 1);
+    toast.success(`🎵 ${data.collaboratorName || 'Someone'} submitted a new version!`);
+});
+
+const unsubVote = on('vote:new', (data) => {
+    if (data.trackId?.toString() !== trackId?.toString()) return;
+    // Update vote count on the specific submission without a full refetch
+    setSubmissions(prev => prev.map(s =>
+    s.id?.toString() === data.submissionId?.toString()
+        ? { ...s, upvotes: (parseInt(s.upvotes) || 0) + 1 }
+        : s
+    ));
+});
+
+return () => { unsubSubmission(); unsubVote(); };
+}, [on, trackId]);
 
 const fetchTrackDetails = async () => {
 setIsLoading(true);

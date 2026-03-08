@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../components/common/Toast';
+import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 function CollaborationsPage() {
@@ -10,6 +11,7 @@ const [history, setHistory] = useState({ received: [], sent: [] });
 const [loading, setLoading] = useState(true);
 const [activeTab, setActiveTab] = useState('pending');
 const toast = useToast();
+const { on } = useSocket();
 
 useEffect(() => {
 const fetchRequests = async () => {
@@ -37,6 +39,45 @@ const fetchRequests = async () => {
 };
 fetchRequests();
 }, []);
+
+// Real-time: incoming collaboration request
+useEffect(() => {
+const unsubRequest = on('collaboration:request', (data) => {
+    setReceived(prev => {
+    // Avoid duplicates
+    if (prev.some(r => r.id === data.requestId)) return prev;
+    const newRequest = {
+        id: data.requestId,
+        track_id: data.trackId,
+        track_title: data.trackTitle,
+        collaborator_name: data.requesterName,
+        message: data.message,
+        status: 'pending',
+        created_at: data.timestamp,
+    };
+    return [newRequest, ...prev];
+    });
+    toast.success(`🤝 New collaboration request from ${data.requesterName}!`);
+});
+
+const unsubResponse = on('collaboration:response', (data) => {
+    setSent(prev => prev.filter(r => r.id !== data.requestId));
+    setHistory(prev => ({
+    ...prev,
+    sent: [
+        ...prev.sent,
+        { id: data.requestId, track_title: data.trackTitle, status: data.status, updated_at: data.timestamp }
+    ]
+    }));
+    if (data.status === 'approved') {
+    toast.success(`✅ Your request for "${data.trackTitle}" was approved!`);
+    } else {
+    toast.error(`Your request for "${data.trackTitle}" was declined`);
+    }
+});
+
+return () => { unsubRequest(); unsubResponse(); };
+}, [on]);
 
 const handleResponse = async (requestId, status) => {
 try {

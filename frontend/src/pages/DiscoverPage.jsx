@@ -2,11 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import TrackCard from '../components/tracks/TrackCard';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 function DiscoverPage() {
 const { user } = useAuth();
+const { on } = useSocket();
 const [tracks, setTracks] = useState([]);
+const [newTrackBanner, setNewTrackBanner] = useState(false);
 const [filters, setFilters] = useState({ bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
 const [loading, setLoading] = useState(true);
 const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -33,6 +36,15 @@ useEffect(() => {
 fetchTracks();
 }, [fetchTracks]);
 
+// Real-time: new track uploaded by someone else
+useEffect(() => {
+const unsub = on('track:new', (data) => {
+    // Only show banner if filters are clear (otherwise the new track might not match)
+    setNewTrackBanner(true);
+});
+return unsub;
+}, [on]);
+
 const clearFilters = () => setFilters({ bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
 const activeFilterCount = Object.values(filters).filter((v) => v !== '').length;
 
@@ -57,6 +69,19 @@ return (
         </Link>
         )}
     </div>
+
+    {/* New track banner */}
+    {newTrackBanner && (
+        <div className="mb-4 flex items-center justify-between px-4 py-3 bg-primary-500/10 border border-primary-500/30 rounded-xl text-primary-400 text-sm font-medium animate-slide-down">
+        <span>🎵 New tracks available!</span>
+        <button
+            onClick={() => { fetchTracks(); setNewTrackBanner(false); }}
+            className="px-3 py-1 bg-primary-600 hover:bg-primary-500 text-white text-xs rounded-lg transition-all"
+        >
+            Refresh
+        </button>
+        </div>
+    )}
 
     {/* Filter Bar */}
     <div className="mb-8">
