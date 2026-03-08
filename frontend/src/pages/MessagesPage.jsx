@@ -38,6 +38,7 @@ const typingTimeoutRef = useRef(null);
 const [startingConversation, setStartingConversation] = useState(false);
 const [deletingMessageId, setDeletingMessageId] = useState(null);
 const [hoveredMessageId, setHoveredMessageId] = useState(null);
+const [deleteModalMessageId, setDeleteModalMessageId] = useState(null);
 
 const hasJoinedConversation = useRef(false);
 const lastNotificationCount = useRef(0);
@@ -58,8 +59,13 @@ return new Set();
 const currentOnlineUsers = onlineUsersSet();
 
 // Delete a message
-const handleDeleteMessage = async (messageId) => {
-if (!window.confirm('Delete this message?')) return;
+const handleDeleteMessage = (messageId) => {
+setDeleteModalMessageId(messageId);
+};
+
+const confirmDeleteMessage = async () => {
+const messageId = deleteModalMessageId;
+setDeleteModalMessageId(null);
 setDeletingMessageId(messageId);
 try {
     await api.delete(`/messages/${messageId}`);
