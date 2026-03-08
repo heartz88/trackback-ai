@@ -133,6 +133,18 @@ try {
         }
     });
 
+    // Emit real-time event so Discover page updates live
+    try {
+    const { io } = require('../server');
+    io.emit('track:new', {
+        trackId: track.id,
+        title: track.title,
+        username: req.user.username,
+        genre: track.genre || null,
+        timestamp: new Date().toISOString()
+    });
+    } catch (e) { /* non-critical */ }
+
     res.status(201).json({
     message: 'Track uploaded successfully. Analysis in progress.',
     track: {

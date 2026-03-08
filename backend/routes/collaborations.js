@@ -271,13 +271,10 @@ await db.query(
     [status, id]
 );
 
-// If approved, update track status and create active collaboration
+// If approved, create active collaboration
+// NOTE: Track intentionally stays 'open' so multiple collaborators can request.
+// Track only becomes 'completed' when owner explicitly picks a winning submission.
 if (status === 'approved') {
-    await db.query(
-    'UPDATE tracks SET status = $1 WHERE id = $2',
-    ['in_progress', request.track_id]
-    );
-
     // Create active collaboration record
     await db.query(
     `INSERT INTO active_collaborations (track_id, owner_id, collaborator_id, conversation_id, status)
@@ -622,6 +619,20 @@ await db.query(
     trackId
     ]
 );
+
+// Emit real-time event so Community page updates live
+try {
+    const { io } = require('../server');
+    io.emit('track:completed', {
+    trackId,
+    title: trackResult.rows[0].title,
+    winningSubmission: {
+        id: winningSubmission.id,
+        collaborator: winningSubmission.username,
+    },
+    timestamp: new Date().toISOString()
+    });
+} catch (e) { /* non-critical */ }
 
 res.json({
     message: 'Track marked as completed',
