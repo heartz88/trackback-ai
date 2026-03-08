@@ -64,6 +64,7 @@ const ok = await confirm({
     title: 'Delete message?',
     message: 'This message will be permanently removed.',
     confirmText: 'Delete',
+    danger: true
 });
 if (!ok) return;
 setDeletingMessageId(messageId);
