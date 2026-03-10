@@ -88,17 +88,37 @@ function EditProfilePage() {
         setError('');
 
         try {
-            const formData = new FormData();
-            formData.append('avatar', file);
-            const res = await api.post('/users/avatar', formData, {
+            const fd = new FormData();
+            fd.append('avatar', file);
+            // FIX 1: was '/users/avatar' — backend route is /users/:userId/avatar
+            const res = await api.post(`/users/${user.id}/avatar`, fd, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setAvatarUrl(res.data.avatar_url);
+            // FIX 3: update auth context so nav avatar refreshes without page reload
+            login(localStorage.getItem('token'), { ...user, avatar_url: res.data.avatar_url });
             setSuccess('Profile picture updated!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            setError('Failed to upload image');
+            setError(err.response?.data?.error?.message || 'Failed to upload image');
             setAvatarUrl('');
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
+    // FIX 2: was just `setAvatarUrl('')` — now calls the DELETE endpoint too
+    const handleRemoveAvatar = async () => {
+        setUploadingAvatar(true);
+        setError('');
+        try {
+            await api.delete(`/users/${user.id}/avatar`);
+            setAvatarUrl('');
+            login(localStorage.getItem('token'), { ...user, avatar_url: null });
+            setSuccess('Profile picture removed');
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setError('Failed to remove profile picture');
         } finally {
             setUploadingAvatar(false);
         }
@@ -221,7 +241,8 @@ function EditProfilePage() {
                                 <div className="flex items-center gap-6 mb-8 p-5 bg-[var(--bg-tertiary)]/30 rounded-2xl border border-[var(--border-color)]">
                                     <div className="relative flex-shrink-0">
                                         {avatarUrl ? (
-                                            <img src={avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-4 border-primary-500/30" />
+                                            <img src={avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-4 border-primary-500/30"
+                                                onError={() => setAvatarUrl('')} />
                                         ) : (
                                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-2xl font-bold border-4 border-primary-500/30">
                                                 {formData.username?.[0]?.toUpperCase() || '?'}
@@ -243,8 +264,9 @@ function EditProfilePage() {
                                             {uploadingAvatar ? 'Uploading...' : 'Upload Photo'}
                                         </button>
                                         {avatarUrl && (
-                                            <button type="button" onClick={() => setAvatarUrl('')}
-                                                className="ml-3 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 text-sm font-semibold rounded-xl transition-all border border-[var(--border-color)]">
+                                            <button type="button" onClick={handleRemoveAvatar}
+                                                disabled={uploadingAvatar}
+                                                className="ml-3 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 text-sm font-semibold rounded-xl transition-all border border-[var(--border-color)] disabled:opacity-50">
                                                 Remove
                                             </button>
                                         )}
