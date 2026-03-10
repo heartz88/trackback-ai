@@ -224,42 +224,65 @@ router.post('/forgot-password', async (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Reset your password</title>
 </head>
-<body style="margin:0;padding:0;background:#040d14;font-family:'Segoe UI',Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
   <div style="display:none;max-height:0;overflow:hidden;">Reset your TrackBackAI password — link expires in 1 hour</div>
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#040d14;padding:40px 20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-        <!-- Header -->
-        <tr><td style="background:linear-gradient(135deg,#0f2027,#1a3a3a);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center;border-bottom:1px solid rgba(20,184,166,0.2);">
-          <div style="display:inline-flex;align-items:center;gap:10px;">
-            <div style="width:36px;height:36px;background:linear-gradient(135deg,#14b8a6,#06b6d4);border-radius:10px;display:inline-block;"></div>
-            <span style="font-size:22px;font-weight:800;color:#f0fdfa;letter-spacing:-0.03em;">TrackBack<span style="color:#14b8a6;">AI</span></span>
-          </div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:48px 20px;">
+    <tr><td align="center">
+      <table width="580" cellpadding="0" cellspacing="0" style="max-width:580px;width:100%;">
+
+        <!-- Logo -->
+        <tr><td style="padding-bottom:24px;text-align:center;">
+          <span style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-0.03em;">
+            Track<span style="color:#14b8a6;">Back</span>AI
+          </span>
         </td></tr>
 
-        <!-- Body -->
-        <tr><td style="background:#0a1628;padding:40px;border-left:1px solid rgba(20,184,166,0.1);border-right:1px solid rgba(20,184,166,0.1);">
-          <h2 style="color:#f0fdfa;font-size:22px;font-weight:800;margin:0 0 8px;">Reset Your Password 🔐</h2>
-          <p style="color:#94a3b8;font-size:15px;margin:0 0 24px;">Hey <strong style="color:#e2e8f0;">${user.username}</strong>,</p>
-          <div style="background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.18);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
-            <p style="color:#e2e8f0;font-size:15px;margin:0;">
-              We received a request to reset your password. Click the button below to set a new one.
+        <!-- Card -->
+        <tr><td style="background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+
+          <!-- Accent bar -->
+          <div style="height:4px;background:linear-gradient(90deg,#14b8a6,#06b6d4);"></div>
+
+          <!-- Body -->
+          <div style="padding:40px 48px;">
+            <p style="font-size:13px;font-weight:600;color:#14b8a6;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;">Password Reset</p>
+            <h1 style="font-size:24px;font-weight:800;color:#0f172a;margin:0 0 8px;line-height:1.2;">Reset your password</h1>
+            <p style="color:#64748b;font-size:15px;margin:0 0 28px;">Hi <strong style="color:#0f172a;">${user.username}</strong>,</p>
+
+            <div style="background:#f0fdfa;border-left:3px solid #14b8a6;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:24px;">
+              <p style="color:#0f172a;font-size:14px;margin:0;line-height:1.6;">
+                We received a request to reset your password. Click the button below to choose a new one. This link expires in <strong>1 hour</strong>.
+              </p>
+            </div>
+
+            <p style="color:#94a3b8;font-size:13px;margin:0 0 4px;">If you didn't request this, you can safely ignore this email — your password won't change.</p>
+
+            <table cellpadding="0" cellspacing="0" style="margin:32px auto 0;">
+              <tr><td style="background:linear-gradient(135deg,#14b8a6,#06b6d4);border-radius:100px;">
+                <a href="${resetLink}" style="display:inline-block;padding:14px 36px;color:#ffffff;font-weight:700;font-size:14px;letter-spacing:0.02em;text-decoration:none;">Reset Password →</a>
+              </td></tr>
+            </table>
+
+            <p style="color:#94a3b8;font-size:12px;margin:28px 0 0;word-break:break-all;text-align:center;">
+              Or copy this link:<br/>
+              <a href="${resetLink}" style="color:#14b8a6;">${resetLink}</a>
             </p>
           </div>
-          <p style="color:#94a3b8;font-size:13px;margin:0 0 24px;">This link expires in <strong style="color:#e2e8f0;">1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>
-          <div style="text-align:center;margin:28px 0;">
-            <a href="${resetLink}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#14b8a6,#06b6d4);color:#0f172a;font-weight:800;font-size:15px;border-radius:100px;text-decoration:none;letter-spacing:0.02em;">Reset Password →</a>
+
+          <!-- Footer -->
+          <div style="padding:24px 48px;background:#f8fafc;border-top:1px solid #e2e8f0;">
+            <p style="color:#94a3b8;font-size:12px;margin:0 0 6px;line-height:1.6;">
+              You're receiving this because a password reset was requested for your TrackBackAI account.
+            </p>
+            <a href="${FRONTEND_URL}" style="color:#94a3b8;font-size:12px;text-decoration:none;">trackbackai.me</a>
           </div>
-          <p style="color:#64748b;font-size:12px;margin:24px 0 0;word-break:break-all;">Or copy this link: <a href="${resetLink}" style="color:#14b8a6;">${resetLink}</a></p>
+
         </td></tr>
 
-        <!-- Footer -->
-        <tr><td style="background:#040d14;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(20,184,166,0.08);border-top:none;">
-          <p style="color:#475569;font-size:12px;margin:0 0 8px;">
-            You're receiving this because a password reset was requested for your TrackBackAI account.
-          </p>
-          <a href="${FRONTEND_URL}" style="color:#475569;font-size:12px;text-decoration:none;">TrackBackAI</a>
+        <!-- Bottom note -->
+        <tr><td style="padding-top:20px;text-align:center;">
+          <p style="color:#94a3b8;font-size:11px;margin:0;">© 2025 TrackBackAI. All rights reserved.</p>
         </td></tr>
 
       </table>
