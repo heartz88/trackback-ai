@@ -14,7 +14,8 @@ const app = express();
 const server = http.createServer(app);
 
 // CORS configuration
-const allowedOrigins = [
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o=>o.trim()):
+[
   'https://trackback-frontend-3ofn.onrender.com',
   'http://localhost:3005',
   'http://localhost:3000'
@@ -78,7 +79,6 @@ try {
 const token = socket.handshake.auth.token;
 
 if (!token) {
-    console.log('❌ No token provided for socket connection');
     return next(new Error('Authentication error: No token provided'));
 }
 
@@ -91,7 +91,6 @@ const userResult = await db.query(
 );
 
 if (userResult.rows.length === 0) {
-    console.log(`❌ User not found in database: ${decoded.id}`);
     return next(new Error('Authentication error: User not found'));
 }
 
@@ -99,8 +98,6 @@ const user = userResult.rows[0];
 socket.userId = user.id;
 socket.username = user.username;
 socket.email = user.email;
-
-console.log(`🔐 Socket authenticated for user: ${user.username} (${user.id})`);
 next();
 } catch (err) {
 console.error('❌ Socket auth error:', err.message);
@@ -110,7 +107,6 @@ next(new Error('Authentication error: Invalid token'));
 
 // Socket.IO connection handler
 io.on('connection', (socket) => {
-console.log(`🔌 New socket connection: ${socket.id} for user: ${socket.username} (${socket.userId})`);
 
 // Add user to online users
 onlineUsers.set(socket.userId, {
@@ -154,7 +150,7 @@ timestamp: new Date().toISOString(),
 total: onlineUsersList.length
 });
 
-console.log(`👥 Sending ${onlineUsersList.length} online users to ${socket.username}`);
+
 
 // Notify all other users about this user coming online
 socket.broadcast.emit('user:online', {
@@ -173,7 +169,6 @@ try {
     return socket.emit('error', { message: 'Invalid message data' });
     }
 
-    console.log(`📨 New message from ${socket.username} in conversation ${conversationId}`);
 
     const convResult = await db.query(
     `SELECT cp.conversation_id 
@@ -265,7 +260,7 @@ try {
     return socket.emit('error', { message: 'Missing required fields' });
     }
 
-    console.log(`🤝 Collaboration request from ${socket.username} for track ${trackId}`);
+    
 
     const trackResult = await db.query(
     'SELECT user_id, title FROM tracks WHERE id = $1',
@@ -348,7 +343,7 @@ try {
     return socket.emit('error', { message: 'Missing required fields' });
     }
 
-    console.log(`🤝 Collaboration response from ${socket.username} for request ${requestId}`);
+    
 
     const requestResult = await db.query(
     `SELECT cr.*, t.title as track_title, cr.collaborator_id 
@@ -461,7 +456,7 @@ try {
 
 socket.on('join:conversation', (conversationId) => {
 socket.join(`conversation:${conversationId}`);
-console.log(`💬 User ${socket.username} joined conversation: ${conversationId}`);
+
 
 db.query(
     `UPDATE conversation_participants 
@@ -473,7 +468,6 @@ db.query(
 
 socket.on('leave:conversation', (conversationId) => {
 socket.leave(`conversation:${conversationId}`);
-console.log(`💬 User ${socket.username} left conversation: ${conversationId}`);
 });
 
 socket.on('heartbeat', () => {
@@ -484,7 +478,6 @@ db.query(
 });
 
 socket.on('disconnect', () => {
-console.log(`🔌 Socket disconnected: ${socket.id} for user: ${socket.username} (${socket.userId})`);
 
 onlineUsers.delete(socket.userId);
 
@@ -499,7 +492,7 @@ socket.broadcast.emit('user:offline', {
     timestamp: new Date().toISOString()
 });
 
-console.log(`👥 Online users remaining: ${onlineUsers.size}`);
+
 });
 });
 
@@ -545,9 +538,7 @@ users: Array.from(onlineUsers.values()).map(user => ({
 const verifyDbConnection = async () => {
 try {
 const result = await db.query('SELECT NOW()');
-console.log('✅ Connected to PostgreSQL database at:', result.rows[0].now);
 } catch (err) {
-console.error('❌ Database connection error:', err.message);
 process.exit(1);
 }
 };
@@ -610,21 +601,11 @@ await verifyDbConnection();
 
 // Start the server
 server.listen(PORT, async () => {
-    console.log(`🚀 TrackBackAI API running on port ${PORT}`);
-    console.log(`🔌 Socket.IO server ready`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3005'}`);
-    console.log(`📡 Socket.IO transport: websocket, polling`);
-    console.log(`📊 Database Admin: http://localhost:8080`);
-    console.log(`   Login: postgres / Samdave12 / trackback-ai_DB`);
-
     // Clear online users table
     await db.query('DELETE FROM online_users').catch(() => {
-    console.log('⚠️  online_users table might not exist yet');
     });
 });
 } catch (err) {
-console.error('❌ Failed to start server:', err);
 process.exit(1);
 }
 };
