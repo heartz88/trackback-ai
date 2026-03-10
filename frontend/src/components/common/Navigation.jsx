@@ -124,7 +124,6 @@ return (
                 <NavLink to="/upload">Upload</NavLink>
                 <NavLink to="/my-tracks">My Tracks</NavLink>
                 <NavLink to="/collaborations">Collabs</NavLink>
-                <NavLink to="/community">Community</NavLink>
                 <NavLink to="/messages" badge={unreadCount}>Messages</NavLink>
             </div>
             )}
@@ -145,8 +144,11 @@ return (
                     className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--border-color)] transition-all duration-300 border border-transparent hover:border-[var(--accent-primary)]/30 group"
                 >
                     <div className="relative">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20">
-                        <span className="text-white text-sm font-bold">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 overflow-hidden">
+                        {user.avatar_url ? (
+                        <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                        ) : null}
+                        <span className="text-white text-sm font-bold" style={user.avatar_url ? { display: 'none' } : {}}>
                         {user.username[0].toUpperCase()}
                         </span>
                     </div>
@@ -283,8 +285,11 @@ return (
             >
             <div className="flex items-center space-x-3">
                 <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg">
-                    <span className="text-white text-lg font-bold">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg overflow-hidden">
+                    {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                    ) : null}
+                    <span className="text-white text-lg font-bold" style={user.avatar_url ? { display: 'none' } : {}}>
                     {user.username[0].toUpperCase()}
                     </span>
                 </div>
@@ -309,7 +314,6 @@ return (
             <MenuItem to="/upload" onClick={closeMenu}>Upload Track</MenuItem>
             <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
             <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
-            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
             <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
             <MenuItem to={`/profile/${user.id}`} onClick={closeMenu}>Profile</MenuItem>
             <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
@@ -328,8 +332,7 @@ return (
             </>
         ) : (
             <>
-            {/*<MenuItem to="/discover" onClick={closeMenu}>Discover</MenuItem>*/}
-            {/* Mobile Menu Overlay <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>*/}
+            <MenuItem to="/discover" onClick={closeMenu}>Discover</MenuItem>
             <MenuItem to="/login" onClick={closeMenu}>Sign In</MenuItem>
             <MenuItem to="/register" onClick={closeMenu}>Join Now</MenuItem>
             </>
