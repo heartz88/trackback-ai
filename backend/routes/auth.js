@@ -1,21 +1,24 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto'); // ADD THIS - was missing!
+const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const authMiddleware = require('../middleware/auth');
+const { Resend } = require('resend');
 
 const router = express.Router();
-
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const resend = new Resend(process.env.RESEND_API_KEY);
+const FROM_EMAIL = process.env.EMAIL_FROM || 'TrackBackAI <notifications@trackbackai.me>';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3005';
 
 // Helper function to generate JWT token
 const generateToken = (user) => {
     return jwt.sign(
     {
         id: user.id,
-        userId: user.id, // Add both for compatibility
+        userId: user.id,
         username: user.username,
         email: user.email
     },
@@ -40,7 +43,6 @@ router.post('/register',
 
         const { username, email, password, bio, skills } = req.body;
 
-        // Check if user already exists
         const existingUser = await db.query(
         'SELECT * FROM users WHERE email = $1 OR username = $2',
         [email, username]
@@ -52,10 +54,8 @@ router.post('/register',
         });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert user with new columns
         const result = await db.query(
             `INSERT INTO users (username, email, password_hash, bio, skills, 
                                social_links, looking_for_collab, last_active, created_at) 
@@ -65,8 +65,6 @@ router.post('/register',
         );
 
         const user = result.rows[0];
-
-        // Generate JWT token
         const token = generateToken(user);
 
         res.status(201).json({
@@ -96,7 +94,6 @@ router.post('/login',
 
         const { email, password } = req.body;
 
-        // Find user
         const result = await db.query(
             'SELECT * FROM users WHERE email = $1',
             [email]
@@ -109,8 +106,6 @@ router.post('/login',
         }
 
         const user = result.rows[0];
-
-        // Verify password
         const validPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!validPassword) {
@@ -119,13 +114,11 @@ router.post('/login',
         });
         }
 
-        // Update last active
         await db.query(
             'UPDATE users SET last_active = NOW() WHERE id = $1',
             [user.id]
         );
 
-        // Generate JWT token
         const token = generateToken(user);
 
         res.json({
@@ -154,9 +147,6 @@ router.post('/refresh', authMiddleware, async (req, res) => {
     try {
     const userId = req.user.id;
 
-    console.log(`🔄 Refreshing token for user: ${userId}`);
-
-    // Fetch fresh user data from database
     const result = await db.query(
         'SELECT id, username, email, bio, skills, social_links, looking_for_collab, created_at FROM users WHERE id = $1',
         [userId]
@@ -170,16 +160,12 @@ router.post('/refresh', authMiddleware, async (req, res) => {
 
     const user = result.rows[0];
 
-    // Update last active
     await db.query(
         'UPDATE users SET last_active = NOW() WHERE id = $1',
         [userId]
     );
 
-    // Generate new JWT token
     const newToken = generateToken(user);
-
-    console.log(`✅ Token refreshed for user: ${user.username}`);
 
     res.json({
         message: 'Token refreshed successfully',
@@ -187,7 +173,7 @@ router.post('/refresh', authMiddleware, async (req, res) => {
         user
     });
     } catch (error) {
-    console.error('❌ Token refresh error:', error);
+    console.error('Token refresh error:', error);
     res.status(500).json({
         error: {
         message: 'Token refresh failed',
@@ -199,76 +185,139 @@ router.post('/refresh', authMiddleware, async (req, res) => {
 
 // Forgot Password - Request reset
 router.post('/forgot-password', async (req, res) => {
-try {
-const { email } = req.body;
+    try {
+        const { email } = req.body;
 
-// Check if user exists
-const userResult = await db.query(
-    'SELECT id, username FROM users WHERE email = $1',
-    [email]
-);
+        // Always return success for security (don't reveal if email exists)
+        const successMsg = { message: 'If an account exists, you will receive reset instructions' };
 
-if (userResult.rows.length === 0) {
-    // Return success even if email doesn't exist (security)
-    return res.json({ message: 'If an account exists, you will receive reset instructions' });
-}
+        const userResult = await db.query(
+            'SELECT id, username FROM users WHERE email = $1',
+            [email]
+        );
 
-const user = userResult.rows[0];
+        if (userResult.rows.length === 0) {
+            return res.json(successMsg);
+        }
 
-// Generate reset token
-const resetToken = crypto.randomBytes(32).toString('hex');
-const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+        const user = userResult.rows[0];
 
-// Store token in database
-await db.query(
-    'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
-    [resetToken, tokenExpiry, user.id]
-);
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
-// Send email with reset link
-const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+        // Store token in database
+        await db.query(
+            'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
+            [resetToken, tokenExpiry, user.id]
+        );
 
-// TODO: Implement email sending (using SendGrid, Nodemailer, etc.)
-console.log(`Reset link for ${email}: ${resetLink}`);
+        const resetLink = FRONTEND_URL + '/reset-password?token=' + resetToken;
 
-res.json({ message: 'If an account exists, you will receive reset instructions' });
-} catch (error) {
-console.error('Forgot password error:', error);
-res.status(500).json({ error: { message: 'Failed to process request' } });
-}
+        // Send password reset email via Resend
+        if (process.env.RESEND_API_KEY) {
+            try {
+                const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset your password</title>
+</head>
+<body style="margin:0;padding:0;background:#040d14;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;">Reset your TrackBackAI password — link expires in 1 hour</div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#040d14;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Header -->
+        <tr><td style="background:linear-gradient(135deg,#0f2027,#1a3a3a);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center;border-bottom:1px solid rgba(20,184,166,0.2);">
+          <div style="display:inline-flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;background:linear-gradient(135deg,#14b8a6,#06b6d4);border-radius:10px;display:inline-block;"></div>
+            <span style="font-size:22px;font-weight:800;color:#f0fdfa;letter-spacing:-0.03em;">TrackBack<span style="color:#14b8a6;">AI</span></span>
+          </div>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="background:#0a1628;padding:40px;border-left:1px solid rgba(20,184,166,0.1);border-right:1px solid rgba(20,184,166,0.1);">
+          <h2 style="color:#f0fdfa;font-size:22px;font-weight:800;margin:0 0 8px;">Reset Your Password 🔐</h2>
+          <p style="color:#94a3b8;font-size:15px;margin:0 0 24px;">Hey <strong style="color:#e2e8f0;">${user.username}</strong>,</p>
+          <div style="background:rgba(20,184,166,0.06);border:1px solid rgba(20,184,166,0.18);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+            <p style="color:#e2e8f0;font-size:15px;margin:0;">
+              We received a request to reset your password. Click the button below to set a new one.
+            </p>
+          </div>
+          <p style="color:#94a3b8;font-size:13px;margin:0 0 24px;">This link expires in <strong style="color:#e2e8f0;">1 hour</strong>. If you didn't request this, you can safely ignore this email.</p>
+          <div style="text-align:center;margin:28px 0;">
+            <a href="${resetLink}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#14b8a6,#06b6d4);color:#0f172a;font-weight:800;font-size:15px;border-radius:100px;text-decoration:none;letter-spacing:0.02em;">Reset Password →</a>
+          </div>
+          <p style="color:#64748b;font-size:12px;margin:24px 0 0;word-break:break-all;">Or copy this link: <a href="${resetLink}" style="color:#14b8a6;">${resetLink}</a></p>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="background:#040d14;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid rgba(20,184,166,0.08);border-top:none;">
+          <p style="color:#475569;font-size:12px;margin:0 0 8px;">
+            You're receiving this because a password reset was requested for your TrackBackAI account.
+          </p>
+          <a href="${FRONTEND_URL}" style="color:#475569;font-size:12px;text-decoration:none;">TrackBackAI</a>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+                await resend.emails.send({
+                    from: FROM_EMAIL,
+                    to: email,
+                    subject: '🔐 Reset your TrackBackAI password',
+                    html,
+                });
+
+                console.log('✉️  Password reset email sent to:', email);
+            } catch (emailErr) {
+                // Never block the response due to email failure
+                console.error('❌ Failed to send reset email:', emailErr.message);
+            }
+        } else {
+            console.log('⚠️  RESEND_API_KEY not set — reset link:', resetLink);
+        }
+
+        res.json(successMsg);
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: { message: 'Failed to process request' } });
+    }
 });
 
 // Reset Password
 router.post('/reset-password', async (req, res) => {
-try {
-const { token, new_password } = req.body;
+    try {
+        const { token, new_password } = req.body;
 
-// Find user with valid token
-const userResult = await db.query(
-    'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
-    [token]
-);
+        const userResult = await db.query(
+            'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expiry > NOW()',
+            [token]
+        );
 
-if (userResult.rows.length === 0) {
-    return res.status(400).json({ error: { message: 'Invalid or expired reset token' } });
-}
+        if (userResult.rows.length === 0) {
+            return res.status(400).json({ error: { message: 'Invalid or expired reset token' } });
+        }
 
-const user = userResult.rows[0];
+        const user = userResult.rows[0];
+        const hashedPassword = await bcrypt.hash(new_password, 10);
 
-// Hash new password
-const hashedPassword = await bcrypt.hash(new_password, 10);
+        await db.query(
+            'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
+            [hashedPassword, user.id]
+        );
 
-// Update password and clear reset token
-await db.query(
-    'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',
-    [hashedPassword, user.id]
-);
-
-res.json({ message: 'Password reset successfully' });
-} catch (error) {
-console.error('Reset password error:', error);
-res.status(500).json({ error: { message: 'Failed to reset password' } });
-}
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ error: { message: 'Failed to reset password' } });
+    }
 });
 
 // Get current user
@@ -289,7 +338,6 @@ router.get('/me', authMiddleware, async (req, res) => {
 
     const user = result.rows[0];
 
-    // Update last active
     await db.query(
         'UPDATE users SET last_active = NOW() WHERE id = $1',
         [userId]
