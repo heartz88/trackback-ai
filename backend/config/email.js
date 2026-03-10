@@ -25,7 +25,7 @@ return `<!DOCTYPE html>
     <tr><td style="background:linear-gradient(135deg,#0f2027,#1a3a3a);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center;border-bottom:1px solid rgba(20,184,166,0.2);">
         <div style="display:inline-flex;align-items:center;gap:10px;">
         <div style="width:36px;height:36px;background:linear-gradient(135deg,#14b8a6,#06b6d4);border-radius:10px;display:inline-block;"></div>
-        <span style="font-size:22px;font-weight:800;color:#f0fdfa;letter-spacing:-0.03em;">TrackBack<span style="color:#14b8a6;">AI</span></span>
+        <span style="font-size:22px;font-weight:800;color:#f0fdfa;letter-spacing:-0.03em;">Track<span style="color:#14b8a6;">Back</span>AI</span>
         </div>
     </td></tr>
 
