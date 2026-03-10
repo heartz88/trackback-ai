@@ -201,11 +201,9 @@ const result = await resend.emails.send({
     html,
 });
 
-console.log(`✉️  Email sent [${type}] to ${recipientEmail} — id: ${result.data?.id}`);
 return { sent: true, id: result.data?.id };
 } catch (err) {
 // Never throw — email failure must not break the main request
-console.error(`❌ Email send failed [${type}]:`, err.message);
 return { error: err.message };
 }
 }
