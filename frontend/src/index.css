@@ -724,47 +724,74 @@ animation: beatPulse 0.6s ease-in-out infinite;
 /* ===== MODE SWITCHER ===== */
 
 .mode-switch {
-position: relative;
-width: 60px;
-height: 32px;
-background: var(--bg-tertiary);
-border-radius: 16px;
-border: 1px solid var(--border-color);
-cursor: pointer;
-transition: all 0.3s ease;
+  position: relative;
+  width: 56px;
+  height: 28px;
+  background: linear-gradient(135deg, #1e3a5f, #0f2340);
+  border-radius: 14px;
+  border: 1px solid rgba(99, 179, 237, 0.25);
+  cursor: pointer;
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 0 0 0 rgba(20,184,166,0);
+  overflow: hidden;
 }
 
+.mode-switch:hover {
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 0 0 3px rgba(20,184,166,0.15);
+}
+
+.light .mode-switch {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+/* Stars (dark mode background dots) */
 .mode-switch::before {
-content: '';
-position: absolute;
-top: 2px;
-left: 2px;
-width: 28px;
-height: 28px;
-background: var(--accent-primary);
-border-radius: 50%;
-transition: transform 0.3s ease;
-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 28px;
+  width: 4px;
+  height: 4px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  box-shadow:
+    8px 4px 0 -1px rgba(255,255,255,0.35),
+    4px 10px 0 -1.5px rgba(255,255,255,0.25),
+    14px 9px 0 -1.5px rgba(255,255,255,0.3);
+  transition: opacity 0.4s ease;
+  opacity: 1;
 }
 
 .light .mode-switch::before {
-transform: translateX(28px);
+  opacity: 0;
 }
 
+/* The sliding knob — uses the after pseudo, contains icon via ThemeToggle SVG */
 .mode-switch::after {
-content: '🌙';
-position: absolute;
-left: 8px;
-top: 50%;
-transform: translateY(-50%);
-font-size: 14px;
-transition: opacity 0.3s ease;
+  content: '🌙';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 22px;
+  text-align: center;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.4s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .light .mode-switch::after {
-content: '☀️';
-left: auto;
-right: 8px;
+  content: '☀️';
+  transform: translateX(28px);
+  background: #fff8e1;
+  box-shadow: 0 2px 6px rgba(251,191,36,0.4), 0 1px 2px rgba(0,0,0,0.1);
 }
 
 /* ===== ACCESSIBILITY - REDUCED MOTION ===== */
@@ -829,17 +856,17 @@ box-shadow: none;
 }
 
 .mode-switch {
-width: 50px;
-height: 28px;
+  width: 50px;
+  height: 26px;
 }
-
-.mode-switch::before {
-width: 24px;
-height: 24px;
+.mode-switch::after {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  line-height: 20px;
 }
-
-.light .mode-switch::before {
-transform: translateX(22px);
+.light .mode-switch::after {
+  transform: translateX(24px);
 }
 }
 
@@ -902,17 +929,17 @@ height: 160px;
 }
 
 .mode-switch {
-width: 55px;
-height: 30px;
+  width: 52px;
+  height: 28px;
 }
-
-.mode-switch::before {
-width: 26px;
-height: 26px;
+.mode-switch::after {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  line-height: 22px;
 }
-
-.light .mode-switch::before {
-transform: translateX(25px);
+.light .mode-switch::after {
+  transform: translateX(24px);
 }
 }
 
@@ -952,17 +979,17 @@ height: 200px;
 }
 
 .mode-switch {
-width: 60px;
-height: 32px;
+  width: 56px;
+  height: 28px;
 }
-
-.mode-switch::before {
-width: 28px;
-height: 28px;
+.mode-switch::after {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  line-height: 22px;
 }
-
-.light .mode-switch::before {
-transform: translateX(28px);
+.light .mode-switch::after {
+  transform: translateX(28px);
 }
 }
 
