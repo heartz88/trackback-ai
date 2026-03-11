@@ -105,36 +105,34 @@ function EditProfilePage() {
             login(localStorage.getItem('token'), response.data.user);
             setSuccess('Profile updated!');
             setTimeout(() => navigate(`/profile/${formData.username}`), 1500);
-        } catch (err) {
-            setError(err.response?.data?.error?.message || 'Failed to update profile');
-        } finally { setSaving(false); }
+        } catch (err) { setError(err.response?.data?.error?.message || 'Failed to update profile'); }
+        finally { setSaving(false); }
     };
 
     const handleSubmitPassword = async (e) => {
         e.preventDefault();
         setError(''); setSuccess('');
-        if (passwordData.new_password !== passwordData.confirm_password) { setError('New passwords do not match'); return; }
+        if (passwordData.new_password !== passwordData.confirm_password) { setError('Passwords do not match'); return; }
         if (passwordData.new_password.length < 6) { setError('Password must be at least 6 characters'); return; }
         setSaving(true);
         try {
-            await api.put(`/users/${user.id}/password`, {
-                current_password: passwordData.current_password,
-                new_password: passwordData.new_password
-            });
+            await api.put(`/users/${user.id}/password`, { current_password: passwordData.current_password, new_password: passwordData.new_password });
             setSuccess('Password updated!');
             setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
-        } catch (err) {
-            setError(err.response?.data?.error?.message || 'Failed to update password');
-        } finally { setSaving(false); }
+        } catch (err) { setError(err.response?.data?.error?.message || 'Failed to update password'); }
+        finally { setSaving(false); }
     };
+
+    const previewSkills = formData.skills.split(',').map(s => s.trim()).filter(Boolean);
+    const previewGenres = formData.preferred_genres.split(',').map(s => s.trim()).filter(Boolean);
 
     const inputClass = "w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all";
 
-    const tabs = [
+    const TABS = [
         { id: 'profile', label: 'Profile', shortLabel: 'Profile', icon: '👤' },
         { id: 'details', label: 'Music', shortLabel: 'Music', icon: '🎵' },
         { id: 'social', label: 'Social', shortLabel: 'Social', icon: '🔗' },
-        { id: 'notifications', label: 'Notifications', shortLabel: 'Notifs', icon: '🔔' },
+        { id: 'notifications', label: 'Notifications', shortLabel: 'Alerts', icon: '🔔' },
         { id: 'security', label: 'Security', shortLabel: 'Security', icon: '🔒' },
     ];
 
@@ -145,37 +143,48 @@ function EditProfilePage() {
     );
 
     return (
-        <div className="min-h-screen bg-[var(--bg-primary)] py-4 sm:py-8 px-3 sm:px-4">
-            <div className="max-w-3xl mx-auto">
+        <div className="min-h-screen bg-[var(--bg-primary)]">
+            {/* Top gradient accent bar */}
+            <div className="h-1 w-full bg-gradient-to-r from-primary-600 via-primary-400 to-primary-600" />
+
+            <div className="max-w-3xl mx-auto px-3 sm:px-6 py-6 sm:py-10">
 
                 {/* Header */}
-                <div className="mb-5 sm:mb-8">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-1">Edit Profile</h1>
-                    <p className="text-sm text-[var(--text-secondary)]">Customize your profile and connect with other artists</p>
+                <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-1">
+                        <Link to={`/profile/${formData.username}`}
+                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary-400 hover:bg-primary-500/10 transition-all">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </Link>
+                        <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Edit Profile</h1>
+                    </div>
+                    <p className="text-sm text-[var(--text-tertiary)] ml-10">Customize how you appear to other artists</p>
                 </div>
 
                 {/* Alerts */}
                 {error && (
-                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm">
+                    <div className="bg-red-500/10 border border-red-500/40 text-red-400 px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm animate-slide-down">
                         <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         {error}
                     </div>
                 )}
                 {success && (
-                    <div className="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm">
+                    <div className="bg-green-500/10 border border-green-500/40 text-green-400 px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm animate-slide-down">
                         <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         {success}
                     </div>
                 )}
 
-                {/* Tabs — scrollable on mobile */}
-                <div className="flex gap-1 mb-5 border-b border-[var(--border-color)] pb-0 overflow-x-auto scrollbar-none">
-                    {tabs.map(tab => (
-                        <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-t-xl font-medium transition-all whitespace-nowrap text-sm border-b-2 -mb-px ${
+                {/* Tab bar — scrollable on mobile */}
+                <div className="flex gap-1 mb-5 overflow-x-auto pb-1 scrollbar-none">
+                    {TABS.map(tab => (
+                        <button key={tab.id} onClick={() => { setActiveTab(tab.id); setError(''); setSuccess(''); }}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium transition-all whitespace-nowrap text-sm flex-shrink-0 ${
                                 activeTab === tab.id
-                                    ? 'border-primary-500 text-primary-400 bg-primary-500/5'
-                                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
+                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/25'
+                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
                             }`}>
                             <span>{tab.icon}</span>
                             <span className="hidden sm:inline">{tab.label}</span>
@@ -184,227 +193,329 @@ function EditProfilePage() {
                     ))}
                 </div>
 
-                {/* ── Profile Info Tab ── */}
+                {/* ── PROFILE INFO TAB ── */}
                 {activeTab === 'profile' && (
-                    <form onSubmit={handleSubmitProfile} className="glass-panel rounded-2xl p-4 sm:p-8 space-y-5">
-                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">Basic Information</h2>
-
-                        {/* Avatar Upload */}
-                        <div className="flex items-center gap-4 p-4 bg-[var(--bg-tertiary)]/40 rounded-2xl border border-[var(--border-color)]">
-                            <div className="relative flex-shrink-0">
-                                {avatarUrl ? (
-                                    <img src={avatarUrl} alt="Avatar" className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-primary-500/30" onError={() => setAvatarUrl('')} />
-                                ) : (
-                                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xl sm:text-2xl font-bold border-4 border-primary-500/30">
-                                        {formData.username?.[0]?.toUpperCase() || '?'}
-                                    </div>
-                                )}
-                                {uploadingAvatar && (
-                                    <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
-                                        <svg className="w-5 h-5 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-[var(--text-primary)] mb-0.5">Profile Picture</p>
-                                <p className="text-xs text-[var(--text-tertiary)] mb-3">JPEG, PNG, WebP — max 5MB</p>
-                                <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-                                <div className="flex flex-wrap gap-2">
-                                    <button type="button" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}
-                                        className="px-3 py-1.5 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white text-xs font-semibold rounded-lg transition-all">
-                                        {uploadingAvatar ? 'Uploading...' : 'Upload Photo'}
-                                    </button>
-                                    {avatarUrl && (
-                                        <button type="button" onClick={handleRemoveAvatar} disabled={uploadingAvatar}
-                                            className="px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 text-xs font-semibold rounded-lg transition-all border border-[var(--border-color)] disabled:opacity-50">
-                                            Remove
-                                        </button>
+                    <form onSubmit={handleSubmitProfile} className="space-y-5">
+                        {/* Avatar card */}
+                        <div className="glass-panel rounded-2xl p-4 sm:p-6">
+                            <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">Profile Picture</h2>
+                            <div className="flex items-center gap-4">
+                                {/* Avatar */}
+                                <div className="relative flex-shrink-0">
+                                    {avatarUrl ? (
+                                        <img src={avatarUrl} alt="Avatar"
+                                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover ring-4 ring-primary-500/30 shadow-xl"
+                                            onError={() => setAvatarUrl('')} />
+                                    ) : (
+                                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-3xl font-bold ring-4 ring-primary-500/30 shadow-xl">
+                                            {formData.username?.[0]?.toUpperCase() || '?'}
+                                        </div>
                                     )}
+                                    {uploadingAvatar && (
+                                        <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
+                                            <svg className="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                            </svg>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Controls */}
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm text-[var(--text-secondary)] mb-3">JPEG, PNG, WebP · max 5MB</p>
+                                    <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                                    <div className="flex flex-wrap gap-2">
+                                        <button type="button" onClick={() => avatarInputRef.current?.click()}
+                                            disabled={uploadingAvatar}
+                                            className="px-4 py-2 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white text-sm font-semibold rounded-xl transition-all">
+                                            {uploadingAvatar ? 'Uploading…' : 'Upload Photo'}
+                                        </button>
+                                        {avatarUrl && (
+                                            <button type="button" onClick={handleRemoveAvatar} disabled={uploadingAvatar}
+                                                className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 text-sm font-semibold rounded-xl transition-all border border-[var(--border-color)] disabled:opacity-50">
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Username + Email */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Username <span className="text-red-400">*</span></label>
-                                <input type="text" name="username" value={formData.username} onChange={handleChange}
-                                    className={inputClass} style={{ fontSize: '16px' }} required />
+                        {/* Basic info card */}
+                        <div className="glass-panel rounded-2xl p-4 sm:p-6 space-y-4">
+                            <h2 className="text-base font-semibold text-[var(--text-primary)]">Basic Information</h2>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Username <span className="text-red-400">*</span></label>
+                                    <input type="text" name="username" value={formData.username} onChange={handleChange}
+                                        style={{ fontSize: '16px' }} className={inputClass} required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Email <span className="text-red-400">*</span></label>
+                                    <input type="email" name="email" value={formData.email} onChange={handleChange}
+                                        style={{ fontSize: '16px' }} className={inputClass} required />
+                                </div>
                             </div>
+
                             <div>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Email <span className="text-red-400">*</span></label>
-                                <input type="email" name="email" value={formData.email} onChange={handleChange}
-                                    className={inputClass} style={{ fontSize: '16px' }} required />
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Bio</label>
+                                <textarea name="bio" value={formData.bio} onChange={handleChange} rows="4"
+                                    style={{ fontSize: '16px' }} className={inputClass + ' resize-none'}
+                                    placeholder="Tell others about yourself, your music style, what you're working on…" />
+                                <p className="text-xs text-[var(--text-tertiary)] mt-1.5">A brief description about yourself and your music</p>
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Skills</label>
+                                <input type="text" name="skills" value={formData.skills} onChange={handleChange}
+                                    style={{ fontSize: '16px' }} className={inputClass}
+                                    placeholder="mixing, mastering, vocals, guitar, production" />
+                                <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Separate with commas</p>
+                            </div>
+
+                            {/* Collab toggle */}
+                            <label className="flex items-center gap-3 p-3 sm:p-4 bg-[var(--bg-tertiary)]/40 rounded-xl border border-[var(--border-color)] cursor-pointer hover:border-primary-500/40 transition-all">
+                                <div className="relative flex-shrink-0">
+                                    <input type="checkbox" id="looking_for_collab" checked={formData.looking_for_collab}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, looking_for_collab: e.target.checked }))}
+                                        className="sr-only" />
+                                    <div className={`w-10 h-6 rounded-full transition-colors duration-200 ${formData.looking_for_collab ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'}`}>
+                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${formData.looking_for_collab ? 'translate-x-5' : 'translate-x-1'}`} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-[var(--text-primary)]">Available for collaborations</p>
+                                    <p className="text-xs text-[var(--text-tertiary)]">Show a green badge on your profile</p>
+                                </div>
+                            </label>
                         </div>
 
-                        {/* Bio */}
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Bio</label>
-                            <textarea name="bio" value={formData.bio} onChange={handleChange} rows="4"
-                                className={inputClass + " resize-none"} style={{ fontSize: '16px' }}
-                                placeholder="Tell others about yourself, your music style, what you're working on..." />
-                            <p className="text-xs text-[var(--text-tertiary)] mt-1.5">A brief description about yourself and your music</p>
-                        </div>
-
-                        {/* Skills */}
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Skills</label>
-                            <input type="text" name="skills" value={formData.skills} onChange={handleChange}
-                                className={inputClass} style={{ fontSize: '16px' }}
-                                placeholder="mixing, mastering, vocals, guitar, production" />
-                            <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Separate multiple skills with commas</p>
-                        </div>
-
-                        {/* Collab toggle */}
-                        <div className="flex items-center gap-3 p-4 bg-[var(--bg-tertiary)]/30 rounded-xl border border-[var(--border-color)]">
-                            <input type="checkbox" id="looking_for_collab" checked={formData.looking_for_collab}
-                                onChange={(e) => setFormData(prev => ({ ...prev, looking_for_collab: e.target.checked }))}
-                                className="w-5 h-5 rounded border-[var(--border-color)] bg-[var(--bg-tertiary)] text-primary-600 focus:ring-primary-500" />
-                            <label htmlFor="looking_for_collab" className="text-sm text-[var(--text-primary)] font-medium">Available for collaborations</label>
-                        </div>
+                        {/* Live preview — inline, always visible on profile tab */}
+                        {(formData.username || formData.bio || previewSkills.length > 0) && (
+                            <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-primary-500/20">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                    <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Live Preview</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {avatarUrl ? (
+                                        <img src={avatarUrl} alt="Preview" className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-500/30 flex-shrink-0" />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                            {formData.username?.[0]?.toUpperCase() || '?'}
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="font-bold text-[var(--text-primary)]">{formData.username || 'username'}</p>
+                                            {formData.looking_for_collab && <span className="px-2 py-0.5 bg-green-500/10 text-green-400 border border-green-500/30 rounded-full text-xs">✓ Open to collabs</span>}
+                                        </div>
+                                        <p className="text-xs text-[var(--text-tertiary)]">trackbackai.me/profile/{formData.username || 'username'}</p>
+                                    </div>
+                                </div>
+                                {formData.bio && <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed line-clamp-2">{formData.bio}</p>}
+                                {previewSkills.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                        {previewSkills.slice(0, 5).map((s, i) => <span key={i} className="px-2 py-0.5 bg-primary-500/10 border border-primary-500/30 rounded-full text-xs text-primary-400">{s}</span>)}
+                                        {previewSkills.length > 5 && <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] rounded-full text-xs text-[var(--text-tertiary)]">+{previewSkills.length - 5}</span>}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Actions */}
-                        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[var(--border-color)]">
+                        <div className="flex gap-3">
                             <button type="submit" disabled={saving}
-                                className="flex-1 py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20">
-                                {saving ? 'Saving...' : 'Save Changes'}
+                                className="flex-1 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20 disabled:shadow-none">
+                                {saving ? 'Saving…' : 'Save Changes'}
                             </button>
                             <Link to={`/profile/${formData.username}`}
-                                className="py-3 px-6 bg-[var(--bg-tertiary)] hover:opacity-80 text-[var(--text-primary)] font-semibold rounded-xl transition-all border border-[var(--border-color)] text-center text-sm">
+                                className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-semibold rounded-xl transition-all border border-[var(--border-color)] text-center">
                                 Cancel
                             </Link>
                         </div>
                     </form>
                 )}
 
-                {/* ── Music Details Tab ── */}
+                {/* ── MUSIC DETAILS TAB ── */}
                 {activeTab === 'details' && (
-                    <form onSubmit={handleSubmitProfile} className="glass-panel rounded-2xl p-4 sm:p-8 space-y-5">
-                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">Music Details</h2>
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Preferred Genres</label>
-                            <input type="text" name="preferred_genres" value={formData.preferred_genres} onChange={handleChange}
-                                className={inputClass} style={{ fontSize: '16px' }}
-                                placeholder="Electronic, Hip-Hop, Rock, Jazz" />
-                            <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Separate with commas</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Equipment / Software</label>
-                            <input type="text" name="equipment" value={formData.equipment} onChange={handleChange}
-                                className={inputClass} style={{ fontSize: '16px' }}
-                                placeholder="Ableton Live, MIDI Keyboard, Guitar, Microphone" />
-                            <p className="text-xs text-[var(--text-tertiary)] mt-1.5">What DAW do you use? Separate with commas</p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[var(--border-color)]">
-                            <button type="submit" disabled={saving}
-                                className="flex-1 py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all">
-                                {saving ? 'Saving...' : 'Save Details'}
-                            </button>
-                        </div>
-                    </form>
-                )}
+                    <form onSubmit={handleSubmitProfile} className="space-y-5">
+                        <div className="glass-panel rounded-2xl p-4 sm:p-6 space-y-5">
+                            <h2 className="text-base font-semibold text-[var(--text-primary)]">Music Details</h2>
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Preferred Genres</label>
+                                <input type="text" name="preferred_genres" value={formData.preferred_genres} onChange={handleChange}
+                                    style={{ fontSize: '16px' }} className={inputClass}
+                                    placeholder="Electronic, Hip-Hop, Rock, Jazz" />
+                                <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Separate with commas</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Equipment / Software</label>
+                                <input type="text" name="equipment" value={formData.equipment} onChange={handleChange}
+                                    style={{ fontSize: '16px' }} className={inputClass}
+                                    placeholder="Ableton Live, MIDI Keyboard, Guitar, Microphone" />
+                                <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Your DAW and instruments, separated by commas</p>
+                            </div>
 
-                {/* ── Social Links Tab ── */}
-                {activeTab === 'social' && (
-                    <form onSubmit={handleSubmitProfile} className="glass-panel rounded-2xl p-4 sm:p-8 space-y-4">
-                        <div>
-                            <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-1">Social Links</h2>
-                            <p className="text-sm text-[var(--text-secondary)]">Connect your social media profiles</p>
-                        </div>
-
-                        {/* @ prefix platforms */}
-                        {[
-                            { name: 'instagram', label: 'Instagram', prefix: '@', placeholder: 'username', icon: 'https://cdn.simpleicons.org/instagram' },
-                            { name: 'twitter', label: 'Twitter / X', prefix: '@', placeholder: 'username', icon: 'https://cdn.simpleicons.org/x' },
-                            { name: 'tiktok', label: 'TikTok', prefix: '@', placeholder: 'username', icon: 'https://cdn.simpleicons.org/tiktok' },
-                        ].map(({ name, label, prefix, placeholder, icon }) => (
-                            <div key={name}>
-                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
-                                    <img src={icon} className="w-4 h-4" alt={label} />{label}
-                                </label>
-                                <div className="flex items-center bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-500">
-                                    <span className="px-3 py-3 text-[var(--text-tertiary)] text-sm border-r border-[var(--border-color)] bg-[var(--bg-tertiary)] select-none">{prefix}</span>
-                                    <input type="text" name={name} value={socialLinks[name]} onChange={handleSocialChange}
-                                        className="flex-1 px-3 py-3 bg-transparent text-[var(--text-primary)] focus:outline-none text-sm"
-                                        style={{ fontSize: '16px' }} placeholder={placeholder} />
+                            {/* Genres preview */}
+                            {previewGenres.length > 0 && (
+                                <div>
+                                    <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-wider mb-2">Preview</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {previewGenres.map((g, i) => <span key={i} className="px-3 py-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full text-sm text-[var(--text-secondary)]">{g}</span>)}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-
-                        {/* URL platforms */}
-                        {[
-                            { name: 'soundcloud', label: 'SoundCloud', placeholder: 'soundcloud.com/username', icon: 'https://cdn.simpleicons.org/soundcloud' },
-                            { name: 'spotify', label: 'Spotify', placeholder: 'open.spotify.com/artist/...', icon: 'https://cdn.simpleicons.org/spotify' },
-                            { name: 'youtube', label: 'YouTube', placeholder: 'youtube.com/c/username', icon: 'https://cdn.simpleicons.org/youtube' },
-                            { name: 'discord', label: 'Discord', placeholder: 'username or invite link', icon: 'https://cdn.simpleicons.org/discord' },
-                        ].map(({ name, label, placeholder, icon }) => (
-                            <div key={name}>
-                                <label className="text-sm font-semibold text-[var(--text-secondary)] mb-2 flex items-center gap-2">
-                                    <img src={icon} className="w-4 h-4" alt={label} />{label}
-                                </label>
-                                <input type="text" name={name} value={socialLinks[name]} onChange={handleSocialChange}
-                                    className={inputClass} style={{ fontSize: '16px' }} placeholder={placeholder} />
-                            </div>
-                        ))}
-
-                        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[var(--border-color)]">
-                            <button type="submit" disabled={saving}
-                                className="flex-1 py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all">
-                                {saving ? 'Saving...' : 'Save Social Links'}
-                            </button>
+                            )}
                         </div>
-                    </form>
-                )}
-
-                {/* ── Notifications Tab ── */}
-                {activeTab === 'notifications' && (
-                    <div className="glass-panel rounded-2xl p-4 sm:p-8">
-                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-1">Email Notifications</h2>
-                        <p className="text-sm text-[var(--text-secondary)] mb-5">Choose which activity sends you an email.</p>
-                        <EmailNotificationSettings />
-                    </div>
-                )}
-
-                {/* ── Security Tab ── */}
-                {activeTab === 'security' && (
-                    <form onSubmit={handleSubmitPassword} className="glass-panel rounded-2xl p-4 sm:p-8 space-y-5">
-                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">Change Password</h2>
-                        {[
-                            { name: 'current_password', label: 'Current Password' },
-                            { name: 'new_password', label: 'New Password', minLength: 6 },
-                            { name: 'confirm_password', label: 'Confirm New Password' },
-                        ].map(({ name, label, minLength }) => (
-                            <div key={name}>
-                                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">{label}</label>
-                                <input type="password" name={name} value={passwordData[name]} onChange={handlePasswordChange}
-                                    className={inputClass} style={{ fontSize: '16px' }} required minLength={minLength} />
-                            </div>
-                        ))}
-                        <div className="bg-[var(--bg-tertiary)]/30 p-4 rounded-xl border border-[var(--border-color)]">
-                            <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-2">Requirements</h4>
-                            <ul className="space-y-1.5 text-sm text-[var(--text-secondary)]">
-                                <li className="flex items-center gap-2">
-                                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${passwordData.new_password.length >= 6 ? 'bg-green-500' : 'bg-[var(--text-tertiary)]'}`} />
-                                    At least 6 characters
-                                </li>
-                                <li className="flex items-center gap-2">
-                                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${passwordData.new_password && passwordData.new_password === passwordData.confirm_password ? 'bg-green-500' : 'bg-[var(--text-tertiary)]'}`} />
-                                    Passwords match
-                                </li>
-                            </ul>
-                        </div>
-                        <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors block text-center">
-                            Forgot your password?
-                        </Link>
                         <button type="submit" disabled={saving}
-                            className="w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all">
-                            {saving ? 'Updating...' : 'Update Password'}
+                            className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20">
+                            {saving ? 'Saving…' : 'Save Details'}
                         </button>
                     </form>
                 )}
 
+                {/* ── SOCIAL LINKS TAB ── */}
+                {activeTab === 'social' && (
+                    <form onSubmit={handleSubmitProfile} className="space-y-5">
+                        <div className="glass-panel rounded-2xl p-4 sm:p-6 space-y-4">
+                            <div>
+                                <h2 className="text-base font-semibold text-[var(--text-primary)]">Social Links</h2>
+                                <p className="text-sm text-[var(--text-tertiary)] mt-0.5">Connect your profiles so others can find you</p>
+                            </div>
+
+                            {/* @ handle platforms */}
+                            <div className="space-y-3">
+                                {[
+                                    { name: 'instagram', label: 'Instagram', prefix: '@', placeholder: 'username', icon: 'https://cdn.simpleicons.org/instagram', color: 'from-purple-500 to-pink-500' },
+                                    { name: 'twitter', label: 'Twitter / X', prefix: '@', placeholder: 'username', icon: 'https://cdn.simpleicons.org/x', color: 'from-blue-400 to-blue-500' },
+                                    { name: 'tiktok', label: 'TikTok', prefix: '@', placeholder: 'username', icon: 'https://cdn.simpleicons.org/tiktok', color: 'from-gray-800 to-black' },
+                                ].map(({ name, label, prefix, placeholder, icon, color }) => (
+                                    <div key={name}>
+                                        <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] mb-1.5">
+                                            <span className={`w-5 h-5 bg-gradient-to-br ${color} rounded flex items-center justify-center flex-shrink-0`}>
+                                                <img src={icon + '/ffffff'} className="w-3 h-3" alt={label} />
+                                            </span>
+                                            {label}
+                                        </label>
+                                        <div className="flex items-center bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
+                                            <span className="px-3 text-[var(--text-tertiary)] text-sm border-r border-[var(--border-color)] py-3 flex-shrink-0">{prefix}</span>
+                                            <input type="text" name={name} value={socialLinks[name]} onChange={handleSocialChange}
+                                                style={{ fontSize: '16px' }}
+                                                className="flex-1 px-3 py-3 bg-transparent text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none text-sm"
+                                                placeholder={placeholder} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="border-t border-[var(--border-color)] pt-4 space-y-3">
+                                {[
+                                    { name: 'soundcloud', label: 'SoundCloud', placeholder: 'soundcloud.com/username', icon: 'https://cdn.simpleicons.org/soundcloud', color: 'bg-orange-500' },
+                                    { name: 'spotify', label: 'Spotify', placeholder: 'open.spotify.com/artist/…', icon: 'https://cdn.simpleicons.org/spotify', color: 'bg-green-500' },
+                                    { name: 'youtube', label: 'YouTube', placeholder: 'youtube.com/c/username', icon: 'https://cdn.simpleicons.org/youtube', color: 'bg-red-600' },
+                                    { name: 'discord', label: 'Discord', placeholder: 'username or invite link', icon: 'https://cdn.simpleicons.org/discord', color: 'bg-indigo-500' },
+                                ].map(({ name, label, placeholder, icon, color }) => (
+                                    <div key={name}>
+                                        <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)] mb-1.5">
+                                            <span className={`w-5 h-5 ${color} rounded flex items-center justify-center flex-shrink-0`}>
+                                                <img src={icon + '/ffffff'} className="w-3 h-3" alt={label} />
+                                            </span>
+                                            {label}
+                                        </label>
+                                        <input type="text" name={name} value={socialLinks[name]} onChange={handleSocialChange}
+                                            style={{ fontSize: '16px' }} className={inputClass}
+                                            placeholder={placeholder} />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Social preview strip */}
+                            {Object.values(socialLinks).some(v => v) && (
+                                <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--border-color)]">
+                                    <p className="w-full text-xs text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Preview</p>
+                                    {socialLinks.instagram && <SocialBadge color="from-purple-500 to-pink-500" icon="https://cdn.simpleicons.org/instagram/ffffff" label="Instagram" />}
+                                    {socialLinks.twitter && <SocialBadge color="from-blue-400 to-blue-500" icon="https://cdn.simpleicons.org/x/ffffff" label="X" />}
+                                    {socialLinks.tiktok && <SocialBadge color="from-gray-800 to-black" icon="https://cdn.simpleicons.org/tiktok/ffffff" label="TikTok" />}
+                                    {socialLinks.soundcloud && <SocialBadge color="bg-orange-500" icon="https://cdn.simpleicons.org/soundcloud/ffffff" label="SoundCloud" />}
+                                    {socialLinks.spotify && <SocialBadge color="bg-green-500" icon="https://cdn.simpleicons.org/spotify/ffffff" label="Spotify" />}
+                                    {socialLinks.youtube && <SocialBadge color="bg-red-600" icon="https://cdn.simpleicons.org/youtube/ffffff" label="YouTube" />}
+                                    {socialLinks.discord && <SocialBadge color="bg-indigo-500" icon="https://cdn.simpleicons.org/discord/ffffff" label="Discord" />}
+                                </div>
+                            )}
+                        </div>
+
+                        <button type="submit" disabled={saving}
+                            className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20">
+                            {saving ? 'Saving…' : 'Save Social Links'}
+                        </button>
+                    </form>
+                )}
+
+                {/* ── NOTIFICATIONS TAB ── */}
+                {activeTab === 'notifications' && (
+                    <div className="glass-panel rounded-2xl p-4 sm:p-6">
+                        <h2 className="text-base font-semibold text-[var(--text-primary)] mb-1">Email Notifications</h2>
+                        <p className="text-sm text-[var(--text-tertiary)] mb-5">Choose which activity sends you an email</p>
+                        <EmailNotificationSettings />
+                    </div>
+                )}
+
+                {/* ── SECURITY TAB ── */}
+                {activeTab === 'security' && (
+                    <form onSubmit={handleSubmitPassword} className="space-y-5">
+                        <div className="glass-panel rounded-2xl p-4 sm:p-6 space-y-4">
+                            <h2 className="text-base font-semibold text-[var(--text-primary)]">Change Password</h2>
+                            {[
+                                { name: 'current_password', label: 'Current Password' },
+                                { name: 'new_password', label: 'New Password', minLength: 6 },
+                                { name: 'confirm_password', label: 'Confirm New Password' },
+                            ].map(({ name, label, minLength }) => (
+                                <div key={name}>
+                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">{label}</label>
+                                    <input type="password" name={name} value={passwordData[name]} onChange={handlePasswordChange}
+                                        style={{ fontSize: '16px' }} className={inputClass}
+                                        required minLength={minLength} placeholder="••••••••" />
+                                </div>
+                            ))}
+
+                            {/* Password requirements */}
+                            <div className="bg-[var(--bg-tertiary)]/40 p-4 rounded-xl border border-[var(--border-color)] space-y-2">
+                                <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Requirements</p>
+                                {[
+                                    { label: 'At least 6 characters', met: passwordData.new_password.length >= 6 },
+                                    { label: 'Passwords match', met: passwordData.new_password === passwordData.confirm_password && !!passwordData.new_password },
+                                ].map(({ label, met }) => (
+                                    <div key={label} className="flex items-center gap-2 text-sm">
+                                        <span className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${met ? 'bg-green-500/20 text-green-400' : 'bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]'}`}>
+                                            {met ? '✓' : '○'}
+                                        </span>
+                                        <span className={met ? 'text-green-400' : 'text-[var(--text-tertiary)]'}>{label}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors block text-center">
+                                Forgot your current password?
+                            </Link>
+                        </div>
+
+                        <button type="submit" disabled={saving}
+                            className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20">
+                            {saving ? 'Updating…' : 'Update Password'}
+                        </button>
+                    </form>
+                )}
             </div>
+        </div>
+    );
+}
+
+function SocialBadge({ color, icon, label }) {
+    return (
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 ${color.startsWith('bg-') ? color : `bg-gradient-to-br ${color}`} rounded-lg text-white text-xs font-medium`}>
+            <img src={icon} className="w-3 h-3" alt="" />
+            {label}
         </div>
     );
 }
