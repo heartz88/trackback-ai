@@ -210,6 +210,11 @@ return (
             ) : (
             <>
                 <Link 
+                to="/community" 
+                className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition-colors"
+                >Community
+                </Link>
+                <Link 
                 to="/login" 
                 className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition-colors"
                 >
@@ -220,11 +225,6 @@ return (
                 className="px-5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary-light)] text-white font-medium transition-all duration-300 shadow-lg shadow-[var(--accent-primary)]/20 hover:shadow-[var(--accent-primary)]/30"
                 >
                 Get Started
-                </Link>
-                <Link 
-                to="/community" 
-                className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition-colors"
-                >Community
                 </Link>
             </>
             )}
@@ -339,10 +339,9 @@ return (
             </>
         ) : (
             <>
-            <MenuItem to="/discover" onClick={closeMenu}>Discover</MenuItem>
+            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
             <MenuItem to="/login" onClick={closeMenu}>Sign In</MenuItem>
             <MenuItem to="/register" onClick={closeMenu}>Join Now</MenuItem>
-            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
             </>
         )}
         </div>
