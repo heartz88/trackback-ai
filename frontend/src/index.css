@@ -782,7 +782,7 @@ height: 40px;
 box-shadow: none;
 }
 
-.light }
+}
 
 /* ===== PRINT STYLES ===== */
 
@@ -838,8 +838,7 @@ flex: 1 1 calc(50% - 1rem);
 width: 160px;
 height: 160px;
 }
-
-.light }
+}
 
 /* Medium devices (tablets, 768px and up) */
 @media (min-width: 768px) {
@@ -875,8 +874,7 @@ flex: 1 1 calc(25% - 1.5rem);
 width: 200px;
 height: 200px;
 }
-
-.light }
+}
 
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) {
