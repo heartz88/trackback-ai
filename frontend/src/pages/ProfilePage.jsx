@@ -197,7 +197,6 @@ return (
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[var(--border-color)]">
             <div className="text-center"><div className="text-2xl font-bold text-[var(--text-primary)]">{tracks.length}</div><div className="text-xs text-[var(--text-tertiary)]">Tracks</div></div>
             <div className="text-center"><div className="text-2xl font-bold text-[var(--text-primary)]">{collaborations.length}</div><div className="text-xs text-[var(--text-tertiary)]">Collabs</div></div>
-            <div className="text-center"><div className="text-2xl font-bold text-[var(--text-primary)]">{tracks.reduce((s, t) => s + (t.plays || 0), 0)}</div><div className="text-xs text-[var(--text-tertiary)]">Plays</div></div>
             </div>
         </div>
         </div>
