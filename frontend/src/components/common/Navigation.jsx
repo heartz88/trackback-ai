@@ -168,7 +168,7 @@ return (
                     <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] shadow-2xl overflow-hidden animate-scale-in">
                     <div className="p-2">
                         <Link
-                        to={`/profile/${user.id}`}
+                        to={`/profile/${user.username}`}
                         onClick={() => setIsProfileMenuOpen(false)}
                         className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors group"
                         >
@@ -279,7 +279,7 @@ return (
 
         {user && (
             <Link 
-            to={`/profile/${user.id}`} 
+            to={`/profile/${user.username}`} 
             onClick={closeMenu}
             className="block p-4 rounded-xl bg-gradient-to-r from-[var(--accent-primary)]/5 to-transparent border border-[var(--border-color)] hover:border-[var(--accent-primary)]/30 transition-all duration-300"
             >
@@ -315,7 +315,7 @@ return (
             <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
             <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
             <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
-            <MenuItem to={`/profile/${user.id}`} onClick={closeMenu}>Profile</MenuItem>
+            <MenuItem to={`/profile/${user.username}`} onClick={closeMenu}>Profile</MenuItem>
             <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
             
             <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
