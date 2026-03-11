@@ -68,7 +68,7 @@ return (
 
         {/* Author row */}
         <div className="user-header">
-        <Link to={`/profile/${submission.collaborator_id}`} className="flex items-center gap-3 group">
+        <Link to={`/profile/${submission.collaborator_name}`} className="flex items-center gap-3 group">
             <div className="avatar group-hover:scale-105 transition-transform">
             {submission.collaborator_name?.charAt(0).toUpperCase()}
             </div>

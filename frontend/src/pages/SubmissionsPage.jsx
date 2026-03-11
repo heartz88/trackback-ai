@@ -199,7 +199,7 @@ return (
 
         {/* Owner */}
         <div className="tdp-owner-row">
-        <Link to={`/profile/${owner?.id}`} style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
+        <Link to={`/profile/${owner?.username}`} style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
             <div className="tdp-owner-avatar">{owner?.username?.charAt(0).toUpperCase()}</div>
             <div>
             <div className="tdp-owner-name">@{owner?.username}</div>

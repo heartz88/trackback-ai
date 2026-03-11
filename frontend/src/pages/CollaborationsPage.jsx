@@ -158,13 +158,13 @@ return (
             {received.map((req) => (
                 <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-yellow-500">
                 <div className="flex items-start space-x-4 mb-4">
-                    <Link to={`/profile/${req.collaborator_id}`} className="flex-shrink-0">
+                    <Link to={`/profile/${req.collaborator_name}`} className="flex-shrink-0">
                     <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg hover:scale-105 transition-transform">
                         {req.collaborator_name?.[0]?.toUpperCase() || '?'}
                     </div>
                     </Link>
                     <div className="flex-1 min-w-0">
-                    <Link to={`/profile/${req.collaborator_id}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400 transition-colors">
+                    <Link to={`/profile/${req.collaborator_name}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400 transition-colors">
                         {req.collaborator_name}
                     </Link>
                     <p className="text-sm text-[var(--text-secondary)] mt-0.5">
@@ -246,7 +246,7 @@ return (
                     </Link>
                     <p className="text-sm text-[var(--text-secondary)] mt-0.5">
                         by{' '}
-                        <Link to={`/profile/${req.owner_id}`} className="text-primary-400 hover:text-primary-300">
+                        <Link to={`/profile/${req.owner_name}`} className="text-primary-400 hover:text-primary-300">
                         {req.owner_name}
                         </Link>
                     </p>
@@ -299,13 +299,13 @@ return (
                 <div key={req.id} className="glass-panel p-4 rounded-xl opacity-80 hover:opacity-100 transition-opacity">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-3">
-                        <Link to={`/profile/${req.collaborator_id}`}>
+                        <Link to={`/profile/${req.collaborator_name}`}>
                         <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-transform">
                             {req.collaborator_name?.[0]?.toUpperCase() || '?'}
                         </div>
                         </Link>
                         <div>
-                        <Link to={`/profile/${req.collaborator_id}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 transition-colors text-sm">
+                        <Link to={`/profile/${req.collaborator_name}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 transition-colors text-sm">
                             {req.collaborator_name}
                         </Link>
                         <p className="text-xs text-[var(--text-secondary)]">
@@ -356,7 +356,7 @@ return (
                         </Link>
                         <p className="text-xs text-[var(--text-secondary)]">
                         by{' '}
-                        <Link to={`/profile/${req.owner_id}`} className="text-primary-400 hover:text-primary-300">
+                        <Link to={`/profile/${req.owner_name}`} className="text-primary-400 hover:text-primary-300">
                             {req.owner_name}
                         </Link>
                         </p>

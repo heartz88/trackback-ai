@@ -111,7 +111,7 @@ return (
         </div>
 
         <div className="tdp-owner-row">
-        <Link to={`/profile/${owner?.id}`} style={{display:'flex',alignItems:'center',gap:10,textDecoration:'none'}}>
+        <Link to={`/profile/${owner?.username}`} style={{display:'flex',alignItems:'center',gap:10,textDecoration:'none'}}>
             <div className="tdp-owner-avatar">{owner?.username?.charAt(0).toUpperCase()}</div>
             <div>
             <div className="tdp-owner-name">@{owner?.username}</div>
@@ -238,7 +238,7 @@ return (
                 <div key={c.id} className="tdp-collab-item">
                 <div className="tdp-collab-avatar">{c.username?.charAt(0).toUpperCase()}</div>
                 <div style={{flex:1,minWidth:0}}>
-                    <Link to={`/profile/${c.id}`} style={{color:'var(--text-primary)',fontWeight:600,fontSize:13,textDecoration:'none',display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{c.username}</Link>
+                    <Link to={`/profile/${c.username}`} style={{color:'var(--text-primary)',fontWeight:600,fontSize:13,textDecoration:'none',display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{c.username}</Link>
                     <span style={{color:'var(--text-tertiary)',fontSize:11}}>{c.role||'Collaborator'}</span>
                 </div>
                 {user && user.id !== c.id && <Link to={`/messages/new?userId=${c.id}`} className="tdp-message-btn" style={{marginLeft:0}}>Msg</Link>}

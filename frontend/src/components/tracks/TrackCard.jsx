@@ -63,7 +63,7 @@ return (
                 </div>
 
                 <Link
-                    to={`/profile/${track.user_id}`}
+                    to={`/profile/${track.username}`}
                     className="text-sm text-[var(--text-secondary)] hover:text-primary-400 transition-colors inline-flex items-center gap-1"
                 >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
