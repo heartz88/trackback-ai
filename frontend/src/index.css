@@ -767,6 +767,7 @@ animation: none !important;
 backdrop-filter: blur(10px);
 -webkit-backdrop-filter: blur(10px);
 }
+}
 
 .vinyl-record {
 width: 150px;
@@ -782,7 +783,7 @@ height: 40px;
 box-shadow: none;
 }
 
-}
+
 
 /* ===== PRINT STYLES ===== */
 
@@ -840,6 +841,7 @@ height: 160px;
 }
 }
 
+
 /* Medium devices (tablets, 768px and up) */
 @media (min-width: 768px) {
 .music-card {
@@ -875,7 +877,6 @@ width: 200px;
 height: 200px;
 }
 }
-
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) {
 .music-card {
@@ -5330,4 +5331,347 @@ margin-bottom: 24px;
 .track-row-footer { padding: 10px 16px; }
 .upload-form-card { padding: 22px 18px; }
 .auth-card { padding: 28px 20px; }
+}
+
+/* ============================================================
+MOBILE RESPONSIVE STYLES — All Pages
+max-width: 768px
+============================================================ */
+
+@media (max-width: 768px) {
+
+/* ── Global spacing ── */
+.min-h-screen { padding-bottom: 24px; }
+
+/* ── Navigation breathing room ── */
+.max-w-7xl { padding-left: 16px !important; padding-right: 16px !important; }
+
+/* ============================================================
+    LOGIN PAGE
+    ============================================================ */
+/* Logo bounce on login */
+.inline-block.p-4 img { width: 64px !important; height: 64px !important; }
+
+/* Login form card */
+form.glass {
+padding: 24px 20px !important;
+border-radius: 16px !important;
+}
+
+/* Login title */
+form.glass ~ div h2,
+.text-4xl.font-bold { font-size: 28px !important; }
+
+/* ============================================================
+    AUTH PAGES (Login, Register, Forgot/Reset Password)
+    ============================================================ */
+.auth-card {
+padding: 24px 20px !important;
+border-radius: 20px !important;
+}
+
+.glass-panel.rounded-3xl {
+padding: 24px 20px !important;
+border-radius: 20px !important;
+}
+
+/* ============================================================
+    DISCOVER PAGE
+    ============================================================ */
+/* Header row: stack title + button */
+.flex.items-center.justify-between.mb-8.flex-wrap {
+flex-direction: column;
+align-items: flex-start !important;
+gap: 12px;
+}
+
+/* Discover title */
+.flex.items-center.justify-between.mb-8.flex-wrap h1 {
+font-size: 24px !important;
+}
+
+/* Filter panel */
+.glass-panel.p-6.rounded-2xl .grid {
+grid-template-columns: 1fr !important;
+gap: 12px;
+}
+
+/* Track grid: single column */
+.grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.gap-6 {
+grid-template-columns: 1fr !important;
+gap: 16px;
+}
+
+/* CTA section for logged-out */
+.mt-12.text-center.py-10 .flex.gap-3.justify-center {
+flex-direction: column;
+align-items: stretch;
+}
+
+.mt-12.text-center.py-10 .flex.gap-3.justify-center a {
+text-align: center;
+}
+
+/* ============================================================
+    MY TRACKS PAGE
+    ============================================================ */
+/* Header: stack title and upload button */
+.flex.items-center.justify-between.mb-10 {
+flex-direction: column;
+align-items: flex-start !important;
+gap: 12px;
+}
+
+.flex.items-center.justify-between.mb-10 h1 {
+font-size: 26px !important;
+}
+
+/* MIR stats grid: 2 col on mobile */
+.grid.grid-cols-2.md\:grid-cols-4.gap-3 {
+grid-template-columns: 1fr 1fr !important;
+}
+
+/* Track actions: wrap */
+.px-6.py-3.bg-\[var\(--bg-tertiary\)\/50\] .flex.flex-wrap.gap-3 {
+gap: 8px;
+}
+
+/* ============================================================
+    UPLOAD PAGE
+    ============================================================ */
+.upload-form-card,
+.glass-panel.p-8.rounded-2xl.shadow-2xl {
+padding: 20px 16px !important;
+border-radius: 16px !important;
+}
+
+/* Upload area */
+.border-2.border-dashed.rounded-xl.p-8 {
+padding: 28px 16px !important;
+}
+
+/* Upload title */
+.text-4xl.font-bold.text-\[var\(--text-primary\)\].mb-3 {
+font-size: 24px !important;
+}
+
+/* ============================================================
+    MESSAGES PAGE
+    ============================================================ */
+.messages-layout {
+grid-template-columns: 1fr !important;
+height: auto !important;
+padding: 12px !important;
+gap: 12px;
+}
+
+.messages-sidebar {
+max-height: 320px;
+overflow-y: auto;
+}
+
+.messages-main {
+min-height: 60vh;
+}
+
+/* ============================================================
+    COLLABORATIONS PAGE
+    ============================================================ */
+.collab-card,
+.glass-panel.rounded-2xl {
+border-radius: 14px !important;
+}
+
+/* Collab action buttons: stack */
+.flex.gap-2.mt-4,
+.flex.gap-3.mt-4 {
+flex-direction: column;
+gap: 8px !important;
+}
+
+.flex.gap-2.mt-4 button,
+.flex.gap-3.mt-4 button,
+.flex.gap-2.mt-4 a,
+.flex.gap-3.mt-4 a {
+width: 100%;
+justify-content: center;
+text-align: center;
+}
+
+/* ============================================================
+    PROFILE PAGE
+    ============================================================ */
+.profile-header {
+flex-direction: column !important;
+align-items: center !important;
+text-align: center;
+gap: 16px;
+}
+
+.profile-avatar {
+width: 90px !important;
+height: 90px !important;
+}
+
+.profile-stats {
+justify-content: center !important;
+flex-wrap: wrap;
+gap: 16px;
+}
+
+/* ============================================================
+    EDIT PROFILE PAGE
+    ============================================================ */
+.edit-profile-layout,
+.flex.gap-8 {
+flex-direction: column !important;
+gap: 16px !important;
+}
+
+/* Preview panel: hide on small screens */
+.preview-panel { display: none !important; }
+
+/* ============================================================
+    SUBMISSIONS PAGE
+    ============================================================ */
+.submission-card {
+padding: 16px !important;
+border-radius: 14px !important;
+}
+
+/* Vote buttons: stack */
+.vote-actions {
+flex-direction: column;
+gap: 8px;
+}
+
+/* ============================================================
+    COMMUNITY PAGE
+    ============================================================ */
+/* Stats bar: 3 col stays but smaller */
+.community-stats-bar > div {
+flex: 1 1 80px !important;
+}
+
+/* Tab bar: equal width pills */
+.community-tabs button {
+font-size: 12px !important;
+padding: 7px 4px !important;
+}
+
+/* Track card footer: stack on very small */
+.track-card-footer {
+flex-direction: column;
+gap: 8px;
+}
+
+/* ============================================================
+    TRACK DETAIL PAGE
+    ============================================================ */
+.tdp-grid {
+grid-template-columns: 1fr !important;
+}
+
+.tdp-actions-panel {
+order: -1; /* Show actions above info on mobile */
+}
+
+.tdp-title { font-size: 22px !important; }
+
+.tdp-stats {
+gap: 16px !important;
+flex-wrap: wrap;
+}
+
+/* ============================================================
+    FORGOT / RESET PASSWORD PAGE
+    ============================================================ */
+.max-w-md.w-full { padding: 0 4px; }
+
+/* ============================================================
+    HOMEPAGE
+    ============================================================ */
+/* Hero section */
+.hero-section h1,
+.text-5xl, .text-6xl, .text-7xl {
+font-size: 32px !important;
+line-height: 1.2 !important;
+}
+
+.hero-section p,
+.text-xl.text-\[var\(--text-secondary\)\] {
+font-size: 15px !important;
+}
+
+/* Hero CTA buttons: stack */
+.flex.gap-4.justify-center,
+.flex.gap-3.justify-center {
+flex-direction: column;
+align-items: stretch;
+gap: 12px;
+}
+
+.flex.gap-4.justify-center a,
+.flex.gap-3.justify-center a {
+text-align: center;
+justify-content: center;
+}
+
+/* Feature cards grid: single col */
+.grid.grid-cols-1.md\:grid-cols-3,
+.grid.grid-cols-1.md\:grid-cols-2 {
+grid-template-columns: 1fr !important;
+gap: 16px !important;
+}
+
+/* ============================================================
+    GLOBAL FORM INPUTS
+    ============================================================ */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+font-size: 16px !important; /* Prevents iOS zoom on focus */
+}
+
+/* ============================================================
+    GLOBAL BUTTON TOUCH TARGETS
+    ============================================================ */
+.btn-primary,
+.btn-secondary {
+min-height: 44px;
+font-size: 15px !important;
+}
+
+/* Page-level headings */
+h1.text-3xl { font-size: 22px !important; }
+h1.text-4xl { font-size: 26px !important; }
+
+}
+
+/* ============================================================
+EXTRA SMALL — max-width: 390px (iPhone SE / small Android)
+============================================================ */
+@media (max-width: 390px) {
+
+.min-h-screen { padding-left: 12px; padding-right: 12px; }
+
+/* Tighter card padding */
+.glass-panel, .glass { padding: 16px 14px !important; }
+
+/* Typography scale-down */
+h1 { font-size: 20px !important; }
+h2 { font-size: 18px !important; }
+
+/* MIR tags wrap cleanly */
+.tdp-tags { gap: 4px !important; }
+.tdp-tag { font-size: 10px !important; padding: 2px 7px !important; }
+
+/* Stats pills */
+.community-stats-bar > div { flex: 1 1 70px !important; }
+
+/* Tab labels shorten */
+.community-tabs button { font-size: 11px !important; }
 }
