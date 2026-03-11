@@ -129,11 +129,11 @@ function EditProfilePage() {
     const inputClass = "w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all";
 
     const TABS = [
-        { id: 'profile', label: 'Profile', shortLabel: 'Profile', icon: '👤' },
-        { id: 'details', label: 'Music', shortLabel: 'Music', icon: '🎵' },
-        { id: 'social', label: 'Social', shortLabel: 'Social', icon: '🔗' },
-        { id: 'notifications', label: 'Notifications', shortLabel: 'Alerts', icon: '🔔' },
-        { id: 'security', label: 'Security', shortLabel: 'Security', icon: '🔒' },
+        { id: 'profile', label: 'Profile', shortLabel: 'Profile'},
+        { id: 'details', label: 'Music', shortLabel: 'Music' },
+        { id: 'social', label: 'Social', shortLabel: 'Social' },
+        { id: 'notifications', label: 'Notifications', shortLabel: 'Alerts' },
+        { id: 'security', label: 'Security', shortLabel: 'Security' },
     ];
 
     if (loading) return (
