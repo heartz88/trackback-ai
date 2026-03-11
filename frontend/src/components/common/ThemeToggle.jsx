@@ -22,6 +22,7 @@ function ThemeToggle() {
     <button
       onClick={() => setIsLightMode(p => !p)}
       className="mode-switch"
+      style={{ width: '56px', height: '28px', minWidth: '56px', flexShrink: 0 }}
       aria-label={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
       title={isLightMode ? 'Switch to dark mode' : 'Switch to light mode'}
     />
