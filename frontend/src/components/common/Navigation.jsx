@@ -125,6 +125,7 @@ return (
                 <NavLink to="/my-tracks">My Tracks</NavLink>
                 <NavLink to="/collaborations">Collabs</NavLink>
                 <NavLink to="/messages" badge={unreadCount}>Messages</NavLink>
+                <NavLink to="/community">Community</NavLink>
             </div>
             )}
         </div>
@@ -316,6 +317,7 @@ return (
             <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
             <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
             <MenuItem to={`/profile/${user.username}`} onClick={closeMenu}>Profile</MenuItem>
+            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
             <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
             
             <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
@@ -335,6 +337,7 @@ return (
             <MenuItem to="/discover" onClick={closeMenu}>Discover</MenuItem>
             <MenuItem to="/login" onClick={closeMenu}>Sign In</MenuItem>
             <MenuItem to="/register" onClick={closeMenu}>Join Now</MenuItem>
+            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
             </>
         )}
         </div>
