@@ -221,6 +221,11 @@ return (
                 >
                 Get Started
                 </Link>
+                <Link 
+                to="/community" 
+                className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium transition-colors"
+                >Community
+                </Link>
             </>
             )}
         </div>
