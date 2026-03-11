@@ -123,7 +123,6 @@ function EditProfilePage() {
         finally { setSaving(false); }
     };
 
-    const previewSkills = formData.skills.split(',').map(s => s.trim()).filter(Boolean);
     const previewGenres = formData.preferred_genres.split(',').map(s => s.trim()).filter(Boolean);
 
     const inputClass = "w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all";
@@ -291,38 +290,6 @@ function EditProfilePage() {
                             </label>
                         </div>
 
-                        {/* Live preview — inline, always visible on profile tab */}
-                        {(formData.username || formData.bio || previewSkills.length > 0) && (
-                            <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-primary-500/20">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                                    <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Live Preview</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {avatarUrl ? (
-                                        <img src={avatarUrl} alt="Preview" className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-500/30 flex-shrink-0" />
-                                    ) : (
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                                            {formData.username?.[0]?.toUpperCase() || '?'}
-                                        </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <p className="font-bold text-[var(--text-primary)]">{formData.username || 'username'}</p>
-                                            {formData.looking_for_collab && <span className="px-2 py-0.5 bg-green-500/10 text-green-400 border border-green-500/30 rounded-full text-xs">✓ Open to collabs</span>}
-                                        </div>
-                                        <p className="text-xs text-[var(--text-tertiary)]">trackbackai.me/profile/{formData.username || 'username'}</p>
-                                    </div>
-                                </div>
-                                {formData.bio && <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed line-clamp-2">{formData.bio}</p>}
-                                {previewSkills.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {previewSkills.slice(0, 5).map((s, i) => <span key={i} className="px-2 py-0.5 bg-primary-500/10 border border-primary-500/30 rounded-full text-xs text-primary-400">{s}</span>)}
-                                        {previewSkills.length > 5 && <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] rounded-full text-xs text-[var(--text-tertiary)]">+{previewSkills.length - 5}</span>}
-                                    </div>
-                                )}
-                            </div>
-                        )}
 
                         {/* Actions */}
                         <div className="flex gap-3">
