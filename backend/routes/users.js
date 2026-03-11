@@ -206,6 +206,41 @@ res.status(500).json({ error: { message: 'Failed to change password' } });
 }
 });
 
+
+// ════════════════════════════════════════════════════════════════════════════
+// GET /users/by-username/:username  — public profile by username slug
+// ════════════════════════════════════════════════════════════════════════════
+router.get('/by-username/:username', async (req, res) => {
+try {
+const { username } = req.params;
+
+const userResult = await db.query(
+    `SELECT ${USER_COLS} FROM users WHERE LOWER(username) = LOWER($1)`,
+    [username]
+);
+
+if (userResult.rows.length === 0) {
+    return res.status(404).json({ error: { message: 'User not found' } });
+}
+
+const user = userResult.rows[0];
+if (user.avatar_s3_key) {
+    user.avatar_url = getSignedUrl(user.avatar_s3_key);
+}
+
+let completedCollabs = 0;
+try {
+    const r = await db.query('SELECT COUNT(*) as count FROM submissions s WHERE s.collaborator_id = $1', [user.id]);
+    completedCollabs = parseInt(r.rows[0].count);
+} catch {}
+
+res.json({ user: { ...user, completed_collaborations: completedCollabs } });
+} catch (err) {
+console.error('Get user by username error:', err);
+res.status(500).json({ error: { message: 'Failed to fetch user' } });
+}
+});
+
 // ════════════════════════════════════════════════════════════════════════════
 // GET /users/:id  — public profile
 // ════════════════════════════════════════════════════════════════════════════
