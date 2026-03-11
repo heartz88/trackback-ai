@@ -33,7 +33,7 @@ function ThemeToggle() {
           minHeight: '24px',
           maxHeight: '24px',
           borderRadius: '12px',
-          border: isLightMode ? '1px solid rgba(0, 218, 116, 0.5)' : '1px solid rgba(99,179,237,0.3)',
+          border: isLightMode ? '1px solid rgba(252, 252, 252, 0.5)' : '1px solid rgba(99,179,237,0.3)',
           background: isLightMode ? '#f8f8f8' : '#1e3a5f',
           cursor: 'pointer',
           padding: '0',
