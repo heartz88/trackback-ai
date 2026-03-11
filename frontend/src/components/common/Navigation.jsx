@@ -227,8 +227,8 @@ return (
 
         {/* Mobile Controls */}
         <div className="flex md:hidden items-center space-x-2">
-            {user && <NotificationBell />}
             <div className="flex-shrink-0"><ThemeToggle /></div>
+            {user && <NotificationBell />}
             <HamburgerIcon />
         </div>
         </div>

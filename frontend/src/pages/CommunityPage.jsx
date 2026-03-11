@@ -67,8 +67,7 @@ setLikeCount(newLiked ? likeCount + 1 : likeCount - 1);
 setLikeLoading(true);
 
 try {
-    const url = '/submissions/' + winner.id + '/vote';
-    const res = await api.post(url, { vote_type: 'upvote' });
+    const res = await api.post('/submissions/' + winner.id + '/vote', { vote_type: 'upvote' });
     setLiked(res.data.vote === 'upvote');
     setLikeCount(typeof res.data.upvotes === 'number' ? res.data.upvotes : (newLiked ? prevCount + 1 : prevCount - 1));
 } catch {
@@ -81,10 +80,9 @@ try {
 };
 
 const handleCommentToggle = () => {
+if (!user) { toast.info('Sign in to comment'); return; }
 setShowComments(prev => {
-    if (!prev) {
-    setTimeout(() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
-    }
+    if (!prev) setTimeout(() => commentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
     return !prev;
 });
 };
@@ -115,7 +113,7 @@ return (
         letterSpacing: '0.08em', textTransform: 'uppercase', color: '#fff',
         display: 'flex', alignItems: 'center', gap: 6,
     }}>
-        Featured Track
+        ⭐ Featured Track
     </div>
     )}
 
@@ -133,13 +131,15 @@ return (
         </Link>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
             by{' '}
-            <Link to={'/profile/' + track.user_id} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 500 }}>
+            {/* FIX: use owner_username not user_id */}
+            <Link to={'/profile/' + track.owner_username} style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 500 }}>
             @{track.owner_username}
             </Link>
             {winner && (
             <>
                 {' · completed by '}
-                <Link to={'/profile/' + winner.collaborator_id} style={{ color: 'var(--accent-secondary, #06b6d4)', textDecoration: 'none', fontWeight: 500 }}>
+                {/* FIX: use collaborator_name not collaborator_id */}
+                <Link to={'/profile/' + winner.collaborator_name} style={{ color: 'var(--accent-secondary, #06b6d4)', textDecoration: 'none', fontWeight: 500 }}>
                 @{winner.collaborator_name}
                 </Link>
             </>
@@ -225,7 +225,7 @@ return (
 
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
 
-        {/* Like button */}
+        {/* Like button — works for all, prompts login if not authed */}
         {winner && (
             <button
             onClick={handleLike}
@@ -252,7 +252,7 @@ return (
             </button>
         )}
 
-        {/* Comment button */}
+        {/* Comment button — visible to all, prompts login if not authed */}
         {winner && (
             <button
             onClick={handleCommentToggle}
@@ -284,8 +284,8 @@ return (
         </div>
     </div>
 
-    {/* Inline comments */}
-    {showComments && winner && (
+    {/* Inline comments — only shown if logged in */}
+    {showComments && winner && user && (
         <div ref={commentSectionRef} style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--surface-border)' }}>
         <CommentSection submissionId={winner.id} onCommentCountChange={setCommentCount} />
         </div>
@@ -468,8 +468,8 @@ return (
     </div>
     )}
 
-    {/* CTA */}
-    {!isLoading && tracks.length > 0 && (
+    {/* CTA — visible to everyone, encourages sign up */}
+    {!isLoading && (
     <div
         className="animate-slide-up"
         style={{
