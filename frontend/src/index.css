@@ -5347,8 +5347,8 @@ max-width: 768px
 .max-w-7xl { padding-left: 16px !important; padding-right: 16px !important; }
 
 /* ============================================================
-    LOGIN PAGE
-    ============================================================ */
+LOGIN PAGE
+============================================================ */
 /* Logo bounce on login */
 .inline-block.p-4 img { width: 64px !important; height: 64px !important; }
 
@@ -5363,8 +5363,8 @@ form.glass ~ div h2,
 .text-4xl.font-bold { font-size: 28px !important; }
 
 /* ============================================================
-    AUTH PAGES (Login, Register, Forgot/Reset Password)
-    ============================================================ */
+AUTH PAGES (Login, Register, Forgot/Reset Password)
+============================================================ */
 .auth-card {
 padding: 24px 20px !important;
 border-radius: 20px !important;
@@ -5376,8 +5376,8 @@ border-radius: 20px !important;
 }
 
 /* ============================================================
-    DISCOVER PAGE
-    ============================================================ */
+DISCOVER PAGE
+============================================================ */
 /* Header row: stack title + button */
 .flex.items-center.justify-between.mb-8.flex-wrap {
 flex-direction: column;
@@ -5413,8 +5413,8 @@ text-align: center;
 }
 
 /* ============================================================
-    MY TRACKS PAGE
-    ============================================================ */
+MY TRACKS PAGE
+============================================================ */
 /* Header: stack title and upload button */
 .flex.items-center.justify-between.mb-10 {
 flex-direction: column;
@@ -5437,8 +5437,8 @@ gap: 8px;
 }
 
 /* ============================================================
-    UPLOAD PAGE
-    ============================================================ */
+UPLOAD PAGE
+============================================================ */
 .upload-form-card,
 .glass-panel.p-8.rounded-2xl.shadow-2xl {
 padding: 20px 16px !important;
@@ -5456,8 +5456,8 @@ font-size: 24px !important;
 }
 
 /* ============================================================
-    MESSAGES PAGE
-    ============================================================ */
+MESSAGES PAGE
+============================================================ */
 .messages-layout {
 grid-template-columns: 1fr !important;
 height: auto !important;
@@ -5475,8 +5475,8 @@ min-height: 60vh;
 }
 
 /* ============================================================
-    COLLABORATIONS PAGE
-    ============================================================ */
+COLLABORATIONS PAGE
+============================================================ */
 .collab-card,
 .glass-panel.rounded-2xl {
 border-radius: 14px !important;
@@ -5499,8 +5499,8 @@ text-align: center;
 }
 
 /* ============================================================
-    PROFILE PAGE
-    ============================================================ */
+PROFILE PAGE
+============================================================ */
 .profile-header {
 flex-direction: column !important;
 align-items: center !important;
@@ -5520,8 +5520,8 @@ gap: 16px;
 }
 
 /* ============================================================
-    EDIT PROFILE PAGE
-    ============================================================ */
+EDIT PROFILE PAGE
+============================================================ */
 .edit-profile-layout,
 .flex.gap-8 {
 flex-direction: column !important;
@@ -5532,8 +5532,8 @@ gap: 16px !important;
 .preview-panel { display: none !important; }
 
 /* ============================================================
-    SUBMISSIONS PAGE
-    ============================================================ */
+SUBMISSIONS PAGE
+============================================================ */
 .submission-card {
 padding: 16px !important;
 border-radius: 14px !important;
@@ -5546,8 +5546,8 @@ gap: 8px;
 }
 
 /* ============================================================
-    COMMUNITY PAGE
-    ============================================================ */
+COMMUNITY PAGE
+============================================================ */
 /* Stats bar: 3 col stays but smaller */
 .community-stats-bar > div {
 flex: 1 1 80px !important;
@@ -5566,8 +5566,8 @@ gap: 8px;
 }
 
 /* ============================================================
-    TRACK DETAIL PAGE
-    ============================================================ */
+TRACK DETAIL PAGE
+============================================================ */
 .tdp-grid {
 grid-template-columns: 1fr !important;
 }
@@ -5584,13 +5584,13 @@ flex-wrap: wrap;
 }
 
 /* ============================================================
-    FORGOT / RESET PASSWORD PAGE
-    ============================================================ */
+FORGOT / RESET PASSWORD PAGE
+============================================================ */
 .max-w-md.w-full { padding: 0 4px; }
 
 /* ============================================================
-    HOMEPAGE
-    ============================================================ */
+HOMEPAGE
+============================================================ */
 /* Hero section */
 .hero-section h1,
 .text-5xl, .text-6xl, .text-7xl {
@@ -5625,8 +5625,8 @@ gap: 16px !important;
 }
 
 /* ============================================================
-    GLOBAL FORM INPUTS
-    ============================================================ */
+GLOBAL FORM INPUTS
+============================================================ */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -5637,8 +5637,8 @@ font-size: 16px !important; /* Prevents iOS zoom on focus */
 }
 
 /* ============================================================
-    GLOBAL BUTTON TOUCH TARGETS
-    ============================================================ */
+GLOBAL BUTTON TOUCH TARGETS
+============================================================ */
 .btn-primary,
 .btn-secondary {
 min-height: 44px;
