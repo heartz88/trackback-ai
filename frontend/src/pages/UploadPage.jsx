@@ -42,7 +42,7 @@ if (formData.desired_skills) {
 }
 
 try {
-    console.log('📤 Uploading track...');
+    //;
     
     // Set proper headers for FormData
     const response = await api.post('/tracks/upload', data, {
@@ -51,7 +51,7 @@ try {
     }
     });
     
-    console.log('✅ Upload response:', response.data);
+    //;
     
     setSuccess('Track uploaded successfully! Analysis in progress...');
     

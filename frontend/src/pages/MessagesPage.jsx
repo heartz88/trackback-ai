@@ -84,19 +84,19 @@ try {
 const fetchConversations = useCallback(async () => {
 try {
 setLoadingConversations(true);
-console.log('📨 Fetching conversations...');
+//;
 
 const response = await api.get('/messages/conversations');
 const conversationsData = response.data.conversations || [];
 
-console.log('✅ Conversations fetched:', conversationsData);
+//;
 setConversations(conversationsData);
 
 // If URL has conversationId, select that conversation
 if (conversationId) {
     const conv = conversationsData.find(c => c.id.toString() === conversationId);
     if (conv) {
-        console.log('🔍 Found conversation from URL:', conv);
+        //;
         setSelectedConversation(conv);
     }
 }
@@ -110,14 +110,14 @@ setLoadingConversations(false);
 
 useEffect(() => {
 if (selectedConversation && isConnected && !hasJoinedConversation.current) {
-console.log(`💬 Joining conversation: ${selectedConversation.id}`);
+//;
 joinConversation(selectedConversation.id);
 hasJoinedConversation.current = true;
 }
 // Leave conversation on unmount or when changing conversations
 return () => {
 if (selectedConversation && hasJoinedConversation.current) {
-    console.log(`👋 Leaving conversation ${selectedConversation.id}`);
+    //;
     leaveConversation(selectedConversation.id);
     hasJoinedConversation.current = false;
 }
@@ -131,12 +131,12 @@ if (!selectedConversation) return;
 const fetchMessages = async () => {
 setLoading(true);
 try {
-    console.log(`📩 Fetching messages for conversation ${selectedConversation.id}`);
+    //;
 
     const response = await api.get(`/messages/conversations/${selectedConversation.id}/messages`);
     const messagesData = response.data.messages || [];
 
-    console.log(`✅ Messages fetched: ${messagesData.length} messages`);
+    //;
     setMessages(messagesData);
 
     // Mark as read
@@ -179,7 +179,7 @@ const latest = notifications[0];
 
 if (latest.type === 'message' && selectedConversation) {
     if (latest.data.conversationId?.toString() === selectedConversation.id.toString()) {
-        console.log('📩 New message received via notifications:', latest.data);
+        //;
         setMessages(prev => {
             // Prevent duplicates
             if (prev.some(m => m.id === latest.data.id)) {
@@ -198,10 +198,10 @@ lastNotificationCount.current = notifications.length;
 
 // Socket event listeners
 useEffect(() => {
-console.log('🎧 Setting up socket event listeners');
+//;
 
 const handleNewMessage = (message) => {
-console.log('📩 Socket: New message received:', message);
+//;
 
 if (selectedConversation && message.conversationId.toString() === selectedConversation.id.toString()) {
     setMessages(prev => {
@@ -220,7 +220,7 @@ if (selectedConversation && message.conversationId.toString() === selectedConver
 };
 
 const handleUserTyping = (data) => {
-console.log('⌨️ Socket: User typing:', data);
+//;
 
 if (selectedConversation && data.conversationId?.toString() === selectedConversation.id.toString()) {
     setTypingUsers(prev => ({
@@ -241,7 +241,7 @@ if (selectedConversation && data.conversationId?.toString() === selectedConversa
 };
 
 const handleSocketConnected = () => {
-console.log('✅ Socket reconnected in MessagesPage');
+//;
 // Rejoin current conversation if there is one
 if (selectedConversation && !hasJoinedConversation.current) {
     joinConversation(selectedConversation.id);
@@ -255,7 +255,7 @@ const unsubscribeUserTyping = socketService.on('user:typing', handleUserTyping);
 const unsubscribeSocketConnected = socketService.on('socket:connected', handleSocketConnected);
 
 return () => {
-console.log('🧹 Cleaning up socket listeners');
+//;
 unsubscribeNewMessage?.();
 unsubscribeUserTyping?.();
 unsubscribeSocketConnected?.();
@@ -285,7 +285,7 @@ return;
 const messageContent = newMessage.trim();
 setNewMessage(''); // Clear input immediately
 
-console.log(`📤 Sending message to conversation ${selectedConversation.id}:`, messageContent);
+//;
 
 const success = sendMessage(selectedConversation.id, messageContent);
 if (!success) {
@@ -311,8 +311,8 @@ typingTimeoutRef.current = setTimeout(() => {
 const handleStartConversation = async (recipientId) => {
 try {
 setStartingConversation(true);
-console.log('=== STARTING CONVERSATION ===');
-console.log('Recipient ID:', recipientId);
+//;
+//;
 
 // Make sure recipientId is a number
 const parsedRecipientId = parseInt(recipientId);
@@ -326,16 +326,16 @@ if (parsedRecipientId === user.id) {
     return;
 }
 
-console.log('Making API call to /messages/conversations with participantId:', parsedRecipientId);
+//;
 
 const response = await api.post('/messages/conversations', {
     participantId: parsedRecipientId
 });
 
-console.log('✅ API Response:', response.data);
+//;
 
 const newConversation = response.data.conversation;
-console.log('✅ New conversation created:', newConversation);
+//;
 
 // Replace existing entry if conversation already existed, otherwise prepend
 setConversations(prev => {
@@ -371,7 +371,7 @@ if (err.response?.status === 400) {
             c.participants?.some(p => p.id === parseInt(recipientId))
         );
         if (existingConv) {
-            console.log('🔄 Found existing conversation, switching to it...');
+            //;
             setSelectedConversation(existingConv);
             hasJoinedConversation.current = false;
             navigate(`/messages/${existingConv.id}`);
@@ -387,10 +387,10 @@ setStartingConversation(false);
 };
 
 const handleReconnect = async () => {
-console.log('🔌 Attempting to reconnect socket...');
+//;
 const success = await reconnect();
 if (success) {
-console.log('✅ Reconnection successful');
+//;
 } else {
 console.error('❌ Reconnection failed');
 }

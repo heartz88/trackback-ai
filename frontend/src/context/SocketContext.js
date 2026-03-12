@@ -15,7 +15,7 @@ const [connectionError, setConnectionError] = useState(null);
 // Connect socket when user is authenticated
 useEffect(() => {
 if (user && token) {
-    console.log('🔄 Connecting socket with token for user:', user.username);
+    //;
     
     const connectSocket = async () => {
     try {
@@ -31,18 +31,18 @@ if (user && token) {
 
     // Listen for connection status
     const handleConnect = () => {
-    console.log('✅ Socket connected in context');
+    //;
     setIsConnected(true);
     setConnectionError(null);
     };
     
     const handleDisconnect = () => {
-    console.log('🔌 Socket disconnected in context');
+    //;
     setIsConnected(false);
     };
 
     const handleConnectionEstablished = (data) => {
-    console.log('🎯 Connection established in context:', data);
+    //;
     setIsConnected(true);
     setConnectionError(null);
     };
@@ -55,7 +55,7 @@ if (user && token) {
 
     // Message handlers
     const handleNewMessage = (message) => {
-    console.log('📩 New message in context:', message);
+    //;
     // The room broadcast means you receive your own message:new event too,
     // which was incorrectly adding a notification for the sender.
     if (message.senderId === user?.id) return;
@@ -70,7 +70,7 @@ if (user && token) {
     };
 
     const handleCollaborationRequest = (data) => {
-    console.log('🤝 Collaboration request in context:', data);
+    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'collaboration_request',
@@ -82,7 +82,7 @@ if (user && token) {
     };
 
     const handleCollaborationResponse = (data) => {
-    console.log('🤝 Collaboration response in context:', data);
+    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'collaboration_response',
@@ -94,7 +94,7 @@ if (user && token) {
     };
 
     const handleNewSubmission = (data) => {
-    console.log('🎵 New submission in context:', data);
+    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'submission',
@@ -106,7 +106,7 @@ if (user && token) {
     };
 
     const handleNewVote = (data) => {
-    console.log('❤️ New vote in context:', data);
+    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'vote',
@@ -118,7 +118,7 @@ if (user && token) {
     };
 
     const handleNewComment = (data) => {
-    console.log('💬 New comment in context:', data);
+    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'comment',
@@ -130,41 +130,41 @@ if (user && token) {
     };
 
     const handleTrackNew = (data) => {
-    console.log('🎵 New track uploaded:', data);
+    //;
     // Pages listening to this event can update their track lists
     };
 
     const handleTrackCompleted = (data) => {
-    console.log('✅ Track completed:', data);
+    //;
     // Pages listening to this event can update their lists
     };
 
     // Handle online users properly
     const handleUsersOnline = (data) => {
-    console.log('👥 Online users event received:', data);
+    //;
     if (data.onlineUsers && Array.isArray(data.onlineUsers)) {
         const onlineUserIds = new Set(data.onlineUsers.map(user => user.id));
-        console.log('👥 Setting online users to:', Array.from(onlineUserIds));
+        //;
         setOnlineUsers(onlineUserIds);
     }
     };
 
     const handleUserOnline = (data) => {
-    console.log('🟢 User online event:', data);
+    //;
     setOnlineUsers(prev => {
         const newSet = new Set(prev);
         newSet.add(data.userId);
-        console.log('🟢 Updated online users:', Array.from(newSet));
+        //;
         return newSet;
     });
     };
 
     const handleUserOffline = (data) => {
-    console.log('🔴 User offline event:', data);
+    //;
     setOnlineUsers(prev => {
         const newSet = new Set(prev);
         newSet.delete(data.userId);
-        console.log('🔴 Updated online users:', Array.from(newSet));
+        //;
         return newSet;
     });
     };
@@ -194,7 +194,7 @@ if (user && token) {
     }, 30000);
 
     return () => {
-    console.log('🧹 Cleaning up socket listeners');
+    //;
     clearInterval(heartbeatInterval);
     unsubscribeConnected();
     unsubscribeDisconnected();
@@ -218,7 +218,7 @@ if (user && token) {
     }
     };
 } else {
-    console.log('👤 No user or token, disconnecting socket');
+    //;
     socketService.disconnect();
     setIsConnected(false);
     setOnlineUsers(new Set());
@@ -284,7 +284,7 @@ if (!isConnected) {
     try {
     // Wait for connection
     await socketService.waitForConnection();
-    console.log(`✅ Connected, now joining conversation ${conversationId}`);
+    //;
     return socketService.joinConversation(conversationId);
     } catch (error) {
     console.error(`❌ Failed to connect for conversation ${conversationId}:`, error.message);

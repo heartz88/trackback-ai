@@ -67,7 +67,7 @@ const SubmissionForm = ({ trackId, collaborationId, onSuccess, onCancel }) => {
                 },
             });
 
-            console.log('✅ Submission created:', response.data);
+            //;
             
             if (onSuccess) {
                 onSuccess(response.data.submission);

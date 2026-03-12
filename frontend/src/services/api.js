@@ -67,13 +67,13 @@ async (error) => {
         isRefreshing = true;
 
         try {
-        console.log('🔄 Token expired, attempting refresh...');
+        //;
         
         const token = localStorage.getItem('token');
         
         if (!token) {
             // No token to refresh, redirect to login
-            console.log('❌ No token found, redirecting to login');
+            //;
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';
@@ -98,7 +98,7 @@ async (error) => {
         localStorage.setItem('token', newToken);
         localStorage.setItem('user', JSON.stringify(userData));
 
-        console.log('✅ Token refreshed successfully');
+        //;
 
         // Update the authorization header
         api.defaults.headers.common['Authorization'] = 'Bearer ' + newToken;

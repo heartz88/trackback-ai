@@ -130,7 +130,7 @@ socket.on('user:typing', ({ conversationId, isTyping }) => {
 // Start or get conversation with a user
 router.post('/conversations', authMiddleware, async (req, res) => {
 try {
-console.log('=== STARTING CONVERSATION ===');
+//;
 const { participantId } = req.body;
 const userId = req.user.id;
 

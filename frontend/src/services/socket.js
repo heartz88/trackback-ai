@@ -20,12 +20,12 @@ connect(token) {
 // waitForConnection() to crash silently — preventing room joins for users
 // who load the page while the socket is still establishing.
 if (this.socket?.connected) {
-    console.log('✅ Already connected');
+    //;
     return Promise.resolve(this.socket);
 }
 
 if (this.isConnecting && this.connectionPromise) {
-    console.log('🔄 Already connecting, returning existing promise...');
+    //;
     return this.connectionPromise;
 }
 
@@ -33,7 +33,7 @@ this.token = token;
 this.isConnecting = true;
 this.reconnectAttempts = 0;
 
-console.log('🔌 Connecting to Socket.IO server...');
+//;
 
 this.socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001', {
     auth: { token },
@@ -49,7 +49,7 @@ this.socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001', {
 
 // Connection event handlers
 this.socket.on('connect', () => {
-    console.log('✅ Socket.IO connected successfully');
+    //;
     this.connected = true;
     this.isConnecting = false;
     this.reconnectAttempts = 0;
@@ -69,13 +69,13 @@ this.socket.on('connect_error', (error) => {
 });
 
 this.socket.on('disconnect', (reason) => {
-    console.log(`🔌 Socket disconnected: ${reason}`);
+    //;
     this.connected = false;
     this.emitToAll('socket:disconnected', { reason });
 });
 
 this.socket.on('connection:established', (data) => {
-    console.log('🎯 Server connection confirmed:', data.message);
+    //;
     this.connected = true;
     this.emitToAll('connection:established', data);
 });
@@ -115,7 +115,7 @@ return this.connectionPromise;
 
 disconnect() {
 if (this.socket) {
-    console.log('🔌 Disconnecting socket...');
+    //;
     this.socket.disconnect();
     this.socket = null;
 }
@@ -131,7 +131,7 @@ if (!this.socket?.connected) {
     return false;
 }
 
-console.log(`📤 Emitting ${eventName}:`, data);
+//;
 this.socket.emit(eventName, data);
 return true;
 }
@@ -199,9 +199,9 @@ if (!this.socket?.connected) {
     console.warn(`⚠️ Cannot join conversation ${conversationId}: Socket not connected`);
     // Try to reconnect
     if (this.token) {
-    console.log('🔄 Attempting to reconnect socket...');
+    //;
     this.connect(this.token).then(() => {
-        console.log(`✅ Reconnected, joining conversation ${conversationId}`);
+        //;
         this.emit('join:conversation', conversationId);
     }).catch(err => {
         console.error('❌ Failed to reconnect:', err.message);
@@ -209,7 +209,7 @@ if (!this.socket?.connected) {
     }
     return false;
 }
-console.log(`💬 Joining conversation: ${conversationId}`);
+//;
 return this.emit('join:conversation', conversationId);
 }
 
@@ -218,7 +218,7 @@ if (!this.socket?.connected) {
     console.warn(`⚠️ Cannot leave conversation ${conversationId}: Socket not connected`);
     return false;
 }
-console.log(`💬 Leaving conversation: ${conversationId}`);
+//;
 return this.emit('leave:conversation', conversationId);
 }
 

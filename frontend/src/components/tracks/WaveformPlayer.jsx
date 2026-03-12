@@ -192,7 +192,7 @@ try {
     width:         w,
     height:        150,
     });
-    console.log('audioMotion ✅ initialized at', w, 'x', h);
+    //;
 } catch (e) {
     console.warn('audioMotion failed:', e);
 }
