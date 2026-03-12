@@ -11,7 +11,7 @@ try {
     const { vote_type } = req.body; // 'upvote' or 'downvote'
     const userId = req.user.id;
 
-    console.log(`📊 Vote request: User ${userId} voting ${vote_type} on submission ${submissionId}`);
+    //
 
     if (!['upvote', 'downvote'].includes(vote_type)) {
         return res.status(400).json({ error: { message: 'Invalid vote type' } });
@@ -57,7 +57,7 @@ try {
         if (oldVote === vote_type) {
             // Remove vote if clicking same button
             await db.query('DELETE FROM votes WHERE id = $1', [existingVote.rows[0].id]);
-            console.log(`✅ Vote removed for user ${userId}`);
+            //
             
             return res.json({ 
                 message: 'Vote removed',
@@ -69,7 +69,6 @@ try {
                 'UPDATE votes SET vote_type = $1, created_at = NOW() WHERE id = $2',
                 [vote_type, existingVote.rows[0].id]
             );
-            console.log(`✅ Vote updated to ${vote_type} for user ${userId}`);
             
             return res.json({ 
                 message: 'Vote updated',

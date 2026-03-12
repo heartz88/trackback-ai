@@ -113,10 +113,8 @@ try {
         [conversationId, result.rows[0].id]
     );
 
-    console.log(`✅ Auto-created conversation ${conversationId} for collaboration request ${result.rows[0].id}`);
     }
 } catch (convError) {
-    console.warn('⚠️ Could not auto-create conversation:', convError.message);
     // Non-critical error, continue
 }
 
@@ -357,7 +355,6 @@ const s3Key = `submissions/${trackId}/${userId}/${timestamp}_${safeFileName}`;
 
 // Upload to S3
 const s3Result = await uploadToS3(req.file, s3Key);
-console.log(`✅ Submission uploaded to S3: ${s3Result.Location}`);
 
 // Create submission record
 const submissionResult = await db.query(

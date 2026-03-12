@@ -68,8 +68,7 @@ try {
     return res.status(400).json({ error: { message: 'No audio file provided' } });
     }
 
-    console.log('📁 File received:', req.file.originalname, 'Size:', req.file.size, 'Type:', req.file.mimetype);
-    console.log('📝 Form data:', req.body);
+
 
     const { title, description, genre, desired_skills } = req.body;
     const userId = req.user.id;
@@ -80,11 +79,9 @@ try {
     const safeFileName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
     const s3Key = `tracks/${userId}/${timestamp}_${safeFileName}`;
 
-    console.log('📤 Uploading to S3 with key:', s3Key);
 
     const s3Result = await uploadToS3(req.file, s3Key);
-    console.log('✅ S3 upload successful:', s3Result.Location);
-
+    
     let skillsArray = [];
     if (desired_skills) {
     if (typeof desired_skills === 'string') {
@@ -105,12 +102,12 @@ try {
     );
 
     const track = result.rows[0];
-    console.log('💾 Track saved to database with ID:', track.id);
+    //
 
     const audioUrl = getSignedUrl(s3Key);
 
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5000';
-    console.log(`🤖 Triggering ML analysis for track ${track.id}`);
+
 
     axios.post(`${mlServiceUrl}/analyze`, {
     track_id: track.id,
@@ -121,15 +118,14 @@ try {
     timeout: 120000
     })
     .then(() => {
-        console.log(`✅ ML analysis request sent for track ${track.id}`);
     })
     .catch((mlError) => {
-        console.error(`❌ ML service request error for track ${track.id}:`, mlError.message);
+        console.error(` ML service request error for track ${track.id}:`, mlError.message);
         if (mlError.code !== 'ECONNABORTED' && mlError.message !== 'timeout of 120000ms exceeded') {
         db.query('UPDATE tracks SET analysis_status = $1 WHERE id = $2', ['failed', track.id])
             .catch(err => console.error('Error updating track status:', err));
         } else {
-        console.log(`⏳ Request timeout - ML service may still be processing track ${track.id}`);
+        //
         }
     });
 
@@ -236,7 +232,7 @@ if (genre) {
 query += ` ORDER BY t.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
 params.push(parseInt(limit), parseInt(offset));
 
-console.log('📊 Executing query:', query, 'Params:', params);
+//
 
 const result = await db.query(query, params);
 
@@ -532,7 +528,7 @@ try {
 const { id } = req.params;
 const { bpm, energy_level, duration, key, musical_key } = req.body;
 
-console.log(`📊 Updating track ${id} with analysis results:`, { bpm, energy_level, duration, key, musical_key });
+//
 
 if (!bpm || !energy_level || !duration) {
     return res.status(400).json({ error: { message: 'Missing required analysis fields' } });
@@ -554,7 +550,7 @@ if (result.rows.length === 0) {
     return res.status(404).json({ error: { message: 'Track not found' } });
 }
 
-console.log(`✅ Track ${id} updated successfully`);
+//
 res.json({ message: 'Analysis results updated successfully', track: result.rows[0] });
 } catch (error) {
 console.error('❌ Update analysis error:', error);
@@ -612,7 +608,7 @@ const result = await db.query(
 
 const track = result.rows[0];
 track.audio_url = getSignedUrl(track.s3_key);
-console.log(`✏️  Track ${id} metadata corrected by owner (user ${userId})`);
+//
 
 res.json({ message: 'Track metadata updated successfully', track });
 } catch (error) {

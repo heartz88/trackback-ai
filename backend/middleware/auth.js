@@ -60,8 +60,6 @@ const authMiddleware = (req, res, next) => {
         username: decoded.username,
         email: decoded.email
     };
-    
-    console.log(`✅ Auth successful for user: ${req.user.username} (${req.user.id})`);
     next();
     
 } catch (error) {

@@ -33,17 +33,23 @@ const isTokenExpired = (token) => {
     return expiresIn < 5 * 60 * 1000;
 };
 
+// Get token expiry time in milliseconds
+const getTokenExpiryTime = (token) => {
+    const decoded = decodeToken(token);
+    if (!decoded || !decoded.exp) return 0;
+    return decoded.exp * 1000;
+};
+
 // Refresh token before it expires
 const refreshToken = useCallback(async () => {
     try {
-    const currentToken = localStorage.getItem('token');
+    const currentToken = localStorage.getItem('token') || sessionStorage.getItem('token');
     
     if (!currentToken || isTokenExpired(currentToken)) {
         logout();
         return null;
     }
 
-    
     // Call backend to get a new token
     const response = await api.post('/auth/refresh', {}, {
         headers: {
@@ -53,9 +59,16 @@ const refreshToken = useCallback(async () => {
 
     const newToken = response.data.token;
     const userData = response.data.user;
+    const isRememberMe = !!localStorage.getItem('token'); // Check if originally stored in localStorage
 
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    if (isRememberMe) {
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+    } else {
+        sessionStorage.setItem('token', newToken);
+        sessionStorage.setItem('user', JSON.stringify(userData));
+    }
+    
     setToken(newToken);
     setUser(userData);
 
@@ -72,17 +85,20 @@ const refreshToken = useCallback(async () => {
     }
 }, []);
 
-// Load user from localStorage on initial mount
+// Load user from storage on initial mount
 useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    // Check both localStorage and sessionStorage
+    const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+    const isRememberMe = !!localStorage.getItem('token');
 
     if (storedToken && storedUser) {
     // Check if token is still valid
     if (isTokenExpired(storedToken)) {
-        console.log('⚠️ Stored token is expired, logging out...');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         setToken(null);
         setUser(null);
     } else {
@@ -96,7 +112,11 @@ useEffect(() => {
                 const response = await api.get(`/users/${parsedUser.id}`);
                 if (response.data.user) {
                     const freshUser = response.data.user;
-                    localStorage.setItem('user', JSON.stringify(freshUser));
+                    if (isRememberMe) {
+                        localStorage.setItem('user', JSON.stringify(freshUser));
+                    } else {
+                        sessionStorage.setItem('user', JSON.stringify(freshUser));
+                    }
                     setUser(freshUser);
                 }
             } catch (error) {
@@ -112,25 +132,49 @@ useEffect(() => {
     setLoading(false);
 }, []);
 
-// Set up automatic token refresh interval
+// Set up automatic token refresh interval with dynamic timing based on token expiry
 useEffect(() => {
     if (!token) return;
 
-    // Check token every minute
-    const interval = setInterval(() => {
-    const currentToken = localStorage.getItem('token');
-    
-    if (currentToken && isTokenExpired(currentToken)) {
-        refreshToken();
-    }
-    }, 60 * 1000); // Check every minute
+    // Calculate when to check based on token expiry
+    const checkToken = () => {
+        const currentToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        if (currentToken) {
+            const expiryTime = getTokenExpiryTime(currentToken);
+            const timeUntilExpiry = expiryTime - Date.now();
+            
+            // If token expires in less than 1 hour, check more frequently
+            const checkInterval = timeUntilExpiry < 60 * 60 * 1000 ? 60000 : 300000; // 1 min vs 5 mins
+            
+            if (isTokenExpired(currentToken)) {
+                refreshToken();
+            }
+            
+            return checkInterval;
+        }
+        return 60000; // Default to 1 minute
+    };
+
+    let interval = setInterval(() => {
+        const nextInterval = checkToken();
+        // Reschedule with new interval if needed
+        clearInterval(interval);
+        interval = setInterval(checkToken, nextInterval);
+    }, checkToken());
 
     return () => clearInterval(interval);
 }, [token, refreshToken]);
 
-const login = (newToken, userData) => {
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+// login function with rememberMe parameter
+const login = (newToken, userData, rememberMe = false) => {
+    if (rememberMe) {
+        localStorage.setItem('token', newToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+    } else {
+        sessionStorage.setItem('token', newToken);
+        sessionStorage.setItem('user', JSON.stringify(userData));
+    }
     setToken(newToken);
     setUser(userData);
 };
@@ -138,6 +182,8 @@ const login = (newToken, userData) => {
 const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setToken(null);
     setUser(null);
 };
@@ -150,7 +196,13 @@ const refreshUserData = useCallback(async () => {
         const response = await api.get(`/users/${user.id}`);
         if (response.data.user) {
             const freshUser = response.data.user;
-            localStorage.setItem('user', JSON.stringify(freshUser));
+            const isRememberMe = !!localStorage.getItem('token');
+            
+            if (isRememberMe) {
+                localStorage.setItem('user', JSON.stringify(freshUser));
+            } else {
+                sessionStorage.setItem('user', JSON.stringify(freshUser));
+            }
             setUser(freshUser);
             return freshUser;
         }

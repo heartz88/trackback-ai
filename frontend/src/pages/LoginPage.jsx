@@ -8,6 +8,7 @@ function LoginPage() {
 const [email, setEmail] = useState('');
 const [password, setPassword] = useState('');
 const [showPassword, setShowPassword] = useState(false);
+const [rememberMe, setRememberMe] = useState(false);
 const [error, setError] = useState('');
 const { login } = useAuth();
 const navigate = useNavigate();
@@ -15,8 +16,16 @@ const navigate = useNavigate();
 const handleSubmit = async (e) => {
 e.preventDefault();
 try {
-    const response = await api.post('/auth/login', { email, password });
-    login(response.data.token, response.data.user);
+    // Send rememberMe to backend
+    const response = await api.post('/auth/login', { 
+        email, 
+        password, 
+        rememberMe // This will be used for token expiry
+    });
+    
+    // Pass rememberMe to login function for storage
+    login(response.data.token, response.data.user, rememberMe);
+    
     navigate('/discover');
 } catch (err) {
     setError(err.response?.data?.error?.message || 'Login failed');
@@ -80,7 +89,29 @@ return (
             </button>
             </div>
         </div>
+        
+        {/* Remember Me Checkbox */}
+        <div className="flex items-center justify-between animate-slide-up" style={{ animationDelay: '0.25s', animationFillMode: 'both' }}>
+            <label className="flex items-center cursor-pointer group">
+                <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-[var(--border-color)] text-primary-600 focus:ring-primary-500 focus:ring-offset-0 bg-[var(--bg-tertiary)] cursor-pointer"
+                />
+                <span className="ml-2 text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+                    Remember me for 30 days
+                </span>
+            </label>
+            <Link 
+                to="/forgot-password" 
+                className="text-sm text-primary-400 hover:text-primary-300 font-medium transition-colors"
+            >
+                Forgot password?
+            </Link>
         </div>
+        </div>
+        
         <button
         type="submit"
         className="w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-[1.02] active:scale-[0.98] animate-slide-up"
@@ -88,16 +119,11 @@ return (
         >
         Sign in
         </button>
+        
         <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
         Don't have an account?{' '}
         <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
             Sign up
-        </Link>
-        </p>
-        <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-        Forgotten your password?{' '}
-        <Link to="/forgot-password" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
-            Forgot Password
         </Link>
         </p>
     </form>

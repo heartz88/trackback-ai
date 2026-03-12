@@ -6,8 +6,8 @@ const db = require('../config/database');
 
 
 db.query('DROP TRIGGER IF EXISTS update_messages_updated_at ON messages')
-.then(() => console.log('✅ Dropped bad messages trigger'))
-.catch(err => console.warn('⚠️ Could not drop messages trigger:', err.message));
+.then()
+.catch();
 
 async function persistMessage(conversationId, senderId, content) {
 // Insert the message
@@ -58,14 +58,12 @@ if (!userId) return;
 socket.on('join:conversation', (conversationId) => {
     const room = `conversation:${conversationId}`;
     socket.join(room);
-    console.log(`👥 User ${userId} joined room ${room}`);
 });
 
 // ── Leave conversation room ─────────────────────────
 socket.on('leave:conversation', (conversationId) => {
     const room = `conversation:${conversationId}`;
     socket.leave(room);
-    console.log(`👋 User ${userId} left room ${room}`);
 });
 
 // ── Send message ────────────────────────────────────
@@ -92,7 +90,7 @@ socket.on('message:send', async ({ conversationId, content }) => {
         // Broadcast the saved message (with real DB id) to everyone in the room
         io.to(`conversation:${conversationId}`).emit('message:new', savedMessage);
 
-        console.log(`✅ Message ${savedMessage.id} saved and broadcast to conversation ${conversationId}`);
+
     } catch (err) {
         console.error('❌ Error saving socket message:', err);
         socket.emit('message:error', { error: 'Failed to send message' });
@@ -121,7 +119,6 @@ console.log('=== STARTING CONVERSATION ===');
 const { participantId } = req.body;
 const userId = req.user.id;
 
-console.log(`💬 Starting conversation: User ${userId} with Participant ${participantId}`);
 
 if (!participantId) {
     return res.status(400).json({ error: { message: 'Participant ID is required' } });
@@ -151,7 +148,7 @@ if (usersCheck.rows.length !== 2) {
 }
 
 const participant = usersCheck.rows.find(u => u.id === parsedParticipantId);
-console.log('✅ Both users found. Participant:', participant.username);
+
 
 // Check if conversation already exists
 const existingConversation = await db.query(
@@ -168,7 +165,6 @@ let isNew = false;
 
 if (existingConversation.rows.length > 0) {
     conversationId = existingConversation.rows[0].conversation_id;
-    console.log(`✅ Found existing conversation: ${conversationId}`);
 } else {
     isNew = true;
     const conversationResult = await db.query(
@@ -182,7 +178,7 @@ if (existingConversation.rows.length > 0) {
             VALUES ($1, $2, NOW(), NOW()), ($1, $3, NOW(), NOW())`,
         [conversationId, userId, parsedParticipantId]
     );
-    console.log(`✅ Created new conversation: ${conversationId}`);
+
 }
 
 // Fetch full conversation details
@@ -251,7 +247,7 @@ res.status(500).json({
 router.get('/conversations', authMiddleware, async (req, res) => {
 try {
 const userId = req.user.id;
-console.log(`📨 Getting conversations for user ${userId}`);
+
 
 const conversations = await db.query(
     `SELECT
@@ -272,7 +268,7 @@ const conversations = await db.query(
     [userId]
 );
 
-console.log(`✅ Found ${conversations.rows.length} conversations for user ${userId}`);
+
 
 const formattedConversations = conversations.rows.map(conv => {
     const participantsArray = conv.participants || [];
@@ -316,7 +312,7 @@ try {
 const { conversationId } = req.params;
 const userId = req.user.id;
 
-console.log(`📨 Getting messages for conversation ${conversationId}, user ${userId}`);
+
 
 // Verify participant
 const participantCheck = await db.query(
@@ -346,9 +342,8 @@ const messages = await db.query(
     [conversationId]
 );
 
-console.log(`✅ Found ${messages.rows.length} messages in conversation ${conversationId}`);
 
-// ✅ FIX: Send the response FIRST before doing read-marking.
+// Send the response FIRST before doing read-marking.
 // The messages table has an update_messages_updated_at trigger that tries
 // to set NEW.updated_at, but messages has no updated_at column — so the
 // UPDATE below was crashing with a 500 even though messages loaded fine.
@@ -375,14 +370,14 @@ db.query(
         AND sender_id != $1
         AND NOT ($1 = ANY(read_by))`,
     [userId, conversationId]
-).catch(err => console.warn('⚠️ Failed to mark messages read_by:', err.message));
+).catch();
 
 db.query(
     `UPDATE conversation_participants
         SET last_read_at = NOW()
         WHERE conversation_id = $1 AND user_id = $2`,
     [conversationId, userId]
-).catch(err => console.warn('⚠️ Failed to update last_read_at:', err.message));
+).catch(Error);
 } catch (error) {
 console.error('❌ Error getting messages:', error);
 res.status(500).json({

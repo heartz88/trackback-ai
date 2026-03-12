@@ -25,7 +25,6 @@ Metadata: {
 
 try {
 const result = await s3.upload(params).promise();
-console.log(`✅ File uploaded to S3: ${result.Location}`);
 return result;
 } catch (error) {
 console.error('❌ S3 upload error:', error);
@@ -57,7 +56,6 @@ const params = {
 };
 
 await s3.deleteObject(params).promise();
-console.log(`✅ File deleted from S3: ${key}`);
 } catch (error) {
 console.error('❌ S3 delete error:', error);
 throw new Error(`Failed to delete from S3: ${error.message}`);

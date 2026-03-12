@@ -57,7 +57,7 @@ res.json({
     total_recent: activeUsers.length
 });
 } catch (error) {
-console.error('❌ Error getting online users:', error);
+console.error('Error getting online users:', error);
 res.status(500).json({
     error: {
     message: 'Failed to fetch online users',
@@ -94,7 +94,7 @@ res.json({
     checked_at: new Date().toISOString()
 });
 } catch (error) {
-console.error('❌ Error checking online status:', error);
+console.error('Error checking online status:', error);
 res.status(500).json({
     error: {
     message: 'Failed to check online status',

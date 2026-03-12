@@ -105,7 +105,7 @@ router.post('/login',
         return res.status(400).json({ errors: errors.array() });
         }
 
-        const { email, password } = req.body;
+        const { email, password, rememberMe } = req.body; // Get rememberMe from request
 
         const result = await db.query(
             'SELECT * FROM users WHERE email = $1',
@@ -135,7 +135,19 @@ router.post('/login',
         // Refresh avatar URL if exists
         refreshAvatarUrl(user);
 
-        const token = generateToken(user);
+        // Set token expiry based on remember me
+        const tokenExpiry = rememberMe ? '30d' : '24h'; // 30 days for remember me, 24 hours for normal
+        
+        const token = jwt.sign(
+            { 
+                id: user.id, 
+                userId: user.id, 
+                username: user.username, 
+                email: user.email 
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: tokenExpiry }
+        );
 
         res.json({
         message: 'Login successful',
@@ -321,10 +333,9 @@ router.post('/forgot-password', async (req, res) => {
 
             } catch (emailErr) {
                 // Never block the response due to email failure
-                console.error('Failed to send reset email:', emailErr.message);
+
             }
         } else {
-            console.log('Reset link:', resetLink);
         }
 
         res.json(successMsg);
