@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import CommentSection from '../comments/CommentSection';
+import Avatar from '../common/Avatar';
 import WaveformPlayer from '../tracks/WaveformPlayer';
 import VoteButton from './VoteButton';
 
@@ -49,6 +50,13 @@ return new Date(dateString).toLocaleDateString();
 
 const versionNum = parseInt(submission.version_number) || 1;
 
+// Create user object for Avatar
+const submitter = {
+id: submission.collaborator_id,
+username: submission.collaborator_name,
+avatar_url: submission.avatar_url
+};
+
 return (
 <div className={`submission-card ${isWinner ? 'winner' : ''}`}>
     {isWinner && (
@@ -68,9 +76,7 @@ return (
         {/* Author row */}
         <div className="user-header">
         <Link to={`/profile/${submission.collaborator_name}`} className="flex items-center gap-3 group">
-            <div className="avatar group-hover:scale-105 transition-transform">
-            {submission.collaborator_name?.charAt(0).toUpperCase()}
-            </div>
+            <Avatar user={submitter} size={40} />
             <div>
             <h3 className="username group-hover:text-primary-400 transition-colors">
                 {submission.collaborator_name}

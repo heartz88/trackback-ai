@@ -88,7 +88,7 @@ if (!onlineUsers?.has(ownerId)) {
     triggerNotificationEmail(db, ownerId, 'collaboration_request', {
     senderName: req.user.username,
     trackTitle: trackResult.rows[0].title,
-});
+    });
 } else {
     console.log(`[collaborations] User ${ownerId} is online, skipping email`);
 }
@@ -126,7 +126,6 @@ try {
         'UPDATE collaboration_requests SET conversation_id = $1 WHERE id = $2',
         [conversationId, result.rows[0].id]
     );
-
     }
 } catch (convError) {
     // Non-critical error, continue
@@ -164,13 +163,17 @@ res.status(500).json({ error: { message: 'Failed to fetch collaboration status' 
 }
 });
 
-// Get active collaborators for a track
+// Get active collaborators for a track - UPDATED to include avatar_url
 router.get('/track/:trackId/active', async (req, res) => {
 try {
 const { trackId } = req.params;
 
 const result = await db.query(
-    `SELECT cr.*, u.username as collaborator_name, u.id as collaborator_id
+    `SELECT cr.*, 
+            u.id as collaborator_id, 
+            u.username as collaborator_name,
+            u.avatar_url,
+            u.avatar_s3_key
     FROM collaboration_requests cr
     JOIN users u ON cr.collaborator_id = u.id
     WHERE cr.track_id = $1 AND cr.status = 'approved'
@@ -178,7 +181,21 @@ const result = await db.query(
     [trackId]
 );
 
-res.json({ collaborators: result.rows, count: result.rows.length });
+// Refresh avatar URLs for each collaborator
+const collaborators = result.rows.map(collab => {
+    if (collab.avatar_s3_key) {
+    collab.avatar_url = getSignedUrl(collab.avatar_s3_key);
+    }
+    return {
+    id: collab.collaborator_id,
+    username: collab.collaborator_name,
+    avatar_url: collab.avatar_url,
+    role: collab.role || 'Collaborator',
+    joined_at: collab.updated_at
+    };
+});
+
+res.json({ collaborators, count: collaborators.length });
 } catch (error) {
 console.error('Get active collaborators error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch collaborators' } });
@@ -196,6 +213,8 @@ const result = await db.query(
             t.s3_key as track_file,
             u.username as collaborator_name,
             u.email as collaborator_email,
+            u.avatar_url,
+            u.avatar_s3_key,
             c.id as conversation_id
     FROM collaboration_requests cr
     JOIN tracks t ON cr.track_id = t.id
@@ -207,10 +226,15 @@ const result = await db.query(
 );
 
 res.json({ 
-    requests: result.rows.map(req => ({
-    ...req,
-    track_audio_url: getSignedUrl(req.track_file)
-    }))
+    requests: result.rows.map(req => {
+    if (req.avatar_s3_key) {
+        req.avatar_url = getSignedUrl(req.avatar_s3_key);
+    }
+    return {
+        ...req,
+        track_audio_url: getSignedUrl(req.track_file)
+    };
+    })
 });
 } catch (error) {
 console.error('Get requests error:', error);
@@ -228,6 +252,8 @@ const result = await db.query(
             t.title as track_title, 
             u.username as owner_name,
             u.email as owner_email,
+            u.avatar_url,
+            u.avatar_s3_key,
             c.id as conversation_id
     FROM collaboration_requests cr
     JOIN tracks t ON cr.track_id = t.id
@@ -238,7 +264,14 @@ const result = await db.query(
     [userId]
 );
 
-res.json({ requests: result.rows });
+res.json({ 
+    requests: result.rows.map(req => {
+    if (req.avatar_s3_key) {
+        req.avatar_url = getSignedUrl(req.avatar_s3_key);
+    }
+    return req;
+    })
+});
 } catch (error) {
 console.error('Get sent requests error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch requests' } });
@@ -324,7 +357,7 @@ if (!onlineUsers?.has(collaboratorId)) {
     responderName: req.user.username,
     trackTitle: request.title,
     status,
-});
+    });
 } else {
     console.log(`[collaborations] User ${collaboratorId} is online, skipping email`);
 }
@@ -477,6 +510,8 @@ if (!isOwner && isCollaborator.rows.length === 0) {
 const result = await db.query(
     `SELECT s.*,
             u.username as collaborator_name,
+            u.avatar_url,
+            u.avatar_s3_key,
             t.user_id  as track_owner_id,
             (SELECT COUNT(*) FROM votes WHERE submission_id = s.id AND vote_type = 'upvote')   AS upvotes,
             (SELECT COUNT(*) FROM votes WHERE submission_id = s.id AND vote_type = 'downvote') AS downvotes,
@@ -490,13 +525,18 @@ const result = await db.query(
     [trackId, userId]
 );
 
-const submissions = result.rows.map(sub => ({
+const submissions = result.rows.map(sub => {
+    if (sub.avatar_s3_key) {
+    sub.avatar_url = getSignedUrl(sub.avatar_s3_key);
+    }
+    return {
     ...sub,
-    audio_url:      getSignedUrl(sub.s3_key),
-    can_vote:       !isOwner && sub.collaborator_id !== userId,
-    user_vote:      sub.user_vote || null,
+    audio_url: getSignedUrl(sub.s3_key),
+    can_vote: !isOwner && sub.collaborator_id !== userId,
+    user_vote: sub.user_vote || null,
     version_number: parseInt(sub.version_number) || 1,
-}));
+    };
+});
 
 res.json({ submissions });
 } catch (error) {
@@ -683,7 +723,11 @@ const result = await db.query(
     `SELECT ac.*,
             t.title as track_title,
             u.username as collaborator_name,
-            owner.username as owner_name
+            u.avatar_url,
+            u.avatar_s3_key,
+            owner.username as owner_name,
+            owner.avatar_url as owner_avatar_url,
+            owner.avatar_s3_key as owner_avatar_s3_key
     FROM active_collaborations ac
     JOIN tracks t ON ac.track_id = t.id
     JOIN users u ON ac.collaborator_id = u.id
@@ -693,7 +737,17 @@ const result = await db.query(
     [userId]
 );
 
-res.json({ collaborations: result.rows });
+const collaborations = result.rows.map(collab => {
+    if (collab.avatar_s3_key) {
+    collab.avatar_url = getSignedUrl(collab.avatar_s3_key);
+    }
+    if (collab.owner_avatar_s3_key) {
+    collab.owner_avatar_url = getSignedUrl(collab.owner_avatar_s3_key);
+    }
+    return collab;
+});
+
+res.json({ collaborations });
 } catch (error) {
 console.error('Get user collaborations error:', error);
 // If table doesn't exist yet, return empty array

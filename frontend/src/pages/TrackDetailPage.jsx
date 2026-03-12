@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import Avatar from '../components/common/Avatar';
 import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
@@ -151,8 +152,8 @@ return (
         </div>
 
         <div className="tdp-owner-row">
-        <Link to={`/profile/${owner?.username}`} style={{display:'flex',alignItems:'center',gap:10,textDecoration:'none'}}>
-            <div className="tdp-owner-avatar">{owner?.username?.charAt(0).toUpperCase()}</div>
+        <Link to={`/profile/${owner?.username}`} style={{display:'flex',alignItems:'center',gap:12,textDecoration:'none'}}>
+            <Avatar user={owner} size={40} />
             <div>
             <div className="tdp-owner-name">@{owner?.username}</div>
             <div className="tdp-owner-date">{new Date(track.created_at).toLocaleDateString()}</div>
@@ -170,7 +171,7 @@ return (
 
         <div className="tdp-stats">
         {[{l:'Submissions',v:submissionsCount},{l:'Collaborators',v:collaborators.length}].map((s, idx) => (
-            <div key={idx}>
+            <div key={idx} className="tdp-stat">
             <span className="tdp-stat-value">{s.v}</span>
             <span className="tdp-stat-label">{s.l}</span>
             </div>
@@ -271,14 +272,28 @@ return (
         <div className="tdp-action-card">
             <div className="section-label">🤝 Collaborators</div>
             <div className="tdp-collabs-list">
-            {collaborators.map(c=>(
-                <div key={c.id} className="tdp-collab-item">
-                <div className="tdp-collab-avatar">{c.username?.charAt(0).toUpperCase()}</div>
-                <div style={{flex:1,minWidth:0}}>
-                    <Link to={`/profile/${c.username}`} style={{color:'var(--text-primary)',fontWeight:600,fontSize:13,textDecoration:'none',display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>@{c.username}</Link>
-                    <span style={{color:'var(--text-tertiary)',fontSize:11}}>{c.role||'Collaborator'}</span>
-                </div>
-                {user && user.id !== c.id && <Link to={`/messages/new?userId=${c.id}`} className="tdp-message-btn" style={{marginLeft:0}}>Msg</Link>}
+            {collaborators.map(collab => (
+                <div key={collab.id} className="tdp-collab-item">
+                <Link to={`/profile/${collab.username}`} className="flex items-center gap-3 flex-1 min-w-0 group">
+                    <Avatar user={collab} size={32} />
+                    <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-primary-400 transition-colors truncate">
+                        @{collab.username}
+                    </div>
+                    <span className="text-xs text-[var(--text-tertiary)]">{collab.role || 'Collaborator'}</span>
+                    </div>
+                </Link>
+                {user && user.id !== collab.id && (
+                    <Link 
+                    to={`/messages/new?userId=${collab.id}`} 
+                    className="tdp-message-btn flex-shrink-0"
+                    title="Message collaborator"
+                    >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    </Link>
+                )}
                 </div>
             ))}
             </div>

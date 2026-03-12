@@ -68,8 +68,6 @@ try {
     return res.status(400).json({ error: { message: 'No audio file provided' } });
     }
 
-
-
     const { title, description, genre, desired_skills } = req.body;
     const userId = req.user.id;
 
@@ -78,7 +76,6 @@ try {
     const fileExt = originalName.split('.').pop().toLowerCase();
     const safeFileName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
     const s3Key = `tracks/${userId}/${timestamp}_${safeFileName}`;
-
 
     const s3Result = await uploadToS3(req.file, s3Key);
     
@@ -102,12 +99,10 @@ try {
     );
 
     const track = result.rows[0];
-    //
 
     const audioUrl = getSignedUrl(s3Key);
 
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5000';
-
 
     axios.post(`${mlServiceUrl}/analyze`, {
     track_id: track.id,
@@ -117,16 +112,13 @@ try {
     headers: { 'Content-Type': 'application/json' },
     timeout: 120000
     })
-    .then(() => {
-    })
+    .then(() => {})
     .catch((mlError) => {
-        console.error(` ML service request error for track ${track.id}:`, mlError.message);
-        if (mlError.code !== 'ECONNABORTED' && mlError.message !== 'timeout of 120000ms exceeded') {
+    console.error(`ML service request error for track ${track.id}:`, mlError.message);
+    if (mlError.code !== 'ECONNABORTED' && mlError.message !== 'timeout of 120000ms exceeded') {
         db.query('UPDATE tracks SET analysis_status = $1 WHERE id = $2', ['failed', track.id])
-            .catch(err => console.error('Error updating track status:', err));
-        } else {
-        //
-        }
+        .catch(err => console.error('Error updating track status:', err));
+    }
     });
 
     // Emit real-time event so Discover page updates live
@@ -154,7 +146,7 @@ try {
     }
     });
 } catch (error) {
-    console.error('❌ Upload error:', error);
+    console.error('Upload error:', error);
     console.error('Error stack:', error.stack);
     if (error.code === '23505') {
     return res.status(400).json({ error: { message: 'A track with this title already exists' } });
@@ -180,7 +172,11 @@ const {
 } = req.query;
 
 let query = `
-    SELECT t.*, u.username, u.id as owner_id
+    SELECT t.*, 
+            u.username, 
+            u.id as owner_id,
+            u.avatar_url,
+            u.avatar_s3_key
     FROM tracks t
     JOIN users u ON t.user_id = u.id
     WHERE 1=1
@@ -232,18 +228,21 @@ if (genre) {
 query += ` ORDER BY t.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
 params.push(parseInt(limit), parseInt(offset));
 
-//
-
 const result = await db.query(query, params);
 
-const tracks = result.rows.map(track => ({
+const tracks = result.rows.map(track => {
+    if (track.avatar_s3_key) {
+    track.avatar_url = getSignedUrl(track.avatar_s3_key);
+    }
+    return {
     ...track,
     audio_url: getSignedUrl(track.s3_key),
     duration: track.duration ? Math.round(track.duration) : null,
     bpm: track.bpm ? Math.round(track.bpm) : null,
     desired_skills: track.desired_skills || [],
     musical_key: track.musical_key || null
-}));
+    };
+});
 
 let countQuery = `
     SELECT COUNT(*) as total
@@ -267,7 +266,7 @@ res.json({
     hasMore: (parseInt(offset) + tracks.length) < total
 });
 } catch (error) {
-console.error('❌ Get tracks error:', error);
+console.error('Get tracks error:', error);
 res.status(500).json({
     error: {
     message: 'Failed to fetch tracks',
@@ -296,6 +295,8 @@ const result = await db.query(
     `SELECT
     t.*,
     u.username AS owner_username,
+    u.avatar_url AS owner_avatar_url,
+    u.avatar_s3_key AS owner_avatar_s3_key,
     COUNT(DISTINCT cr.collaborator_id)::int AS collaborator_count,
     COALESCE(
         (SELECT COUNT(*)::int
@@ -309,20 +310,25 @@ const result = await db.query(
     LEFT JOIN collaboration_requests cr
             ON cr.track_id = t.id AND cr.status = 'approved'
     WHERE t.status = 'completed'
-    GROUP BY t.id, u.username
+    GROUP BY t.id, u.username, u.avatar_url, u.avatar_s3_key
     ORDER BY ${orderBy}
     LIMIT $1`,
     [parseInt(limit)]
 );
 
-const tracks = result.rows.map(t => ({
+const tracks = result.rows.map(t => {
+    if (t.owner_avatar_s3_key) {
+    t.owner_avatar_url = getSignedUrl(t.owner_avatar_s3_key);
+    }
+    return {
     ...t,
     audio_url: t.s3_key ? getSignedUrl(t.s3_key) : null,
-}));
+    };
+});
 
 res.json({ tracks });
 } catch (error) {
-console.error('❌ Completed tracks error:', error);
+console.error('Completed tracks error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch completed tracks' } });
 }
 });
@@ -342,7 +348,7 @@ const result = await db.query(
 );
 res.json({ stats: result.rows[0] });
 } catch (error) {
-console.error('❌ Community stats error:', error);
+console.error('Community stats error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch stats' } });
 }
 });
@@ -360,6 +366,7 @@ const result = await db.query(
     `SELECT
     t.id, t.title, t.description, t.bpm, t.energy_level, t.genre,
     t.musical_key, u.username as owner_username,
+    u.avatar_url, u.avatar_s3_key,
     CASE
         WHEN t.genre = ANY(SELECT genre FROM tracks WHERE user_id = $1 AND genre IS NOT NULL) THEN 0.3
         ELSE 0.1
@@ -387,15 +394,20 @@ const result = await db.query(
     [userId, parseInt(limit)]
 );
 
-const recommendations = result.rows.map(track => ({
+const recommendations = result.rows.map(track => {
+    if (track.avatar_s3_key) {
+    track.avatar_url = getSignedUrl(track.avatar_s3_key);
+    }
+    return {
     ...track,
     audio_url: getSignedUrl(track.s3_key),
     match_score: parseFloat(track.match_score).toFixed(2)
-}));
+    };
+});
 
 res.json({ recommendations });
 } catch (error) {
-console.error('❌ Get recommendations error:', error);
+console.error('Get recommendations error:', error);
 res.status(500).json({
     error: {
     message: 'Failed to fetch recommendations',
@@ -434,7 +446,7 @@ const tracks = result.rows.map(track => ({
 
 res.json({ tracks });
 } catch (error) {
-console.error('❌ Get user tracks error:', error);
+console.error('Get user tracks error:', error);
 res.status(500).json({
     error: {
     message: 'Failed to fetch tracks',
@@ -457,7 +469,7 @@ if (isNaN(parseInt(userId))) {
 }
 
 const result = await db.query(
-    `SELECT t.*, u.username
+    `SELECT t.*, u.username, u.avatar_url, u.avatar_s3_key
     FROM tracks t
     JOIN users u ON t.user_id = u.id
     WHERE t.user_id = $1
@@ -466,18 +478,23 @@ const result = await db.query(
     [parseInt(userId)]
 );
 
-const tracks = result.rows.map(track => ({
+const tracks = result.rows.map(track => {
+    if (track.avatar_s3_key) {
+    track.avatar_url = getSignedUrl(track.avatar_s3_key);
+    }
+    return {
     ...track,
     audio_url: getSignedUrl(track.s3_key),
     duration: track.duration ? Math.round(track.duration) : null,
     bpm: track.bpm ? Math.round(track.bpm) : null,
     desired_skills: track.desired_skills || [],
     musical_key: track.musical_key || null
-}));
+    };
+});
 
 res.json({ tracks });
 } catch (error) {
-console.error('❌ Get user tracks by ID error:', error);
+console.error('Get user tracks by ID error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch tracks' } });
 }
 });
@@ -490,7 +507,12 @@ try {
 const { id } = req.params;
 
 const result = await db.query(
-    `SELECT t.*, u.username, u.id as owner_id, u.email as owner_email
+    `SELECT t.*, 
+            u.username, 
+            u.id as owner_id, 
+            u.email as owner_email,
+            u.avatar_url,
+            u.avatar_s3_key
     FROM tracks t
     JOIN users u ON t.user_id = u.id
     WHERE t.id = $1`,
@@ -502,6 +524,12 @@ if (result.rows.length === 0) {
 }
 
 const track = result.rows[0];
+
+// Refresh owner avatar URL if exists
+if (track.avatar_s3_key) {
+    track.avatar_url = getSignedUrl(track.avatar_s3_key);
+}
+
 track.audio_url = getSignedUrl(track.s3_key);
 track.duration = track.duration ? Math.round(track.duration) : null;
 track.bpm = track.bpm ? Math.round(track.bpm) : null;
@@ -510,7 +538,7 @@ track.musical_key = track.musical_key || null;
 
 res.json({ track });
 } catch (error) {
-console.error('❌ Get track error:', error);
+console.error('Get track error:', error);
 res.status(500).json({
     error: {
     message: 'Failed to fetch track',
@@ -528,8 +556,6 @@ try {
 const { id } = req.params;
 const { bpm, energy_level, duration, key, musical_key } = req.body;
 
-//
-
 if (!bpm || !energy_level || !duration) {
     return res.status(400).json({ error: { message: 'Missing required analysis fields' } });
 }
@@ -546,14 +572,13 @@ const result = await db.query(
 );
 
 if (result.rows.length === 0) {
-    console.error(`❌ Track ${id} not found`);
+    console.error(`Track ${id} not found`);
     return res.status(404).json({ error: { message: 'Track not found' } });
 }
 
-//
 res.json({ message: 'Analysis results updated successfully', track: result.rows[0] });
 } catch (error) {
-console.error('❌ Update analysis error:', error);
+console.error('Update analysis error:', error);
 res.status(500).json({
     error: {
     message: 'Failed to update analysis',
@@ -608,11 +633,10 @@ const result = await db.query(
 
 const track = result.rows[0];
 track.audio_url = getSignedUrl(track.s3_key);
-//
 
 res.json({ message: 'Track metadata updated successfully', track });
 } catch (error) {
-console.error('❌ Update track metadata error:', error);
+console.error('Update track metadata error:', error);
 res.status(500).json({ error: { message: 'Failed to update track metadata' } });
 }
 });
@@ -662,7 +686,7 @@ track.musical_key = track.musical_key || null;
 
 res.json({ message: 'Track updated successfully', track });
 } catch (error) {
-console.error('❌ Update track error:', error);
+console.error('Update track error:', error);
 res.status(500).json({
     error: {
     message: 'Failed to update track',
@@ -695,7 +719,7 @@ await db.query('DELETE FROM tracks WHERE id = $1', [id]);
 
 res.json({ message: 'Track deleted successfully' });
 } catch (error) {
-console.error('❌ Delete track error:', error);
+console.error('Delete track error:', error);
 res.status(500).json({
     error: {
     message: 'Failed to delete track',
