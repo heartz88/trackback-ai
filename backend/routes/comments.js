@@ -1,6 +1,7 @@
 const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
+const { triggerNotificationEmail } = require('../config/emailTrigger');
 
 const router = express.Router();
 
@@ -61,6 +62,15 @@ if (submission.collaborator_id !== userId) {
     `INSERT INTO notifications (user_id, type, content, related_id) VALUES ($1, 'comment', $2, $3)`,
     [submission.collaborator_id, `${userResult.rows[0].username} commented on your submission "${submission.title}"`, comment.id]
     );
+
+    // Send email to submission owner
+    const trackInfo = await db.query('SELECT id, title FROM tracks WHERE id = $1', [submission.track_id]);
+    triggerNotificationEmail(db, submission.collaborator_id, 'comment', {
+    commenterName: userResult.rows[0].username,
+    trackTitle: trackInfo.rows[0]?.title || 'your track',
+    trackId: submission.track_id,
+    commentText: content.trim(),
+    });
 }
 
 // Notify parent comment author if this is a reply

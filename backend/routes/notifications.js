@@ -76,7 +76,6 @@ res.status(500).json({ error: { message: 'Failed to get count' } });
 }
 });
 
-module.exports = router;
 
 /* ─────────────────────────────────────────────
 Email preferences endpoints (mounted on /notifications)

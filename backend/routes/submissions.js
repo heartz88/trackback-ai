@@ -3,6 +3,7 @@ const multer = require('multer');
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const { uploadToS3, getSignedUrl } = require('../config/s3');
+const { triggerNotificationEmail } = require('../config/emailTrigger');
 
 const router = express.Router();
 
@@ -78,6 +79,13 @@ await db.query(
     result.rows[0].id
     ]
 );
+
+// Send email to track owner
+triggerNotificationEmail(db, trackOwner.rows[0].user_id, 'submission', {
+    collaboratorName: req.user.username,
+    trackTitle: trackOwner.rows[0].title,
+    trackId: track_id,
+});
 
 res.status(201).json({
     message: 'Submission uploaded successfully',
@@ -207,6 +215,14 @@ await db.query(
     [submission.collaborator_id, `Someone liked your submission`, id]
 );
 
+// Send email to submitter
+const trackInfo = await db.query('SELECT id, title FROM tracks WHERE id = $1', [submission.track_id]);
+triggerNotificationEmail(db, submission.collaborator_id, 'vote', {
+    voterName: req.user.username,
+    trackTitle: trackInfo.rows[0]?.title || 'your track',
+    trackId: submission.track_id,
+});
+
 const countResult = await db.query(
     `SELECT COUNT(*)::int AS upvotes FROM votes WHERE submission_id = $1`,
     [id]
@@ -233,12 +249,21 @@ const result = await db.query(
     [id, userId, content]
 );
 
-const submission = await db.query('SELECT collaborator_id FROM submissions WHERE id = $1', [id]);
+const submission = await db.query('SELECT collaborator_id, track_id FROM submissions WHERE id = $1', [id]);
 if (submission.rows[0].collaborator_id !== userId) {
     await db.query(
     `INSERT INTO notifications (user_id, type, content, related_id) VALUES ($1, 'comment', $2, $3)`,
     [submission.rows[0].collaborator_id, `${req.user.username} commented on your submission`, result.rows[0].id]
     );
+
+    // Send email to submitter
+    const trackInfo = await db.query('SELECT id, title FROM tracks WHERE id = $1', [submission.rows[0].track_id]);
+    triggerNotificationEmail(db, submission.rows[0].collaborator_id, 'comment', {
+    commenterName: req.user.username,
+    trackTitle: trackInfo.rows[0]?.title || 'your track',
+    trackId: submission.rows[0].track_id,
+    commentText: content,
+    });
 }
 
 res.status(201).json({ message: 'Comment added', comment: result.rows[0] });

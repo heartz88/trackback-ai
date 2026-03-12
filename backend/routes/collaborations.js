@@ -3,6 +3,7 @@ const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const multer = require('multer');
 const { uploadToS3, getSignedUrl } = require('../config/s3');
+const { triggerNotificationEmail } = require('../config/emailTrigger');
 
 const router = express.Router();
 
@@ -78,6 +79,12 @@ await db.query(
     result.rows[0].id
     ]
 );
+
+// Send email to track owner
+triggerNotificationEmail(db, trackResult.rows[0].user_id, 'collaboration_request', {
+    senderName: req.user.username,
+    trackTitle: trackResult.rows[0].title,
+});
 
 // AUTO-CREATE MESSAGING CONVERSATION WHEN COLLABORATION IS REQUESTED
 try {
@@ -305,6 +312,13 @@ await db.query(
     id
     ]
 );
+
+// Send email to collaborator
+triggerNotificationEmail(db, request.collaborator_id, 'collaboration_response', {
+    responderName: req.user.username,
+    trackTitle: request.title,
+    status,
+});
 
 res.json({ 
     message: `Request ${status}`,

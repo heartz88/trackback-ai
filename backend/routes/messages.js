@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
+const { triggerNotificationEmail } = require('../config/emailTrigger');
 
 
 
@@ -89,6 +90,20 @@ socket.on('message:send', async ({ conversationId, content }) => {
 
         // Broadcast the saved message (with real DB id) to everyone in the room
         io.to(`conversation:${conversationId}`).emit('message:new', savedMessage);
+
+        // Email the other participant(s) if they're not in the room
+        try {
+            const others = await db.query(
+                `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
+                [conversationId, userId]
+            );
+            for (const row of others.rows) {
+                triggerNotificationEmail(db, row.user_id, 'message', {
+                    senderName: savedMessage.senderName,
+                    conversationId,
+                });
+            }
+        } catch {} // non-critical
 
 
     } catch (err) {
@@ -497,6 +512,20 @@ if (participantCheck.rows.length === 0) {
 }
 
 const savedMessage = await persistMessage(conversationId, userId, content);
+
+// Email the other participant(s)
+try {
+    const others = await db.query(
+        `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
+        [conversationId, userId]
+    );
+    for (const row of others.rows) {
+        triggerNotificationEmail(db, row.user_id, 'message', {
+            senderName: savedMessage.senderName,
+            conversationId,
+        });
+    }
+} catch {} // non-critical
 
 res.status(201).json({ message: 'Message sent successfully', data: savedMessage });
 } catch (error) {
