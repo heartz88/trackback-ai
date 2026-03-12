@@ -13,6 +13,7 @@ const navigate = useNavigate();
 const [isMenuOpen, setIsMenuOpen] = useState(false);
 const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 const [scrolled, setScrolled] = useState(false);
+const [avatarError, setAvatarError] = useState(false); // Add state for avatar error
 const profileMenuRef = useRef(null);
 
 useEffect(() => {
@@ -63,6 +64,11 @@ setIsMenuOpen(false);
 const toggleProfileMenu = () => {
 setIsProfileMenuOpen(!isProfileMenuOpen);
 };
+
+// Reset avatar error when user changes
+useEffect(() => {
+setAvatarError(false);
+}, [user?.avatar_url]);
 
 const HamburgerIcon = () => (
 <button
@@ -138,7 +144,7 @@ return (
             <>
                 <NotificationBell />
 
-                {/* Profile Dropdown */}
+                {/* Profile Dropdown - FIXED AVATAR SECTION */}
                 <div className="relative" ref={profileMenuRef}>
                 <button
                     onClick={toggleProfileMenu}
@@ -146,12 +152,20 @@ return (
                 >
                     <div className="relative">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 overflow-hidden">
-                        {user.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
-                        ) : null}
-                        <span className="text-white text-sm font-bold" style={user.avatar_url ? { display: 'none' } : {}}>
-                        {user.username[0].toUpperCase()}
+                        {/* FIXED: Better avatar handling */}
+                        {user.avatar_url && !avatarError ? (
+                        <img 
+                            src={user.avatar_url} 
+                            alt={user.username} 
+                            className="w-full h-full object-cover"
+                            onError={() => setAvatarError(true)}
+                            onLoad={() => setAvatarError(false)}
+                        />
+                        ) : (
+                        <span className="text-white text-sm font-bold">
+                            {user.username?.[0]?.toUpperCase() || '?'}
                         </span>
+                        )}
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[var(--bg-primary)]" />
                     </div>
@@ -240,7 +254,7 @@ return (
     </div>
     </nav>
 
-    {/* Mobile Menu Overlay */}
+    {/* Mobile Menu Overlay - FIXED MOBILE AVATAR SECTION */}
     <div className={`md:hidden fixed inset-0 z-40 transition-all duration-500 ${
     isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
     }`}>
@@ -292,12 +306,20 @@ return (
             <div className="flex items-center space-x-3">
                 <div className="relative">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg overflow-hidden">
-                    {user.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
-                    ) : null}
-                    <span className="text-white text-lg font-bold" style={user.avatar_url ? { display: 'none' } : {}}>
-                    {user.username[0].toUpperCase()}
+                    {/* FIXED: Better avatar handling for mobile */}
+                    {user.avatar_url && !avatarError ? (
+                    <img 
+                        src={user.avatar_url} 
+                        alt={user.username} 
+                        className="w-full h-full object-cover"
+                        onError={() => setAvatarError(true)}
+                        onLoad={() => setAvatarError(false)}
+                    />
+                    ) : (
+                    <span className="text-white text-lg font-bold">
+                        {user.username?.[0]?.toUpperCase() || '?'}
                     </span>
+                    )}
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[var(--bg-primary)]" />
                 </div>
