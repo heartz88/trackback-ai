@@ -13,23 +13,23 @@ export default function MessageInput({
   disabled 
 }) {
   return (
-    <form onSubmit={onSubmit} className="messages-input-form p-4 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
-      <div className="flex gap-3">
+    <form onSubmit={onSubmit} className="p-3 border-t border-[var(--border-color)] bg-[var(--bg-secondary)] flex-shrink-0">
+      <div className="flex gap-2">
         <input
           type="text"
           value={value}
           onChange={onChange}
-          placeholder={isConnected ? placeholder : "Connecting to server..."}
-          className="flex-1 px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all disabled:opacity-50"
+          placeholder={isConnected ? placeholder : "Connecting..."}
+          className="flex-1 px-4 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all disabled:opacity-50"
           disabled={!isConnected || disabled}
         />
         <button
           type="submit"
           disabled={!value.trim() || !isConnected || disabled}
-          className={`px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center ${
+          className={`px-4 py-2.5 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center ${
             !value.trim() || !isConnected || disabled
-              ? 'bg-gray-600 cursor-not-allowed shadow-none opacity-50'
-              : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-500/20 hover:scale-[1.02] active:scale-[0.98]'
+              ? 'bg-gray-600 cursor-not-allowed opacity-50'
+              : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-500/20'
           }`}
         >
           <SendIcon />

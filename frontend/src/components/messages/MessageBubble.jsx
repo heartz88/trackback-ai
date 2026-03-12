@@ -1,4 +1,3 @@
-
 const TrashIcon = () => (
 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -24,27 +23,25 @@ formatTime
 }) {
 return (
 <div
-    className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2 group`}
+    className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
     onMouseEnter={() => onHover(message.id)}
     onMouseLeave={() => onHover(null)}
 >
-    <div className={`flex items-end gap-1 max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex items-end gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
     {!isOwn && (
-        <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold mt-1 mr-2 flex-shrink-0 shadow-md">
+        <div className="w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-md">
         {message.senderName?.[0]?.toUpperCase() || '?'}
         </div>
     )}
     <div className="relative">
         <div
-        className={`rounded-2xl px-4 py-2.5 break-words ${
+        className={`px-3 py-2 break-words ${
             isOwn
-            ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-br-none shadow-md'
-            : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-bl-none border border-[var(--border-color)]'
+            ? 'bg-primary-500 text-white rounded-2xl rounded-br-none'
+            : 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-2xl rounded-bl-none border border-[var(--border-color)]'
         }`}
         >
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-            {message.content}
-        </p>
+        <p className="text-sm leading-relaxed">{message.content}</p>
         </div>
         {showTime && (
         <div className={`text-[10px] text-[var(--text-tertiary)] mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>

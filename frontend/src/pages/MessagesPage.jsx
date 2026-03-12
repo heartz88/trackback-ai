@@ -16,6 +16,7 @@ import MessagesLoading from '../components/messages/MessagesLoading';
 import MessageThread from '../components/messages/MessageThread';
 import UserSearch from '../components/messages/UserSearch';
 
+
 function MessagesPage() {
   const toast = useToast();
   const confirm = useConfirm();
@@ -44,39 +45,62 @@ function MessagesPage() {
   const [typingUsers, setTypingUsers] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
+  
+  // Refs
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const wasAtBottomRef = useRef(true);
+  const hasJoinedConversation = useRef(false);
+  const lastNotificationCount = useRef(0);
+  
+  // States
   const [startingConversation, setStartingConversation] = useState(false);
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
 
-  const hasJoinedConversation = useRef(false);
-  const lastNotificationCount = useRef(0);
-
-  // Convert onlineUsers to Set if it's an array (for backward compatibility)
+  // Convert onlineUsers to Set
   const onlineUsersSet = useCallback(() => {
-    if (onlineUsers instanceof Set) {
-      return onlineUsers;
-    } else if (Array.isArray(onlineUsers)) {
-      return new Set(onlineUsers.map(u => u.id || u));
-    } else if (typeof onlineUsers === 'object' && onlineUsers !== null) {
+    if (onlineUsers instanceof Set) return onlineUsers;
+    if (Array.isArray(onlineUsers)) return new Set(onlineUsers.map(u => u.id || u));
+    if (typeof onlineUsers === 'object' && onlineUsers !== null) {
       return new Set(Object.keys(onlineUsers).map(Number));
     }
     return new Set();
   }, [onlineUsers]);
 
-  // Get current online users as a Set
   const currentOnlineUsers = onlineUsersSet();
 
-  // Delete a message
+  // Check if user is near bottom
+  const isNearBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    const threshold = 150;
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+  };
+
+  // Track scroll position
+  const handleScroll = useCallback(() => {
+    wasAtBottomRef.current = isNearBottom();
+  }, []);
+
+  // Smart scroll to bottom
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior, block: 'nearest' });
+    }
+  }, []);
+
+  // Delete message
   const handleDeleteMessage = async (messageId) => {
     const ok = await confirm({
       title: 'Delete message?',
-      message: 'This message will be permanently removed.',
+      message: 'This will be permanently removed.',
       confirmText: 'Delete',
       danger: true
     });
     if (!ok) return;
+    
     setDeletingMessageId(messageId);
     try {
       await api.delete(`/messages/${messageId}`);
@@ -84,13 +108,12 @@ function MessagesPage() {
       toast.success('Message deleted');
     } catch (err) {
       toast.error('Failed to delete message');
-      console.error('Delete message error:', err);
     } finally {
       setDeletingMessageId(null);
     }
   };
 
-  // Fetch conversations list
+  // Fetch conversations
   const fetchConversations = useCallback(async () => {
     try {
       setLoadingConversations(true);
@@ -98,12 +121,9 @@ function MessagesPage() {
       const conversationsData = response.data.conversations || [];
       setConversations(conversationsData);
 
-      // If URL has conversationId, select that conversation
       if (conversationId) {
         const conv = conversationsData.find(c => c.id.toString() === conversationId);
-        if (conv) {
-          setSelectedConversation(conv);
-        }
+        if (conv) setSelectedConversation(conv);
       }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
@@ -126,7 +146,7 @@ function MessagesPage() {
     };
   }, [selectedConversation?.id, isConnected, joinConversation, leaveConversation]);
 
-  // Fetch messages when selectedConversation changes
+  // Fetch messages when conversation changes
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -134,13 +154,11 @@ function MessagesPage() {
       setLoading(true);
       try {
         const response = await api.get(`/messages/conversations/${selectedConversation.id}/messages`);
-        const messagesData = response.data.messages || [];
-        setMessages(messagesData);
-
-        // Mark as read
+        setMessages(response.data.messages || []);
         await api.post(`/messages/conversations/${selectedConversation.id}/read`);
+        
+        setTimeout(() => scrollToBottom('auto'), 100);
       } catch (err) {
-        console.error('Failed to fetch messages:', err);
         if (err.response?.status === 403) {
           setSelectedConversation(null);
           navigate('/messages');
@@ -151,7 +169,7 @@ function MessagesPage() {
     };
 
     fetchMessages();
-  }, [selectedConversation?.id, navigate]);
+  }, [selectedConversation?.id, navigate, scrollToBottom]);
 
   // Fetch users for search
   const fetchUsers = useCallback(async () => {
@@ -173,18 +191,17 @@ function MessagesPage() {
   useEffect(() => {
     if (notifications.length > lastNotificationCount.current) {
       const latest = notifications[0];
-
-      if (latest.type === 'message' && selectedConversation) {
-        if (latest.data.conversationId?.toString() === selectedConversation.id.toString()) {
-          setMessages(prev => {
-            if (prev.some(m => m.id === latest.data.id)) return prev;
-            return [...prev, latest.data];
-          });
-        }
+      if (latest.type === 'message' && selectedConversation &&
+          latest.data.conversationId?.toString() === selectedConversation.id.toString()) {
+        setMessages(prev => {
+          if (prev.some(m => m.id === latest.data.id)) return prev;
+          return [...prev, latest.data];
+        });
+        if (wasAtBottomRef.current) setTimeout(() => scrollToBottom(), 100);
       }
       lastNotificationCount.current = notifications.length;
     }
-  }, [notifications, selectedConversation?.id]);
+  }, [notifications, selectedConversation?.id, scrollToBottom]);
 
   // Socket event listeners
   useEffect(() => {
@@ -194,27 +211,17 @@ function MessagesPage() {
           if (prev.some(m => m.id === message.id)) return prev;
           return [...prev, message];
         });
-
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+        if (wasAtBottomRef.current) setTimeout(() => scrollToBottom(), 100);
       }
     };
 
     const handleUserTyping = (data) => {
       if (selectedConversation && data.conversationId?.toString() === selectedConversation.id.toString()) {
-        setTypingUsers(prev => ({
-          ...prev,
-          [data.userId]: data.isTyping
-        }));
-
+        setTypingUsers(prev => ({ ...prev, [data.userId]: data.isTyping }));
         if (data.isTyping) {
           clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => {
-            setTypingUsers(prev => ({
-              ...prev,
-              [data.userId]: false
-            }));
+            setTypingUsers(prev => ({ ...prev, [data.userId]: false }));
           }, 3000);
         }
       }
@@ -237,28 +244,38 @@ function MessagesPage() {
       unsubscribeSocketConnected?.();
       clearTimeout(typingTimeoutRef.current);
     };
-  }, [selectedConversation?.id, joinConversation]);
+  }, [selectedConversation?.id, joinConversation, scrollToBottom]);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
+  // Handle sending messages
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation || !isConnected) {
-      if (!isConnected) {
-        toast.error('Please wait for connection to establish before sending messages.');
-      }
+      if (!isConnected) toast.error('Please wait for connection.');
       return;
     }
 
     const messageContent = newMessage.trim();
     setNewMessage('');
 
+    // Optimistic update
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      conversationId: selectedConversation.id,
+      senderId: user.id,
+      senderName: user.username,
+      content: messageContent,
+      timestamp: new Date().toISOString(),
+      read: false,
+      temp: true
+    };
+    
+    setMessages(prev => [...prev, tempMessage]);
+    setTimeout(() => scrollToBottom(), 50);
+
     const success = sendMessage(selectedConversation.id, messageContent);
     if (!success) {
-      toast.error('Failed to send message. Please check your connection.');
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
+      toast.error('Failed to send message.');
     }
     setTypingStatus(selectedConversation.id, false);
   };
@@ -281,13 +298,8 @@ function MessagesPage() {
       setStartingConversation(true);
 
       const parsedRecipientId = parseInt(recipientId);
-      if (isNaN(parsedRecipientId)) {
-        toast.error('Invalid user ID');
-        return;
-      }
-
-      if (parsedRecipientId === user.id) {
-        toast.error('You cannot start a conversation with yourself');
+      if (isNaN(parsedRecipientId) || parsedRecipientId === user.id) {
+        toast.error(isNaN(parsedRecipientId) ? 'Invalid user ID' : 'Cannot start conversation with yourself');
         return;
       }
 
@@ -299,40 +311,31 @@ function MessagesPage() {
 
       setConversations(prev => {
         const exists = prev.some(c => c.id === newConversation.id);
-        if (exists) {
-          return prev.map(c => c.id === newConversation.id ? newConversation : c);
-        }
+        if (exists) return prev.map(c => c.id === newConversation.id ? newConversation : c);
         return [newConversation, ...prev];
       });
       
       setSelectedConversation(newConversation);
       setShowUserSearch(false);
       hasJoinedConversation.current = false;
-
       navigate(`/messages/${newConversation.id}`);
 
     } catch (err) {
       let errorMessage = 'Failed to start conversation';
+      if (err.response?.data?.error?.message) errorMessage = err.response.data.error.message;
 
-      if (err.response?.data?.error?.message) {
-        errorMessage = err.response.data.error.message;
-      }
-
-      if (err.response?.status === 400) {
-        if (errorMessage.includes('already exists') || errorMessage.includes('Unique constraint')) {
-          const existingConv = conversations.find(c =>
-            c.participants?.some(p => p.id === parseInt(recipientId))
-          );
-          if (existingConv) {
-            setSelectedConversation(existingConv);
-            hasJoinedConversation.current = false;
-            navigate(`/messages/${existingConv.id}`);
-            return;
-          }
+      if (err.response?.status === 400 && errorMessage.includes('already exists')) {
+        const existingConv = conversations.find(c =>
+          c.participants?.some(p => p.id === parseInt(recipientId))
+        );
+        if (existingConv) {
+          setSelectedConversation(existingConv);
+          hasJoinedConversation.current = false;
+          navigate(`/messages/${existingConv.id}`);
+          return;
         }
       }
-
-      toast.error(errorMessage || 'Failed to start conversation');
+      toast.error(errorMessage);
     } finally {
       setStartingConversation(false);
     }
@@ -340,12 +343,10 @@ function MessagesPage() {
 
   const handleReconnect = async () => {
     const success = await reconnect();
-    if (!success) {
-      console.error('Reconnection failed');
-    }
+    if (!success) console.error('Reconnection failed');
   };
 
-  // Helper functions for formatting
+  // Helper functions
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -353,8 +354,7 @@ function MessagesPage() {
   };
 
   const getOtherParticipant = (conversation) => {
-    if (!conversation?.participants) return null;
-    return conversation.participants.find(p => p.id !== user.id);
+    return conversation?.participants?.find(p => p.id !== user.id);
   };
 
   const filteredUsers = users.filter(u =>
@@ -363,63 +363,76 @@ function MessagesPage() {
      u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  if (loadingConversations) {
-    return <MessagesLoading />;
-  }
+  if (loadingConversations) return <MessagesLoading />;
 
   return (
-    <div className="messages-page-root min-h-screen bg-[var(--bg-primary)] py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[var(--bg-primary)]">
+      <div className="max-w-7xl mx-auto h-screen flex flex-col py-4 px-4">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Messages</h1>
-          <ConnectionStatus
-            isConnected={isConnected}
-            connectionError={connectionError}
-            onlineUsersCount={currentOnlineUsers.size}
-            onReconnect={handleReconnect}
-          />
-          <button
-            onClick={() => setShowUserSearch(!showUserSearch)}
-            className="mt-2 px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 text-white rounded-lg"
-          >
-            {showUserSearch ? 'Cancel' : 'New Message'}
-          </button>
+        <div className="mb-4 flex-shrink-0">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Messages</h1>
+          <div className="flex items-center justify-between">
+            <ConnectionStatus
+              isConnected={isConnected}
+              connectionError={connectionError}
+              onlineUsersCount={currentOnlineUsers.size}
+              onReconnect={handleReconnect}
+            />
+            <button
+              onClick={() => setShowUserSearch(!showUserSearch)}
+              className="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
+            >
+              {showUserSearch ? 'Cancel' : '+ New Message'}
+            </button>
+          </div>
         </div>
 
+        {/* User Search */}
         {showUserSearch && (
-          <UserSearch
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            users={users}
-            filteredUsers={filteredUsers}
-            onStartConversation={handleStartConversation}
-            isConnected={isConnected}
-            startingConversation={startingConversation}
-            onlineUsers={currentOnlineUsers}
-          />
+          <div className="mb-4 flex-shrink-0">
+            <UserSearch
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              users={users}
+              filteredUsers={filteredUsers}
+              onStartConversation={handleStartConversation}
+              isConnected={isConnected}
+              startingConversation={startingConversation}
+              onlineUsers={currentOnlineUsers}
+            />
+          </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
+        {/* Main Content */}
+        <div className="flex-1 min-h-0 flex gap-4">
           {/* Left sidebar */}
-          <div className={`lg:w-1/3 ${!selectedConversation ? 'block' : 'hidden lg:block'}`}>
-            <ConversationList
-              conversations={conversations}
-              selectedConversation={selectedConversation}
-              onSelectConversation={(conv) => {
-                setSelectedConversation(conv);
-                navigate(`/messages/${conv.id}`);
-              }}
-              currentUser={user}
-              onlineUsers={currentOnlineUsers}
-              formatTime={formatTime}
-            />
+          <div className={`w-80 flex-shrink-0 ${!selectedConversation ? 'block' : 'hidden lg:block'}`}>
+            <div className="h-full glass-panel rounded-2xl overflow-hidden flex flex-col">
+              <div className="p-3 border-b border-[var(--border-color)]">
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <ConversationList
+                conversations={conversations}
+                selectedConversation={selectedConversation}
+                onSelectConversation={(conv) => {
+                  setSelectedConversation(conv);
+                  navigate(`/messages/${conv.id}`);
+                }}
+                currentUser={user}
+                onlineUsers={currentOnlineUsers}
+                formatTime={formatTime}
+              />
+            </div>
           </div>
 
           {/* Right side - Messages */}
-          <div className={`flex-1 ${!selectedConversation ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`flex-1 min-w-0 ${!selectedConversation ? 'hidden lg:block' : 'block'}`}>
             {selectedConversation ? (
-              <div className="flex flex-col h-full w-full">
+              <div className="h-full glass-panel rounded-2xl overflow-hidden flex flex-col">
                 <ChatHeader
                   conversation={selectedConversation}
                   currentUser={user}
@@ -431,18 +444,24 @@ function MessagesPage() {
                   onNewChat={() => setShowUserSearch(true)}
                 />
 
-                <MessageThread
-                  messages={messages}
-                  currentUser={user}
-                  typingUsers={typingUsers}
-                  otherUser={getOtherParticipant(selectedConversation)}
-                  hoveredMessageId={hoveredMessageId}
-                  setHoveredMessageId={setHoveredMessageId}
-                  onDeleteMessage={handleDeleteMessage}
-                  deletingMessageId={deletingMessageId}
-                  formatTime={formatTime}
-                />
-                <div ref={messagesEndRef} />
+                <div 
+                  ref={messagesContainerRef}
+                  onScroll={handleScroll}
+                  className="flex-1 overflow-y-auto"
+                >
+                  <MessageThread
+                    messages={messages}
+                    currentUser={user}
+                    typingUsers={typingUsers}
+                    otherUser={getOtherParticipant(selectedConversation)}
+                    hoveredMessageId={hoveredMessageId}
+                    setHoveredMessageId={setHoveredMessageId}
+                    onDeleteMessage={handleDeleteMessage}
+                    deletingMessageId={deletingMessageId}
+                    formatTime={formatTime}
+                    messagesEndRef={messagesEndRef}
+                  />
+                </div>
 
                 <MessageInput
                   value={newMessage}
@@ -453,10 +472,12 @@ function MessagesPage() {
                 />
               </div>
             ) : (
-              <EmptyChatState
-                onStartNewChat={() => setShowUserSearch(true)}
-                isConnected={isConnected}
-              />
+              <div className="h-full glass-panel rounded-2xl overflow-hidden">
+                <EmptyChatState
+                  onStartNewChat={() => setShowUserSearch(true)}
+                  isConnected={isConnected}
+                />
+              </div>
             )}
           </div>
         </div>
