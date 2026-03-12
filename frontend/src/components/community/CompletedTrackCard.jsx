@@ -70,11 +70,6 @@ return (
         : 'border border-[var(--border-color)] bg-[var(--surface-1)]'
     }`}
 >
-    {featured && (
-    <div className="bg-primary-600 text-white text-xs font-bold px-3 py-1 absolute top-3 left-3 rounded-full">
-        ⭐ Featured Track
-    </div>
-    )}
 
     <div className="p-5">
     {/* Header with rank and title */}
