@@ -65,7 +65,6 @@ return (
 
     {/* Info */}
     <div className="submission-info">
-
         {/* Author row */}
         <div className="user-header">
         <Link to={`/profile/${submission.collaborator_name}`} className="flex items-center gap-3 group">
@@ -133,7 +132,7 @@ return (
         </div>
     </div>
 
-    {/* Vote button — fixed: onCountsChange now wired so count updates after voting */}
+    {/* Vote button */}
     <div className="submission-voting">
         <VoteButton
         submissionId={submission.id}

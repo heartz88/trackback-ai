@@ -32,25 +32,65 @@ setError('');
 try {
     const trackRes = await api.get(`/tracks/${trackId}`);
     setTrack(trackRes.data.track);
+    
     const ownerRes = await api.get(`/users/${trackRes.data.track.user_id}`);
     setOwner(ownerRes.data.user);
-    try { const r = await api.get(`/submissions/track/${trackId}`); setSubmissionsCount(r.data.submissions?.length || 0); } catch { setSubmissionsCount(0); }
-    try { const r = await api.get(`/collaborations/track/${trackId}/active`); setCollaborators(r.data.collaborators || []); } catch { setCollaborators([]); }
-    if (user) { try { const r = await api.get(`/collaborations/track/${trackId}`); setCollaboration(r.data.collaboration); } catch { setCollaboration(null); } }
-} catch { setError('Failed to load track'); } finally { setIsLoading(false); }
+    
+    // These are public endpoints, safe to call without auth
+    try { 
+    const r = await api.get(`/submissions/track/${trackId}`); 
+    setSubmissionsCount(r.data.submissions?.length || 0); 
+    } catch { 
+    setSubmissionsCount(0); 
+    }
+    
+    try { 
+    const r = await api.get(`/collaborations/track/${trackId}/active`); 
+    setCollaborators(r.data.collaborators || []); 
+    } catch { 
+    setCollaborators([]); 
+    }
+    
+    // Only fetch collaboration status if user is logged in
+    if (user) { 
+    try { 
+        const r = await api.get(`/collaborations/track/${trackId}`); 
+        setCollaboration(r.data.collaboration); 
+    } catch { 
+        setCollaboration(null); 
+    }
+    }
+} catch (err) {
+    console.error('Failed to load track:', err);
+    setError('Failed to load track');
+} finally {
+    setIsLoading(false);
+}
 };
 
 const handleRequestCollaboration = async () => {
-if (!user) { navigate('/login'); return; }
-if (!showMessageInput) { setShowMessageInput(true); return; }
+if (!user) { 
+    navigate('/login'); 
+    return; 
+}
+if (!showMessageInput) { 
+    setShowMessageInput(true); 
+    return; 
+}
 setRequestingCollab(true);
 try {
-    const r = await api.post('/collaborations/request', { track_id: trackId, message: collabMessage || `I'd like to collaborate on "${track.title}"` });
+    const r = await api.post('/collaborations/request', { 
+    track_id: trackId, 
+    message: collabMessage || `I'd like to collaborate on "${track.title}"` 
+    });
     setCollaboration(r.data.request);
     setShowMessageInput(false);
     toast.success('Collaboration request sent!');
-} catch (err) { toast.error(err.response?.data?.error?.message || 'Failed to send request'); }
-finally { setRequestingCollab(false); }
+} catch (err) { 
+    toast.error(err.response?.data?.error?.message || 'Failed to send request'); 
+} finally { 
+    setRequestingCollab(false); 
+}
 };
 
 const handleCompleteTrack = async () => {
@@ -60,11 +100,16 @@ const ok = await confirm({
     confirmText: 'Complete Track',
 });
 if (!ok) return;
-try { await api.post(`/collaborations/${trackId}/complete`); fetchTrackDetails(); toast.success('Track marked as completed!'); }
-catch (err) { toast.error(err.response?.data?.error?.message || 'Failed to complete track'); }
+try { 
+    await api.post(`/collaborations/${trackId}/complete`); 
+    fetchTrackDetails(); 
+    toast.success('Track marked as completed!'); 
+} catch (err) { 
+    toast.error(err.response?.data?.error?.message || 'Failed to complete track'); 
+}
 };
 
-const handlePlay  = useCallback(() => setIsPlaying(true), []);
+const handlePlay = useCallback(() => setIsPlaying(true), []);
 const handlePause = useCallback(() => setIsPlaying(false), []);
 
 const isOwner = user && track && user.id === track.user_id;
@@ -78,6 +123,7 @@ if (isLoading) return (
     <p style={{color:'var(--text-tertiary)',marginTop:16}} className="animate-pulse">Loading track…</p>
 </div>
 );
+
 if (error || !track) return (
 <div className="page-error animate-fade-in">
     <h2>Track Not Found</h2><p>{error||'This track does not exist'}</p>
@@ -87,23 +133,17 @@ if (error || !track) return (
 
 return (
 <div className="track-detail-page animate-fade-in">
-
-    {/* Breadcrumb to make it easier for the user to go back to discover */}
     <nav className="breadcrumb animate-slide-up">
     <Link to="/discover">Discover</Link>
     <span className="breadcrumb-sep">›</span>
     <span className="breadcrumb-current">{track.title}</span>
     </nav>
 
-    {/* Full-width player */}
     <div className="tdp-player-block animate-slide-up stagger-1">
     <WaveformPlayer audioUrl={track.audio_url} height={80} onPlay={handlePlay} onPause={handlePause} />
     </div>
 
-    {/* Two-column grid */}
     <div className="tdp-grid">
-
-    {/* Info */}
     <div className="tdp-info animate-slide-up stagger-2">
         <div className="tdp-title-row">
         <h1 className="tdp-title">{track.title}</h1>
@@ -118,17 +158,19 @@ return (
             <div className="tdp-owner-date">{new Date(track.created_at).toLocaleDateString()}</div>
             </div>
         </Link>
-        {user && !isOwner && (
-            <Link to={`/messages/new?userId=${owner?.id}`} className="tdp-message-btn">
-            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        {user && !isOwner && owner && (
+            <Link to={`/messages/new?userId=${owner.id}`} className="tdp-message-btn">
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
             Message
             </Link>
         )}
         </div>
 
         <div className="tdp-stats">
-        {[{l:'Submissions',v:submissionsCount},{l:'Collaborators',v:collaborators.length}].map(s=>(
-            <div>
+        {[{l:'Submissions',v:submissionsCount},{l:'Collaborators',v:collaborators.length}].map((s, idx) => (
+            <div key={idx}>
             <span className="tdp-stat-value">{s.v}</span>
             <span className="tdp-stat-label">{s.l}</span>
             </div>
@@ -155,11 +197,8 @@ return (
         </>)}
     </div>
 
-    {/* Actions */}
     <div className="tdp-actions-panel animate-slide-up stagger-3">
         <div className="tdp-action-card">
-
-        {/* ── Not logged in ── */}
         {!user && (
             <>
             <div className="section-label">Join the community</div>
@@ -168,7 +207,6 @@ return (
             </>
         )}
 
-        {/* ── Logged in, not owner, no collab yet ── */}
         {canRequestCollab && (
             <>
             <div className="section-label">What do you want to do?</div>
@@ -188,7 +226,6 @@ return (
             </>
         )}
 
-        {/* ── Collab status ── */}
         {collaboration?.status === 'pending' && (
             <>
             <div className="section-label">Your status</div>
@@ -196,6 +233,7 @@ return (
             <div className="tdp-status-pending">⏳ Collaboration Request Pending</div>
             </>
         )}
+        
         {collaboration?.status === 'rejected' && (
             <>
             <div className="section-label">Your status</div>
@@ -203,6 +241,7 @@ return (
             <div className="tdp-status-rejected">❌ Collaboration Declined</div>
             </>
         )}
+        
         {collaboration?.status === 'approved' && (
             <>
             <div className="section-label">Your status</div>
@@ -214,7 +253,6 @@ return (
             </>
         )}
 
-        {/* ── Owner ── */}
         {isOwner && (
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
             <div className="section-label">Your track</div>
@@ -227,7 +265,6 @@ return (
             )}
             </div>
         )}
-
         </div>
 
         {collaborators.length > 0 && (
@@ -250,7 +287,6 @@ return (
     </div>
     </div>
 
-    {/* Submissions — public voting zone */}
     <div className="tdp-submissions animate-slide-up stagger-4">
     <div className="tdp-section-head">
         <div>

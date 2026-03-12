@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import ProfileBanner from '../components/profile/ProfileBanner';
 import ProfileCollaborations from '../components/profile/ProfileCollaborations';
 import ProfileHeader from '../components/profile/ProfileHeader';
@@ -12,6 +12,7 @@ import api from '../services/api';
 
 function ProfilePage() {
   const { username: usernameParam } = useParams();
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [tracks, setTracks] = useState([]);
@@ -23,14 +24,19 @@ function ProfilePage() {
     currentUser?.username?.toLowerCase() === usernameParam?.toLowerCase();
 
   useEffect(() => {
+    // Don't fetch if usernameParam is explicitly undefined and no user is logged in
+    if (usernameParam === 'undefined' || (!usernameParam && !currentUser)) {
+      navigate('/');
+      return;
+    }
     fetchProfileData();
-  }, [usernameParam, currentUser]);
+  }, [usernameParam, currentUser, navigate]);
 
   const fetchProfileData = async () => {
     setLoading(true);
     try {
       let profileData;
-      if (usernameParam) {
+      if (usernameParam && usernameParam !== 'undefined') {
         const res = await api.get(`/users/by-username/${usernameParam}`);
         profileData = res.data.user;
       } else if (currentUser?.id) {

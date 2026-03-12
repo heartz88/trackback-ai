@@ -1,16 +1,16 @@
 import { AudioMotionAnalyzer } from 'audiomotion-analyzer';
 import { useEffect, useRef, useState } from 'react';
 
-
 const WaveformPlayer = ({ audioUrl, height = 80, onReady, onPlay, onPause }) => {
 const containerRef = useRef(null);
-const canvasRef    = useRef(null);   // single canvas for everything
+const canvasRef    = useRef(null);
 const spectrumRef  = useRef(null);
 const audioRef     = useRef(null);
 const audioMotion  = useRef(null);
 const animFrame    = useRef(null);
 const peaksRef     = useRef(null);
 const drawnWidth   = useRef(0);
+const audioContextRef = useRef(null);
 
 const onReadyRef = useRef(onReady);
 const onPlayRef  = useRef(onPlay);
@@ -28,21 +28,34 @@ const [isMuted,    setIsMuted]    = useState(false);
 const [usingSynth, setUsingSynth] = useState(false);
 const prevVolume = useRef(75);
 
+// Helper for rounded rect
+CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+if (w < 2 * r) r = w / 2;
+if (h < 2 * r) r = h / 2;
+this.moveTo(x + r, y);
+this.lineTo(x + w - r, y);
+this.quadraticCurveTo(x + w, y, x + w, y + r);
+this.lineTo(x + w, y + h - r);
+this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+this.lineTo(x + r, y + h);
+this.quadraticCurveTo(x, y + h, x, y + h - r);
+this.lineTo(x, y + r);
+this.quadraticCurveTo(x, y, x + r, y);
+this.closePath();
+return this;
+};
+
 // ── Single-canvas draw ───────────────────────────────────────────────────
-// All coordinates are in CSS pixels. DPR scaling is applied via setTransform
-// at the start of each draw call so it never accumulates.
 const drawWaveform = (peaks, progress = 0) => {
 const canvas = canvasRef.current;
 if (!canvas || !peaks) return;
 
 const dpr = window.devicePixelRatio || 1;
-// CSS pixel dimensions
 const W = canvas.width  / dpr;
 const H = canvas.height / dpr;
 if (W < 10 || H < 4) return;
 
 const ctx = canvas.getContext('2d');
-// Reset transform to identity then apply dpr scale — never accumulates
 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 ctx.clearRect(0, 0, W, H);
 
@@ -52,7 +65,7 @@ const gap  = 1;
 const step = barW + gap;
 const bars = Math.floor(W / step);
 
-// ── Pass 1: all bars in grey ──
+// Pass 1: all bars in grey
 ctx.fillStyle = 'rgba(148,163,184,0.35)';
 for (let i = 0; i < bars; i++) {
     const amp  = Math.max(peaks[Math.floor((i / bars) * peaks.length)] || 0, 0.025);
@@ -62,7 +75,7 @@ for (let i = 0; i < bars; i++) {
     ctx.fill();
 }
 
-// ── Pass 2: bars to the left of playhead in teal (clipped) ──
+// Pass 2: bars to the left of playhead in teal
 const progressX = progress * W;
 if (progressX > 1) {
     ctx.save();
@@ -146,20 +159,23 @@ const tick = () => {
 };
 animFrame.current = requestAnimationFrame(tick);
 };
+
 const stopLoop = () => {
-if (animFrame.current) { cancelAnimationFrame(animFrame.current); animFrame.current = null; }
+if (animFrame.current) { 
+    cancelAnimationFrame(animFrame.current); 
+    animFrame.current = null; 
+}
 };
 
 // ── audioMotion ──────────────────────────────────────────────────────────
-// Must be called only after spectrumRef has real pixel dimensions.
-// We call it from a ResizeObserver so we never hit zero-width.
 const initAudioMotion = (audioEl) => {
 const container = spectrumRef.current;
 if (!container) return;
 
-// Destroy any previous instance
 if (audioMotion.current) {
-    try { audioMotion.current.destroy(); } catch {}
+    try { 
+    audioMotion.current.destroy(); 
+    } catch {} 
     audioMotion.current = null;
 }
 
@@ -167,12 +183,12 @@ const rect = container.getBoundingClientRect();
 const w = rect.width  || containerRef.current?.getBoundingClientRect().width || 800;
 const h = rect.height || 150;
 
-if (w < 10) return; // still not mounted — ResizeObserver will retry
+if (w < 10) return;
 
 try {
     audioMotion.current = new AudioMotionAnalyzer(container, {
     source:        audioEl,
-    mode:          10,           // 1/24th octave bands
+    mode:          10,
     gradient:      'rainbow',
     showBgColor:   false,
     bgAlpha:       0,
@@ -192,7 +208,6 @@ try {
     width:         w,
     height:        150,
     });
-    //;
 } catch (e) {
     console.warn('audioMotion failed:', e);
 }
@@ -227,39 +242,50 @@ audio.src    = audioUrl;
 audio.volume = 0.75;
 audioRef.current = audio;
 
-// audioMotion init is handled by the ResizeObserver below once spectrumRef has dimensions
+// Create AudioContext only if needed for decoding
+let audioContext = null;
+try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    audioContextRef.current = audioContext;
+} catch (e) {
+    console.warn('AudioContext not supported:', e);
+}
 
-const ac = new (window.AudioContext || window.webkitAudioContext)();
-
-fetch(audioUrl, { mode: 'cors' })
+if (audioContext) {
+    fetch(audioUrl, { mode: 'cors' })
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); })
-    .then(buf => ac.decodeAudioData(buf))
+    .then(buf => audioContext.decodeAudioData(buf))
     .then(decoded => {
-    const raw = decoded.getChannelData(0);
-    const count = 2000;
-    const block = Math.floor(raw.length / count);
-    const peaks = new Float32Array(count);
-    let max = 0;
-    for (let i = 0; i < count; i++) {
+        const raw = decoded.getChannelData(0);
+        const count = 2000;
+        const block = Math.floor(raw.length / count);
+        const peaks = new Float32Array(count);
+        let max = 0;
+        for (let i = 0; i < count; i++) {
         let sum = 0;
         for (let j = 0; j < block; j++) sum += Math.abs(raw[i * block + j]);
         peaks[i] = sum / block;
         if (peaks[i] > max) max = peaks[i];
-    }
-    if (max > 0) for (let i = 0; i < count; i++) peaks[i] /= max;
-    finishSetup(peaks, decoded.duration);
-    try { ac.close(); } catch {}
+        }
+        if (max > 0) for (let i = 0; i < count; i++) peaks[i] /= max;
+        finishSetup(peaks, decoded.duration);
     })
     .catch(err => {
-    console.warn('Waveform decode failed (likely CORS) — using synthetic:', err);
-    setUsingSynth(true);
+        console.warn('Waveform decode failed (likely CORS) — using synthetic:', err);
+        setUsingSynth(true);
+        const synth = makeSyntheticPeaks();
+        const go = () => finishSetup(synth, audio.duration || 0);
+        if (audio.readyState >= 1) go();
+        else audio.addEventListener('loadedmetadata', go, { once: true });
+        setTimeout(() => { if (isLoading) go(); }, 3000);
+    });
+} else {
+    // Fallback if AudioContext not available
     const synth = makeSyntheticPeaks();
     const go = () => finishSetup(synth, audio.duration || 0);
     if (audio.readyState >= 1) go();
     else audio.addEventListener('loadedmetadata', go, { once: true });
-    setTimeout(() => { if (isLoading) go(); }, 3000);
-    try { ac.close(); } catch {}
-    });
+}
 
 audio.addEventListener('play',   () => { setIsPlaying(true);  startLoop();  if (onPlayRef.current)  onPlayRef.current();  });
 audio.addEventListener('pause',  () => { setIsPlaying(false); stopLoop();   if (onPauseRef.current) onPauseRef.current(); });
@@ -273,10 +299,25 @@ audio.addEventListener('error', () => setIsLoading(false));
 
 return () => {
     stopLoop();
-    audio.pause(); audio.src = '';
-    if (audioMotion.current) { try { audioMotion.current.destroy(); } catch {} audioMotion.current = null; }
-    audioMotionInitDone.current = false; // allow re-init on next track
-    try { ac.close(); } catch {}
+    if (audio) {
+    audio.pause();
+    audio.src = '';
+    audio.load();
+    }
+    if (audioMotion.current) { 
+    try { 
+        audioMotion.current.destroy(); 
+    } catch {} 
+    audioMotion.current = null; 
+    }
+    // Safely close AudioContext
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+    try {
+        audioContextRef.current.close();
+    } catch (e) {
+        console.warn('Error closing AudioContext:', e);
+    }
+    }
 };
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [audioUrl]);
@@ -284,8 +325,6 @@ return () => {
 // ── ResizeObserver + audioMotion init ───────────────────────────────────
 const audioMotionInitDone = useRef(false);
 
-// Called whenever we want to attempt audioMotion init
-// Polls until both spectrumRef has width AND audioRef is set
 const tryInitAudioMotion = useRef(null);
 tryInitAudioMotion.current = () => {
 if (audioMotionInitDone.current) return;
@@ -297,8 +336,6 @@ initAudioMotion(audioRef.current);
 };
 
 useEffect(() => {
-// Poll every 100ms for up to 5s to handle cases where
-// audioRef isn't set yet when ResizeObserver first fires
 let attempts = 0;
 const poll = setInterval(() => {
     attempts++;
@@ -311,13 +348,14 @@ const ro = new ResizeObserver(() => {
     if (W < 10) return;
     if (Math.abs(W - drawnWidth.current) > 2) resizeCanvas();
     tryInitAudioMotion.current?.();
-    // Resize audioMotion if already running
     if (audioMotion.current && spectrumRef.current) {
     const w = spectrumRef.current.getBoundingClientRect().width;
     if (w > 10) try { audioMotion.current.width = w; } catch {}
     }
 });
+
 if (containerRef.current) ro.observe(containerRef.current);
+
 return () => {
     clearInterval(poll);
     ro.disconnect();
@@ -348,12 +386,18 @@ seek((e.clientX - rect.left) / rect.width);
 const togglePlay = () => {
 const audio = audioRef.current;
 if (!audio) return;
-isPlaying ? audio.pause() : audio.play();
+if (isPlaying) {
+    audio.pause();
+} else {
+    audio.play().catch(err => console.warn('Play failed:', err));
+}
 };
 
 const handleVolumeChange = e => {
 const val = parseInt(e.target.value);
-setVolume(val); prevVolume.current = val; setIsMuted(val === 0);
+setVolume(val); 
+prevVolume.current = val; 
+setIsMuted(val === 0);
 if (audioRef.current) audioRef.current.volume = val / 100;
 };
 
@@ -373,11 +417,8 @@ const pct = duration ? (currentTime / duration) * 100 : 0;
 
 return (
 <div ref={containerRef} className="waveform-player glass">
-
-    {/* Rainbow spectrum */}
     <div ref={spectrumRef} className="audiomotion-container" />
 
-    {/* Single canvas — click anywhere to seek */}
     <div
     className="waveform-section"
     onClick={handleWaveformClick}
@@ -413,7 +454,6 @@ return (
         }
     </button>
 
-    {/* Seek bar — teal fill + draggable thumb */}
     <div className="timeline">
         <span className="current-time">{fmt(currentTime)}</span>
         <div
@@ -426,9 +466,7 @@ return (
         aria-valuemax={100}
         style={{ cursor: 'pointer', position: 'relative' }}
         >
-        {/* Filled teal track */}
         <div className="progress-bar" style={{ width: `${pct}%` }} />
-        {/* Thumb dot — only show when audio is loaded */}
         {duration > 0 && (
             <div style={{
             position: 'absolute',
