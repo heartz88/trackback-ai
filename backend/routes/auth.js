@@ -6,6 +6,7 @@ const { body, validationResult } = require('express-validator');
 const db = require('../config/database');
 const authMiddleware = require('../middleware/auth');
 const { Resend } = require('resend');
+const { getSignedUrl } = require('../config/s3'); // ADD THIS
 
 const router = express.Router();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
@@ -25,6 +26,14 @@ const generateToken = (user) => {
     process.env.JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
     );
+};
+
+// Helper function to refresh avatar URL if needed
+const refreshAvatarUrl = (user) => {
+    if (user.avatar_s3_key) {
+        user.avatar_url = getSignedUrl(user.avatar_s3_key);
+    }
+    return user;
 };
 
 // Register
@@ -60,11 +69,15 @@ router.post('/register',
             `INSERT INTO users (username, email, password_hash, bio, skills, 
                                social_links, looking_for_collab, last_active, created_at) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) 
-             RETURNING id, username, email, bio, skills, social_links, looking_for_collab, created_at`,
+             RETURNING id, username, email, bio, skills, social_links, looking_for_collab, avatar_url, avatar_s3_key, created_at`,
             [username, email, hashedPassword, bio || '', skills || [], '{}', true]
         );
 
         const user = result.rows[0];
+        
+        // Refresh avatar URL if exists
+        refreshAvatarUrl(user);
+        
         const token = generateToken(user);
 
         res.status(201).json({
@@ -119,6 +132,9 @@ router.post('/login',
             [user.id]
         );
 
+        // Refresh avatar URL if exists
+        refreshAvatarUrl(user);
+
         const token = generateToken(user);
 
         res.json({
@@ -132,7 +148,9 @@ router.post('/login',
             skills: user.skills,
             social_links: user.social_links,
             looking_for_collab: user.looking_for_collab,
-            createdAt: user.created_at
+            avatar_url: user.avatar_url,
+            avatar_s3_key: user.avatar_s3_key,
+            created_at: user.created_at
         }
         });
     } catch (error) {
@@ -148,7 +166,7 @@ router.post('/refresh', authMiddleware, async (req, res) => {
     const userId = req.user.id;
 
     const result = await db.query(
-        'SELECT id, username, email, bio, skills, social_links, looking_for_collab, created_at FROM users WHERE id = $1',
+        'SELECT id, username, email, bio, skills, social_links, looking_for_collab, avatar_url, avatar_s3_key, created_at FROM users WHERE id = $1',
         [userId]
     );
 
@@ -159,6 +177,9 @@ router.post('/refresh', authMiddleware, async (req, res) => {
     }
 
     const user = result.rows[0];
+    
+    // Refresh avatar URL if exists
+    refreshAvatarUrl(user);
 
     await db.query(
         'UPDATE users SET last_active = NOW() WHERE id = $1',
@@ -294,17 +315,16 @@ router.post('/forgot-password', async (req, res) => {
                 await resend.emails.send({
                     from: FROM_EMAIL,
                     to: email,
-                    subject: '🔐 Reset your TrackBackAI password',
+                    subject: 'Reset your TrackBackAI password',
                     html,
                 });
 
-                console.log('✉️  Password reset email sent to:', email);
             } catch (emailErr) {
                 // Never block the response due to email failure
-                console.error('❌ Failed to send reset email:', emailErr.message);
+                console.error('Failed to send reset email:', emailErr.message);
             }
         } else {
-            console.log('⚠️  RESEND_API_KEY not set — reset link:', resetLink);
+            console.log('Reset link:', resetLink);
         }
 
         res.json(successMsg);
@@ -349,7 +369,7 @@ router.get('/me', authMiddleware, async (req, res) => {
     const userId = req.user.id;
 
     const result = await db.query(
-        'SELECT id, username, email, bio, skills, social_links, looking_for_collab, created_at FROM users WHERE id = $1',
+        'SELECT id, username, email, bio, skills, social_links, looking_for_collab, avatar_url, avatar_s3_key, created_at FROM users WHERE id = $1',
         [userId]
     );
 
@@ -360,6 +380,9 @@ router.get('/me', authMiddleware, async (req, res) => {
     }
 
     const user = result.rows[0];
+    
+    // Refresh avatar URL if exists
+    refreshAvatarUrl(user);
 
     await db.query(
         'UPDATE users SET last_active = NOW() WHERE id = $1',

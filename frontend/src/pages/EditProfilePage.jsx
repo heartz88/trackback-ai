@@ -14,6 +14,7 @@ function EditProfilePage() {
     const [success, setSuccess] = useState('');
     const [activeTab, setActiveTab] = useState('profile');
     const avatarInputRef = useRef(null);
+    const { refreshUserData } = useAuth();
 
     const [formData, setFormData] = useState({
         username: '', email: '', bio: '', skills: '',
@@ -57,6 +58,7 @@ function EditProfilePage() {
     const handleSocialChange = (e) => setSocialLinks(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handlePasswordChange = (e) => setPasswordData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
+
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -68,7 +70,10 @@ function EditProfilePage() {
             fd.append('avatar', file);
             const res = await api.post(`/users/${user.id}/avatar`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             setAvatarUrl(res.data.avatar_url);
-            login(localStorage.getItem('token'), { ...user, avatar_url: res.data.avatar_url });
+            
+            // Refresh user data to update avatar in context and localStorage
+            await refreshUserData();
+            
             setSuccess('Profile picture updated!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
@@ -82,7 +87,10 @@ function EditProfilePage() {
         try {
             await api.delete(`/users/${user.id}/avatar`);
             setAvatarUrl('');
-            login(localStorage.getItem('token'), { ...user, avatar_url: null });
+            
+            // Refresh user data to update avatar in context and localStorage
+            await refreshUserData();
+        
             setSuccess('Profile picture removed');
             setTimeout(() => setSuccess(''), 3000);
         } catch { setError('Failed to remove profile picture'); }

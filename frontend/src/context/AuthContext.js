@@ -8,7 +8,6 @@ const [user, setUser] = useState(null);
 const [loading, setLoading] = useState(true);
 const [token, setToken] = useState(null);
 
-
 const decodeToken = (token) => {
     try {
     const base64Url = token.split('.')[1];
@@ -23,7 +22,6 @@ const decodeToken = (token) => {
     }
 };
 
-
 const isTokenExpired = (token) => {
     if (!token) return true;
     
@@ -32,21 +30,19 @@ const isTokenExpired = (token) => {
     
     // Check if token expires in less than 5 minutes
     const expiresIn = decoded.exp * 1000 - Date.now();
-    return expiresIn < 5 * 60 * 1000; // 5 minutes buffer
+    return expiresIn < 5 * 60 * 1000;
 };
 
-// ✅ FIXED: Refresh token before it expires
+// Refresh token before it expires
 const refreshToken = useCallback(async () => {
     try {
     const currentToken = localStorage.getItem('token');
     
     if (!currentToken || isTokenExpired(currentToken)) {
-        console.log('🔄 Token expired, logging out...');
         logout();
         return null;
     }
 
-    console.log('🔄 Refreshing token...');
     
     // Call backend to get a new token
     const response = await api.post('/auth/refresh', {}, {
@@ -63,14 +59,12 @@ const refreshToken = useCallback(async () => {
     setToken(newToken);
     setUser(userData);
 
-    console.log('✅ Token refreshed successfully');
     return newToken;
     } catch (error) {
-    console.error('❌ Token refresh failed:', error);
+    console.error('Token refresh failed:', error);
     
     // If refresh fails, log out the user
     if (error.response?.status === 401) {
-        console.log('🚪 Refresh failed, logging out...');
         logout();
     }
     
@@ -78,11 +72,12 @@ const refreshToken = useCallback(async () => {
     }
 }, []);
 
+// Load user from localStorage on initial mount
 useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
+    const storedUser = localStorage.getItem('user');
 
-    if (storedToken && userData) {
+    if (storedToken && storedUser) {
     // Check if token is still valid
     if (isTokenExpired(storedToken)) {
         console.log('⚠️ Stored token is expired, logging out...');
@@ -91,15 +86,33 @@ useEffect(() => {
         setToken(null);
         setUser(null);
     } else {
+        const parsedUser = JSON.parse(storedUser);
         setToken(storedToken);
-        setUser(JSON.parse(userData));
+        setUser(parsedUser);
+        
+        // Fetch fresh user data to get updated avatar URL (signed URLs expire)
+        const fetchFreshUser = async () => {
+            try {
+                const response = await api.get(`/users/${parsedUser.id}`);
+                if (response.data.user) {
+                    const freshUser = response.data.user;
+                    localStorage.setItem('user', JSON.stringify(freshUser));
+                    setUser(freshUser);
+                }
+            } catch (error) {
+                console.error('Failed to fetch fresh user data:', error);
+                // If fetch fails, keep using stored user data
+            }
+        };
+        
+        fetchFreshUser();
     }
     }
 
     setLoading(false);
 }, []);
 
-// ✅ FIXED: Set up automatic token refresh interval
+// Set up automatic token refresh interval
 useEffect(() => {
     if (!token) return;
 
@@ -108,7 +121,6 @@ useEffect(() => {
     const currentToken = localStorage.getItem('token');
     
     if (currentToken && isTokenExpired(currentToken)) {
-        console.log('⚠️ Token about to expire, refreshing...');
         refreshToken();
     }
     }, 60 * 1000); // Check every minute
@@ -130,13 +142,42 @@ const logout = () => {
     setUser(null);
 };
 
+// Function to manually refresh user data (can be called after avatar upload)
+const refreshUserData = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+        const response = await api.get(`/users/${user.id}`);
+        if (response.data.user) {
+            const freshUser = response.data.user;
+            localStorage.setItem('user', JSON.stringify(freshUser));
+            setUser(freshUser);
+            return freshUser;
+        }
+    } catch (error) {
+        console.error('Failed to refresh user data:', error);
+    }
+}, [user?.id]);
+
 return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshToken }}>
+    <AuthContext.Provider value={{
+        user,
+        token,
+        login,
+        logout,
+        loading,
+        refreshToken,
+        refreshUserData
+    }}>
     {children}
     </AuthContext.Provider>
 );
 }
 
 export function useAuth() {
-return useContext(AuthContext);
+const context = useContext(AuthContext);
+if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+}
+return context;
 }
