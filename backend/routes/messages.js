@@ -3,12 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
-
-
-
-db.query('DROP TRIGGER IF EXISTS update_messages_updated_at ON messages')
-.then()
-.catch();
+const { onlineUsers } = require('../server');
 
 async function persistMessage(conversationId, senderId, content) {
 // Insert the message
@@ -46,9 +41,7 @@ read_by: []
 }
 
 // ============================================================
-// Attach socket handler so the socket layer can call it.
-// Call this once from server.js:
-//   require('./routes/messages').attachSocketHandler(io, db)
+// Attach socket handler
 // ============================================================
 function attachSocketHandler(io) {
 io.on('connection', (socket) => {
@@ -68,9 +61,6 @@ socket.on('leave:conversation', (conversationId) => {
 });
 
 // ── Send message ────────────────────────────────────
-// THIS IS THE CRITICAL FIX: every message:send now
-// writes to PostgreSQL FIRST, then broadcasts the
-// saved record (with its real DB id) to the room.
 socket.on('message:send', async ({ conversationId, content }) => {
     try {
         if (!content || !content.trim()) return;
@@ -88,26 +78,33 @@ socket.on('message:send', async ({ conversationId, content }) => {
         // Persist to DB
         const savedMessage = await persistMessage(conversationId, userId, content);
 
-        // Broadcast the saved message (with real DB id) to everyone in the room
+        // Broadcast the saved message to everyone in the room
         io.to(`conversation:${conversationId}`).emit('message:new', savedMessage);
 
-        // Email the other participant(s) if they're not in the room
+        // Email the other participant(s) if they're not online
         try {
             const others = await db.query(
                 `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
                 [conversationId, userId]
             );
             for (const row of others.rows) {
-                triggerNotificationEmail(db, row.user_id, 'message', {
-                    senderName: savedMessage.senderName,
-                    conversationId,
-                });
+                const otherUserId = parseInt(row.user_id);
+                if (!onlineUsers?.has(otherUserId)) {
+                    console.log(`[messages] User ${otherUserId} is offline, sending message email`);
+                    triggerNotificationEmail(db, otherUserId, 'message', {
+                        senderName: savedMessage.senderName,
+                        conversationId,
+                    });
+                } else {
+                    console.log(`[messages] User ${otherUserId} is online, skipping email`);
+                }
             }
-        } catch {} // non-critical
-
+        } catch (err) {
+            console.error('[messages] Error checking online status for email:', err.message);
+        }
 
     } catch (err) {
-        console.error('❌ Error saving socket message:', err);
+        console.error('Error saving socket message:', err);
         socket.emit('message:error', { error: 'Failed to send message' });
     }
 });
@@ -130,10 +127,8 @@ socket.on('user:typing', ({ conversationId, isTyping }) => {
 // Start or get conversation with a user
 router.post('/conversations', authMiddleware, async (req, res) => {
 try {
-//;
 const { participantId } = req.body;
 const userId = req.user.id;
-
 
 if (!participantId) {
     return res.status(400).json({ error: { message: 'Participant ID is required' } });
@@ -161,9 +156,6 @@ if (usersCheck.rows.length !== 2) {
     }
     return res.status(404).json({ error: { message: 'Recipient user not found' } });
 }
-
-const participant = usersCheck.rows.find(u => u.id === parsedParticipantId);
-
 
 // Check if conversation already exists
 const existingConversation = await db.query(
@@ -193,7 +185,6 @@ if (existingConversation.rows.length > 0) {
             VALUES ($1, $2, NOW(), NOW()), ($1, $3, NOW(), NOW())`,
         [conversationId, userId, parsedParticipantId]
     );
-
 }
 
 // Fetch full conversation details
@@ -245,7 +236,7 @@ res.status(200).json({
     }
 });
 } catch (error) {
-console.error('❌ Error in /conversations endpoint:', error);
+console.error('Error in /conversations endpoint:', error);
 let errorMessage = 'Failed to start conversation';
 if (error.code === '23503') errorMessage = 'User does not exist in database';
 if (error.code === '23505') errorMessage = 'Conversation already exists';
@@ -262,7 +253,6 @@ res.status(500).json({
 router.get('/conversations', authMiddleware, async (req, res) => {
 try {
 const userId = req.user.id;
-
 
 const conversations = await db.query(
     `SELECT
@@ -282,8 +272,6 @@ const conversations = await db.query(
         ORDER BY c.updated_at DESC`,
     [userId]
 );
-
-
 
 const formattedConversations = conversations.rows.map(conv => {
     const participantsArray = conv.participants || [];
@@ -311,7 +299,7 @@ const formattedConversations = conversations.rows.map(conv => {
 
 res.json({ conversations: formattedConversations });
 } catch (error) {
-console.error('❌ Error getting conversations:', error);
+console.error('Error getting conversations:', error);
 res.status(500).json({
     error: {
         message: 'Failed to fetch conversations',
@@ -326,8 +314,6 @@ router.get('/conversations/:conversationId/messages', authMiddleware, async (req
 try {
 const { conversationId } = req.params;
 const userId = req.user.id;
-
-
 
 // Verify participant
 const participantCheck = await db.query(
@@ -357,13 +343,7 @@ const messages = await db.query(
     [conversationId]
 );
 
-
-// Send the response FIRST before doing read-marking.
-// The messages table has an update_messages_updated_at trigger that tries
-// to set NEW.updated_at, but messages has no updated_at column — so the
-// UPDATE below was crashing with a 500 even though messages loaded fine.
-// By responding first and running read-marking fire-and-forget, a trigger
-// failure can never block the user from seeing their messages.
+// Send the response FIRST
 res.json({
     messages: messages.rows.map(msg => ({
         id: msg.id,
@@ -377,7 +357,7 @@ res.json({
     }))
 });
 
-// Mark messages as read — fire and forget, don't await
+// Mark messages as read — fire and forget
 db.query(
     `UPDATE messages
         SET read_by = array_append(read_by, $1)
@@ -385,16 +365,16 @@ db.query(
         AND sender_id != $1
         AND NOT ($1 = ANY(read_by))`,
     [userId, conversationId]
-).catch();
+).catch(() => {});
 
 db.query(
     `UPDATE conversation_participants
         SET last_read_at = NOW()
         WHERE conversation_id = $1 AND user_id = $2`,
     [conversationId, userId]
-).catch(Error);
+).catch(() => {});
 } catch (error) {
-console.error('❌ Error getting messages:', error);
+console.error('Error getting messages:', error);
 res.status(500).json({
     error: {
         message: 'Failed to fetch messages',
@@ -435,7 +415,7 @@ await db.query(
 
 res.json({ success: true, message: 'Conversation marked as read' });
 } catch (error) {
-console.error('❌ Error marking conversation as read:', error);
+console.error('Error marking conversation as read:', error);
 res.status(500).json({
     error: {
         message: 'Failed to mark conversation as read',
@@ -481,7 +461,7 @@ res.json({
     }))
 });
 } catch (error) {
-console.error('❌ Error searching users:', error);
+console.error('Error searching users:', error);
 res.status(500).json({
     error: {
         message: 'Failed to search users',
@@ -491,7 +471,7 @@ res.status(500).json({
 }
 });
 
-// Send a message via REST (fallback / alternative to socket)
+// Send a message via REST
 router.post('/conversations/:conversationId/messages', authMiddleware, async (req, res) => {
 try {
 const { conversationId } = req.params;
@@ -513,23 +493,31 @@ if (participantCheck.rows.length === 0) {
 
 const savedMessage = await persistMessage(conversationId, userId, content);
 
-// Email the other participant(s)
+// Email the other participant(s) if they're not online
 try {
     const others = await db.query(
         `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
         [conversationId, userId]
     );
     for (const row of others.rows) {
-        triggerNotificationEmail(db, row.user_id, 'message', {
-            senderName: savedMessage.senderName,
-            conversationId,
-        });
+        const otherUserId = parseInt(row.user_id);
+        if (!onlineUsers?.has(otherUserId)) {
+            console.log(`[messages REST] User ${otherUserId} is offline, sending message email`);
+            triggerNotificationEmail(db, otherUserId, 'message', {
+                senderName: savedMessage.senderName,
+                conversationId,
+            });
+        } else {
+            console.log(`[messages REST] User ${otherUserId} is online, skipping email`);
+        }
     }
-} catch {} // non-critical
+} catch (err) {
+    console.error('[messages REST] Error checking online status for email:', err.message);
+}
 
 res.status(201).json({ message: 'Message sent successfully', data: savedMessage });
 } catch (error) {
-console.error('❌ Error sending message via REST:', error);
+console.error('Error sending message via REST:', error);
 res.status(500).json({
     error: {
         message: 'Failed to send message',
@@ -579,7 +567,7 @@ res.json({
     }
 });
 } catch (error) {
-console.error('❌ Error getting conversation:', error);
+console.error('Error getting conversation:', error);
 res.status(500).json({
     error: {
         message: 'Failed to fetch conversation',
@@ -589,7 +577,7 @@ res.status(500).json({
 }
 });
 
-// Delete a message (only sender can delete their own messages)
+// Delete a message
 router.delete('/:messageId', authMiddleware, async (req, res) => {
 try {
 const { messageId } = req.params;

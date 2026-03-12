@@ -1,6 +1,8 @@
 const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
+const { triggerNotificationEmail } = require('../config/emailTrigger');
+const { onlineUsers } = require('../server');
 
 const router = express.Router();
 
@@ -8,10 +10,8 @@ const router = express.Router();
 router.post('/submission/:submissionId', authMiddleware, async (req, res) => {
 try {
     const { submissionId } = req.params;
-    const { vote_type } = req.body; // 'upvote' or 'downvote'
+    const { vote_type } = req.body;
     const userId = req.user.id;
-
-    //
 
     if (!['upvote', 'downvote'].includes(vote_type)) {
         return res.status(400).json({ error: { message: 'Invalid vote type' } });
@@ -19,7 +19,7 @@ try {
 
     // Get submission details
     const submissionResult = await db.query(
-        `SELECT s.*, t.user_id as track_owner_id
+        `SELECT s.*, t.user_id as track_owner_id, t.title as track_title
             FROM submissions s
             JOIN tracks t ON s.track_id = t.id
             WHERE s.id = $1`,
@@ -32,7 +32,7 @@ try {
 
     const submission = submissionResult.rows[0];
 
-    // Check if user can vote (not the owner and not the submitter)
+    // Check if user can vote
     if (userId === submission.track_owner_id) {
         return res.status(403).json({ 
             error: { message: 'Track owner cannot vote on submissions' } 
@@ -57,7 +57,6 @@ try {
         if (oldVote === vote_type) {
             // Remove vote if clicking same button
             await db.query('DELETE FROM votes WHERE id = $1', [existingVote.rows[0].id]);
-            //
             
             return res.json({ 
                 message: 'Vote removed',
@@ -88,12 +87,28 @@ try {
                 VALUES ($1, 'vote', $2, $3)`,
             [
                 submission.collaborator_id,
-                `Someone ${vote_type}d your submission`,
+                `Someone ${vote_type}d your submission on "${submission.track_title}"`,
                 submissionId
             ]
         );
 
-        //
+        // Send email to submitter if offline
+        const submitterId = parseInt(submission.collaborator_id);
+        if (!onlineUsers?.has(submitterId)) {
+            console.log(`[votes] User ${submitterId} is offline, sending vote email`);
+            
+            // Get voter's name for the email
+            const voterResult = await db.query('SELECT username FROM users WHERE id = $1', [userId]);
+            const voterName = voterResult.rows[0]?.username || 'Someone';
+            
+            triggerNotificationEmail(db, submitterId, 'vote', {
+                voterName: voterName,
+                trackTitle: submission.track_title,
+                trackId: submission.track_id,
+            });
+        } else {
+            console.log(`[votes] User ${submitterId} is online, skipping email`);
+        }
         
         return res.json({ 
             message: 'Vote recorded',
@@ -101,7 +116,7 @@ try {
         });
     }
 } catch (error) {
-    console.error('❌ Vote error:', error);
+    console.error('Vote error:', error);
     res.status(500).json({ error: { message: 'Failed to record vote' } });
 }
 });
@@ -131,7 +146,7 @@ try {
         score: score
     });
 } catch (error) {
-    console.error('❌ Get votes error:', error);
+    console.error('Get votes error:', error);
     res.status(500).json({ error: { message: 'Failed to fetch votes' } });
 }
 });
@@ -153,7 +168,7 @@ try {
 
     res.json({ vote: result.rows[0].vote_type });
 } catch (error) {
-    console.error('❌ Get user vote error:', error);
+    console.error('Get user vote error:', error);
     res.status(500).json({ error: { message: 'Failed to fetch user vote' } });
 }
 });
@@ -181,7 +196,7 @@ try {
 
     res.json({ submissions: result.rows });
 } catch (error) {
-    console.error('❌ Get top submissions error:', error);
+    console.error('Get top submissions error:', error);
     res.status(500).json({ error: { message: 'Failed to fetch top submissions' } });
 }
 });

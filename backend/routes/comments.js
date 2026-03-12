@@ -6,9 +6,7 @@ const { onlineUsers } = require('../server');
 
 const router = express.Router();
 
-// ─────────────────────────────────────────────────────────────────
 // POST / — Add a comment (or reply) to a submission
-// ─────────────────────────────────────────────────────────────────
 router.post('/', authMiddleware, async (req, res) => {
 try {
 const { submission_id, content, parent_id } = req.body;
@@ -64,16 +62,21 @@ if (submission.collaborator_id !== userId) {
     [submission.collaborator_id, `${userResult.rows[0].username} commented on your submission "${submission.title}"`, comment.id]
     );
 
-    // Send email to submission owner
+    // Send email to submission owner if offline
     const trackInfo = await db.query('SELECT id, title FROM tracks WHERE id = $1', [submission.track_id]);
-    if (!onlineUsers?.has(submission.collaborator_id)) {
-    triggerNotificationEmail(db, submission.collaborator_id, 'comment', {
-    commenterName: userResult.rows[0].username,
-    trackTitle: trackInfo.rows[0]?.title || 'your track',
-    trackId: submission.track_id,
-    commentText: content.trim(),
-    });
-}
+    const ownerId = parseInt(submission.collaborator_id);
+    
+    if (!onlineUsers?.has(ownerId)) {
+        console.log(`[comments] User ${ownerId} is offline, sending comment email`);
+        triggerNotificationEmail(db, ownerId, 'comment', {
+            commenterName: userResult.rows[0].username,
+            trackTitle: trackInfo.rows[0]?.title || 'your track',
+            trackId: submission.track_id,
+            commentText: content.trim(),
+        });
+    } else {
+        console.log(`[comments] User ${ownerId} is online, skipping email`);
+    }
 }
 
 // Notify parent comment author if this is a reply
@@ -95,14 +98,10 @@ res.status(500).json({ error: { message: 'Failed to add comment' } });
 }
 });
 
-// ─────────────────────────────────────────────────────────────────
 // GET /submission/:submissionId — Fetch nested comments tree
-// Also returns whether the requesting user has liked each comment
-// ─────────────────────────────────────────────────────────────────
 router.get('/submission/:submissionId', async (req, res) => {
 try {
 const { submissionId } = req.params;
-// userId from query param (optional — guest visitors won't have it)
 const userId = req.query.userId ? parseInt(req.query.userId) : null;
 
 const result = await db.query(
@@ -110,9 +109,7 @@ const result = await db.query(
             u.username,
             u.email,
             u.id AS user_id,
-            -- Like count from comment_likes table
             (SELECT COUNT(*)::int FROM comment_likes WHERE comment_id = c.id) AS likes,
-            -- Did the requesting user like this comment?
             (SELECT COUNT(*)::int FROM comment_likes WHERE comment_id = c.id AND user_id = $2) > 0 AS user_liked
     FROM comments c
     JOIN users u ON c.user_id = u.id
@@ -156,9 +153,7 @@ res.status(500).json({ error: { message: 'Failed to fetch comments' } });
 }
 });
 
-// ─────────────────────────────────────────────────────────────────
-// PUT /:commentId — Edit a comment (owner only)
-// ─────────────────────────────────────────────────────────────────
+// PUT /:commentId — Edit a comment
 router.put('/:commentId', authMiddleware, async (req, res) => {
 try {
 const { commentId } = req.params;
@@ -189,9 +184,7 @@ res.status(500).json({ error: { message: 'Failed to update comment' } });
 }
 });
 
-// ─────────────────────────────────────────────────────────────────
-// DELETE /:commentId — Delete a comment (owner only, cascades replies)
-// ─────────────────────────────────────────────────────────────────
+// DELETE /:commentId — Delete a comment
 router.delete('/:commentId', authMiddleware, async (req, res) => {
 try {
 const { commentId } = req.params;
@@ -213,11 +206,7 @@ res.status(500).json({ error: { message: 'Failed to delete comment' } });
 }
 });
 
-// ─────────────────────────────────────────────────────────────────
 // POST /:commentId/like — Toggle like on a comment
-// Uses comment_likes table: one row per (comment, user)
-// Hitting it twice = unlike
-// ─────────────────────────────────────────────────────────────────
 router.post('/:commentId/like', authMiddleware, async (req, res) => {
 try {
 const { commentId } = req.params;

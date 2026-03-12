@@ -81,12 +81,16 @@ await db.query(
     ]
 );
 
-// Send email to track owner
-if (!onlineUsers?.has(trackResult.rows[0].user_id)) {
-    triggerNotificationEmail(db, trackResult.rows[0].user_id, 'collaboration_request', {
+// Send email to track owner if offline
+const ownerId = parseInt(trackResult.rows[0].user_id);
+if (!onlineUsers?.has(ownerId)) {
+    console.log(`[collaborations] User ${ownerId} is offline, sending collaboration_request email`);
+    triggerNotificationEmail(db, ownerId, 'collaboration_request', {
     senderName: req.user.username,
     trackTitle: trackResult.rows[0].title,
 });
+} else {
+    console.log(`[collaborations] User ${ownerId} is online, skipping email`);
 }
 
 // AUTO-CREATE MESSAGING CONVERSATION WHEN COLLABORATION IS REQUESTED
@@ -139,7 +143,6 @@ res.status(500).json({ error: { message: 'Failed to send request' } });
 });
 
 // Get current user's collaboration status for a specific track
-// Used by SubmissionsPage and TrackDetailPage
 router.get('/track/:trackId', authMiddleware, async (req, res) => {
 try {
 const { trackId } = req.params;
@@ -161,8 +164,7 @@ res.status(500).json({ error: { message: 'Failed to fetch collaboration status' 
 }
 });
 
-// Get active collaborators for a track (used by TrackDetailPage + MyTracksPage)
-// Returns list of approved collaborators so the UI can show collaborator count/avatars
+// Get active collaborators for a track
 router.get('/track/:trackId/active', async (req, res) => {
 try {
 const { trackId } = req.params;
@@ -280,8 +282,6 @@ await db.query(
 );
 
 // If approved, create active collaboration
-// NOTE: Track intentionally stays 'open' so multiple collaborators can request.
-// Track only becomes 'completed' when owner explicitly picks a winning submission.
 if (status === 'approved') {
     // Create active collaboration record
     await db.query(
@@ -316,13 +316,17 @@ await db.query(
     ]
 );
 
-// Send email to collaborator
-if (!onlineUsers?.has(request.collaborator_id)) {
-    triggerNotificationEmail(db, request.collaborator_id, 'collaboration_response', {
+// Send email to collaborator if offline
+const collaboratorId = parseInt(request.collaborator_id);
+if (!onlineUsers?.has(collaboratorId)) {
+    console.log(`[collaborations] User ${collaboratorId} is offline, sending collaboration_response email`);
+    triggerNotificationEmail(db, collaboratorId, 'collaboration_response', {
     responderName: req.user.username,
     trackTitle: request.title,
     status,
 });
+} else {
+    console.log(`[collaborations] User ${collaboratorId} is online, skipping email`);
 }
 
 res.json({ 
@@ -335,7 +339,7 @@ res.status(500).json({ error: { message: 'Failed to update request' } });
 }
 });
 
-// Upload final completed track (NEW ENDPOINT)
+// Upload final completed track
 router.post('/:trackId/submit', authMiddleware, upload.single('audio'), async (req, res) => {
 try {
 const { trackId } = req.params;
@@ -373,7 +377,7 @@ const safeFileName = originalName.replace(/[^a-zA-Z0-9.-]/g, '_');
 const s3Key = `submissions/${trackId}/${userId}/${timestamp}_${safeFileName}`;
 
 // Upload to S3
-const s3Result = await uploadToS3(req.file, s3Key);
+await uploadToS3(req.file, s3Key);
 
 // Create submission record
 const submissionResult = await db.query(
@@ -691,7 +695,7 @@ const result = await db.query(
 
 res.json({ collaborations: result.rows });
 } catch (error) {
-console.error('❌ Get user collaborations error:', error);
+console.error('Get user collaborations error:', error);
 // If table doesn't exist yet, return empty array
 if (error.code === '42P01') {
     return res.json({ collaborations: [] });
