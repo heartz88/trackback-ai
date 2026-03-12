@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import { useToast } from '../components/common/Toast'; // Add this import
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -17,8 +18,10 @@ const [showPassword, setShowPassword] = useState(false);
 const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 const [error, setError] = useState('');
 const [passwordStrength, setPasswordStrength] = useState(0);
+const [isLoading, setIsLoading] = useState(false); // Add loading state
 const { login } = useAuth();
 const navigate = useNavigate();
+const toast = useToast(); // Initialize toast
 
 const calculatePasswordStrength = (password) => {
 let strength = 0;
@@ -37,6 +40,7 @@ setPasswordStrength(calculatePasswordStrength(password));
 
 const handleSubmit = async (e) => {
 e.preventDefault();
+setError('');
 
 if (formData.password !== formData.confirmPassword) {
     setError('Passwords do not match');
@@ -47,6 +51,8 @@ if (formData.password.length < 6) {
     setError('Password must be at least 6 characters');
     return;
 }
+
+setIsLoading(true);
 
 try {
     const { confirmPassword, skills, ...submitData } = formData;
@@ -62,10 +68,42 @@ try {
     skills: skillsArray
     });
     
-    login(response.data.token, response.data.user);
-    navigate('/discover');
+    // Show success toast with verification email info
+    toast.success(
+        <div>
+            <p className="font-semibold mb-1">🎉 Registration successful!</p>
+            <p className="text-sm opacity-90">Please check your email to verify your account.</p>
+        </div>,
+        { duration: 6000 } // Show for 6 seconds
+    );
+    
+    // Show another toast with resend option after 2 seconds
+    setTimeout(() => {
+        toast.info(
+            <div>
+                <p className="text-sm">Didn't receive the email?</p>
+                <Link 
+                    to="/resend-verification" 
+                    state={{ email: formData.email }}
+                    className="inline-block mt-1 text-primary-300 hover:text-primary-200 underline text-sm"
+                >
+                    Click here to resend
+                </Link>
+            </div>,
+            { duration: 10000 }
+        );
+    }, 2000);
+    
+    // Redirect to login page instead of auto-login
+    setTimeout(() => {
+        navigate('/login', { state: { email: formData.email } });
+    }, 3000);
+    
 } catch (err) {
     setError(err.response?.data?.error?.message || 'Registration failed');
+    toast.error('Registration failed. Please try again.');
+} finally {
+    setIsLoading(false);
 }
 };
 
@@ -120,6 +158,7 @@ return (
                 placeholder="Choose a username"
                 className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
             />
             </div>
 
@@ -135,6 +174,7 @@ return (
                 placeholder="you@example.com"
                 className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
             />
             </div>
         </div>
@@ -153,11 +193,13 @@ return (
                 placeholder="••••••••"
                 className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all pr-12"
                 required
+                disabled={isLoading}
                 />
                 <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                disabled={isLoading}
                 >
                 {showPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,11 +257,13 @@ return (
                     : 'border-[var(--border-color)] focus:ring-primary-500'
                 }`}
                 required
+                disabled={isLoading}
                 />
                 <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                disabled={isLoading}
                 >
                 {showConfirmPassword ? (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,6 +320,7 @@ return (
             placeholder="Tell others about yourself, your music style, what you're working on..."
             rows="3"
             className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all resize-none"
+            disabled={isLoading}
             />
         </div>
 
@@ -290,6 +335,7 @@ return (
             onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
             placeholder="e.g., mixing, mastering, vocals, guitar, production"
             className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+            disabled={isLoading}
             />
             <p className="text-xs text-[var(--text-tertiary)] mt-1">
             Separate multiple skills with commas
@@ -300,10 +346,23 @@ return (
         {/* Submit Button */}
         <button
         type="submit"
-        className="w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-[1.02] active:scale-[0.98] animate-slide-up"
+        disabled={isLoading}
+        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-[1.02] active:scale-[0.98] animate-slide-up ${
+            isLoading ? 'opacity-60 cursor-not-allowed hover:scale-100' : ''
+        }`}
         style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
         >
-        Create account
+        {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Creating account...
+            </span>
+        ) : (
+            'Create account'
+        )}
         </button>
 
         <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.45s', animationFillMode: 'both' }}>

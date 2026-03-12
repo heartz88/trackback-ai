@@ -28,7 +28,25 @@ try {
     
     navigate('/discover');
 } catch (err) {
-    setError(err.response?.data?.error?.message || 'Login failed');
+    const errorData = err.response?.data?.error;
+    
+    // Check if error is due to unverified email
+    if (errorData?.code === 'EMAIL_NOT_VERIFIED') {
+        setError(
+            <div className="text-center">
+                <p className="mb-3">Please verify your email before logging in.</p>
+                <Link 
+                    to="/resend-verification" 
+                    state={{ email: errorData.email }}
+                    className="inline-block px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold rounded-lg transition-all"
+                >
+                    Resend verification email
+                </Link>
+            </div>
+        );
+    } else {
+        setError(errorData?.message || 'Login failed');
+    }
 }
 };
 

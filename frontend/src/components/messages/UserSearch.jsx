@@ -1,0 +1,86 @@
+const UserSearchItem = ({ user, isOnline, onSelect, disabled }) => (
+  <div
+    className={`flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--bg-tertiary)] cursor-pointer transition-colors ${
+      disabled ? 'opacity-50 cursor-not-allowed' : ''
+    }`}
+    onClick={() => !disabled && onSelect()}
+  >
+    <div className="relative">
+      <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold">
+        {user.username?.[0]?.toUpperCase() || '?'}
+      </div>
+      {isOnline && (
+        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary-500 rounded-full border border-[var(--bg-primary)]"></div>
+      )}
+    </div>
+    <div className="flex-1">
+      <p className="font-medium text-[var(--text-primary)]">{user.username || 'Unknown User'}</p>
+      <p className="text-sm text-[var(--text-tertiary)]">{user.email}</p>
+    </div>
+    <button
+      className={`px-4 py-1.5 text-white text-sm font-medium rounded-lg transition-all ${
+        disabled
+          ? 'bg-gray-600 cursor-not-allowed opacity-50'
+          : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400'
+      }`}
+      disabled={disabled}
+    >
+      Message
+    </button>
+  </div>
+);
+
+export default function UserSearch({ 
+  searchQuery, 
+  setSearchQuery, 
+  users, 
+  filteredUsers, 
+  onStartConversation,
+  isConnected,
+  startingConversation,
+  onlineUsers 
+}) {
+  const isUserOnline = (userId) => {
+    if (onlineUsers instanceof Set) return onlineUsers.has(userId);
+    if (Array.isArray(onlineUsers)) return onlineUsers.some(u => u.id === userId);
+    return false;
+  };
+
+  return (
+    <div className="messages-search-panel mb-6 glass-panel rounded-2xl p-6 animate-slide-down">
+      <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">
+        Start New Conversation
+      </h3>
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search users by name or email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+          autoFocus
+          disabled={startingConversation || !isConnected}
+        />
+      </div>
+      <div className="max-h-80 overflow-y-auto space-y-2 custom-scrollbar">
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-[var(--text-tertiary)]">
+              {searchQuery ? 'No users found' : 'Start typing to search users'}
+            </p>
+          </div>
+        ) : (
+          filteredUsers.map(user => (
+            <UserSearchItem
+              key={user.id}
+              user={user}
+              isOnline={isUserOnline(user.id)}
+              onSelect={() => onStartConversation(user.id)}
+              disabled={startingConversation || !isConnected}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

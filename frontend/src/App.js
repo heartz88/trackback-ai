@@ -18,10 +18,12 @@ import MessagesPage from './pages/MessagesPage';
 import MyTracksPage from './pages/MyTracksPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
+import ResendVerificationPage from './pages/ResendVerificationPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SubmissionsPage from './pages/SubmissionsPage';
 import TrackDetailPage from './pages/TrackDetailPage';
 import UploadPage from './pages/UploadPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 function App() {
   useEffect(() => {
@@ -60,6 +62,8 @@ function App() {
                 <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/verify-email" element={<VerifyEmailPage />} />
+                <Route path="/resend-verification" element={<ResendVerificationPage />} />
               </Routes>
             </main>
             <Footer />
