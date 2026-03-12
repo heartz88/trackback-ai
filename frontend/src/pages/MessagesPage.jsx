@@ -49,9 +49,6 @@ function MessagesPage() {
   const [startingConversation, setStartingConversation] = useState(false);
   const [deletingMessageId, setDeletingMessageId] = useState(null);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
-  const wasAtBottomRef = useRef(true);
-  const messagesContainerRef = useRef(null);
 
   const hasJoinedConversation = useRef(false);
   const lastNotificationCount = useRef(0);
@@ -70,26 +67,6 @@ function MessagesPage() {
 
   // Get current online users as a Set
   const currentOnlineUsers = onlineUsersSet();
-
-  // Helper function to check if user is near bottom
-  const isNearBottom = () => {
-    const container = messagesContainerRef.current;
-    if (!container) return true;
-    const threshold = 100; // pixels from bottom
-    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
-  };
-
-  // Track scroll position
-  const handleScroll = useCallback(() => {
-    wasAtBottomRef.current = isNearBottom();
-  }, []);
-
-  // Scroll to bottom function
-  const scrollToBottom = useCallback((behavior = 'smooth') => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior });
-    }
-  }, []);
 
   // Delete a message
   const handleDeleteMessage = async (messageId) => {
@@ -135,6 +112,7 @@ function MessagesPage() {
     }
   }, [conversationId]);
 
+  // Join/leave conversation room
   useEffect(() => {
     if (selectedConversation && isConnected && !hasJoinedConversation.current) {
       joinConversation(selectedConversation.id);
@@ -161,11 +139,6 @@ function MessagesPage() {
 
         // Mark as read
         await api.post(`/messages/conversations/${selectedConversation.id}/read`);
-        
-        // Scroll to bottom after loading messages
-        setTimeout(() => {
-          scrollToBottom('auto');
-        }, 100);
       } catch (err) {
         console.error('Failed to fetch messages:', err);
         if (err.response?.status === 403) {
@@ -178,7 +151,7 @@ function MessagesPage() {
     };
 
     fetchMessages();
-  }, [selectedConversation?.id, navigate, scrollToBottom]);
+  }, [selectedConversation?.id, navigate]);
 
   // Fetch users for search
   const fetchUsers = useCallback(async () => {
@@ -207,10 +180,6 @@ function MessagesPage() {
             if (prev.some(m => m.id === latest.data.id)) return prev;
             return [...prev, latest.data];
           });
-          // Set flag to scroll if we were near bottom
-          if (wasAtBottomRef.current) {
-            setShouldScrollToBottom(true);
-          }
         }
       }
       lastNotificationCount.current = notifications.length;
@@ -225,11 +194,10 @@ function MessagesPage() {
           if (prev.some(m => m.id === message.id)) return prev;
           return [...prev, message];
         });
-        
-        // Only auto-scroll if user was near bottom
-        if (wasAtBottomRef.current) {
-          setShouldScrollToBottom(true);
-        }
+
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
     };
 
@@ -271,23 +239,10 @@ function MessagesPage() {
     };
   }, [selectedConversation?.id, joinConversation]);
 
-  // Handle scrolling when shouldScrollToBottom is true
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (shouldScrollToBottom) {
-      scrollToBottom();
-      setShouldScrollToBottom(false);
-    }
-  }, [shouldScrollToBottom, scrollToBottom]);
-
-  // Scroll when messages change (for initial load)
-  useEffect(() => {
-    if (messages.length > 0 && !loading) {
-      // Only auto-scroll on initial load or when we were at bottom
-      if (wasAtBottomRef.current || messages[messages.length - 1]?.senderId === user?.id) {
-        scrollToBottom();
-      }
-    }
-  }, [messages.length, loading, user?.id, scrollToBottom]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -301,30 +256,8 @@ function MessagesPage() {
     const messageContent = newMessage.trim();
     setNewMessage('');
 
-    // Optimistically add message to UI
-    const tempMessage = {
-      id: Date.now(),
-      conversationId: selectedConversation.id,
-      senderId: user.id,
-      senderName: user.username,
-      content: messageContent,
-      timestamp: new Date().toISOString(),
-      read: false,
-      is_own: true,
-      temp: true
-    };
-    
-    setMessages(prev => [...prev, tempMessage]);
-    
-    // Always scroll to bottom when sending your own message
-    setTimeout(() => {
-      scrollToBottom();
-    }, 50);
-
     const success = sendMessage(selectedConversation.id, messageContent);
     if (!success) {
-      // Remove temp message if failed
-      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
       toast.error('Failed to send message. Please check your connection.');
     }
     setTypingStatus(selectedConversation.id, false);
@@ -498,24 +431,18 @@ function MessagesPage() {
                   onNewChat={() => setShowUserSearch(true)}
                 />
 
-                <div 
-                  ref={messagesContainerRef}
-                  onScroll={handleScroll}
-                  className="flex-1 overflow-y-auto"
-                >
-                  <MessageThread
-                    messages={messages}
-                    currentUser={user}
-                    typingUsers={typingUsers}
-                    otherUser={getOtherParticipant(selectedConversation)}
-                    hoveredMessageId={hoveredMessageId}
-                    setHoveredMessageId={setHoveredMessageId}
-                    onDeleteMessage={handleDeleteMessage}
-                    deletingMessageId={deletingMessageId}
-                    formatTime={formatTime}
-                  />
-                  <div ref={messagesEndRef} />
-                </div>
+                <MessageThread
+                  messages={messages}
+                  currentUser={user}
+                  typingUsers={typingUsers}
+                  otherUser={getOtherParticipant(selectedConversation)}
+                  hoveredMessageId={hoveredMessageId}
+                  setHoveredMessageId={setHoveredMessageId}
+                  onDeleteMessage={handleDeleteMessage}
+                  deletingMessageId={deletingMessageId}
+                  formatTime={formatTime}
+                />
+                <div ref={messagesEndRef} />
 
                 <MessageInput
                   value={newMessage}
