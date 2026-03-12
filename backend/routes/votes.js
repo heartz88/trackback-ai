@@ -93,7 +93,7 @@ try {
             ]
         );
 
-        console.log(`✅ New ${vote_type} recorded for user ${userId}`);
+        //
         
         return res.json({ 
             message: 'Vote recorded',
