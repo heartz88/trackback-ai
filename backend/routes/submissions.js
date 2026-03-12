@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const { uploadToS3, getSignedUrl } = require('../config/s3');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
+const { onlineUsers } = require('../server');
 
 const router = express.Router();
 
@@ -81,11 +82,13 @@ await db.query(
 );
 
 // Send email to track owner
-triggerNotificationEmail(db, trackOwner.rows[0].user_id, 'submission', {
+if (!onlineUsers?.has(trackOwner.rows[0].user_id)) {
+    triggerNotificationEmail(db, trackOwner.rows[0].user_id, 'submission', {
     collaboratorName: req.user.username,
     trackTitle: trackOwner.rows[0].title,
     trackId: track_id,
 });
+}
 
 res.status(201).json({
     message: 'Submission uploaded successfully',
@@ -217,11 +220,13 @@ await db.query(
 
 // Send email to submitter
 const trackInfo = await db.query('SELECT id, title FROM tracks WHERE id = $1', [submission.track_id]);
-triggerNotificationEmail(db, submission.collaborator_id, 'vote', {
+if (!onlineUsers?.has(submission.collaborator_id)) {
+    triggerNotificationEmail(db, submission.collaborator_id, 'vote', {
     voterName: req.user.username,
     trackTitle: trackInfo.rows[0]?.title || 'your track',
     trackId: submission.track_id,
 });
+}
 
 const countResult = await db.query(
     `SELECT COUNT(*)::int AS upvotes FROM votes WHERE submission_id = $1`,
@@ -258,12 +263,14 @@ if (submission.rows[0].collaborator_id !== userId) {
 
     // Send email to submitter
     const trackInfo = await db.query('SELECT id, title FROM tracks WHERE id = $1', [submission.rows[0].track_id]);
+    if (!onlineUsers?.has(submission.rows[0].collaborator_id)) {
     triggerNotificationEmail(db, submission.rows[0].collaborator_id, 'comment', {
     commenterName: req.user.username,
     trackTitle: trackInfo.rows[0]?.title || 'your track',
     trackId: submission.rows[0].track_id,
     commentText: content,
     });
+}
 }
 
 res.status(201).json({ message: 'Comment added', comment: result.rows[0] });

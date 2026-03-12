@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 
 // Import database pool
 const db = require('./config/database');
+const { triggerNotificationEmail } = require('./config/emailTrigger');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,7 +19,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 [
   'https://trackback-frontend-3ofn.onrender.com',
   'http://localhost:3005',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  'http://trackbackai.me'
 ];
 
 const corsOptions = {
@@ -220,19 +222,33 @@ try {
     );
 
     participantsResult.rows.forEach(({ user_id: userId }) => {
-    if (userId !== socket.userId && onlineUsers.has(userId)) {
+    if (userId !== socket.userId) {
+        if (onlineUsers.has(userId)) {
         const userSocketId = onlineUsers.get(userId).socketId;
         const targetSocket = io.sockets.sockets.get(userSocketId);
         const alreadyInRoom = targetSocket?.rooms?.has(`conversation:${conversationId}`);
         if (!alreadyInRoom) {
-        io.to(userSocketId).emit('message:new', messageData);
+            io.to(userSocketId).emit('message:new', messageData);
         }
 
         db.query(
-        `INSERT INTO notifications (user_id, type, content, related_id) 
+            `INSERT INTO notifications (user_id, type, content, related_id) 
             VALUES ($1, 'message', $2, $3)`,
-        [userId, `New message from ${socket.username}`, message.id]
+            [userId, `New message from ${socket.username}`, message.id]
         ).catch(err => console.error('Error creating notification:', err));
+        } else {
+        // User is offline — save notification and send email
+        db.query(
+            `INSERT INTO notifications (user_id, type, content, related_id) 
+            VALUES ($1, 'message', $2, $3)`,
+            [userId, `New message from ${socket.username}`, message.id]
+        ).catch(err => console.error('Error creating notification:', err));
+
+        triggerNotificationEmail(db, userId, 'message', {
+            senderName: socket.username,
+            conversationId,
+        });
+        }
     }
     });
 

@@ -4,6 +4,7 @@ const db = require('../config/database');
 const multer = require('multer');
 const { uploadToS3, getSignedUrl } = require('../config/s3');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
+const { onlineUsers } = require('../server');
 
 const router = express.Router();
 
@@ -81,10 +82,12 @@ await db.query(
 );
 
 // Send email to track owner
-triggerNotificationEmail(db, trackResult.rows[0].user_id, 'collaboration_request', {
+if (!onlineUsers?.has(trackResult.rows[0].user_id)) {
+    triggerNotificationEmail(db, trackResult.rows[0].user_id, 'collaboration_request', {
     senderName: req.user.username,
     trackTitle: trackResult.rows[0].title,
 });
+}
 
 // AUTO-CREATE MESSAGING CONVERSATION WHEN COLLABORATION IS REQUESTED
 try {
@@ -314,11 +317,13 @@ await db.query(
 );
 
 // Send email to collaborator
-triggerNotificationEmail(db, request.collaborator_id, 'collaboration_response', {
+if (!onlineUsers?.has(request.collaborator_id)) {
+    triggerNotificationEmail(db, request.collaborator_id, 'collaboration_response', {
     responderName: req.user.username,
     trackTitle: request.title,
     status,
 });
+}
 
 res.json({ 
     message: `Request ${status}`,

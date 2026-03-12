@@ -2,6 +2,7 @@ const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
+const { onlineUsers } = require('../server');
 
 const router = express.Router();
 
@@ -65,12 +66,14 @@ if (submission.collaborator_id !== userId) {
 
     // Send email to submission owner
     const trackInfo = await db.query('SELECT id, title FROM tracks WHERE id = $1', [submission.track_id]);
+    if (!onlineUsers?.has(submission.collaborator_id)) {
     triggerNotificationEmail(db, submission.collaborator_id, 'comment', {
     commenterName: userResult.rows[0].username,
     trackTitle: trackInfo.rows[0]?.title || 'your track',
     trackId: submission.track_id,
     commentText: content.trim(),
     });
+}
 }
 
 // Notify parent comment author if this is a reply
