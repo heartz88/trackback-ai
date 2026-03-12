@@ -16,24 +16,17 @@ this.connectionPromise = null;
 
 connect(token) {
 // Always return a Promise so callers can safely await/then.
-// Previously returning undefined when already connecting/connected caused
-// waitForConnection() to crash silently — preventing room joins for users
-// who load the page while the socket is still establishing.
 if (this.socket?.connected) {
-    //;
     return Promise.resolve(this.socket);
 }
 
 if (this.isConnecting && this.connectionPromise) {
-    //;
     return this.connectionPromise;
 }
 
 this.token = token;
 this.isConnecting = true;
 this.reconnectAttempts = 0;
-
-//;
 
 this.socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001', {
     auth: { token },
@@ -49,7 +42,6 @@ this.socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001', {
 
 // Connection event handlers
 this.socket.on('connect', () => {
-    //;
     this.connected = true;
     this.isConnecting = false;
     this.reconnectAttempts = 0;
@@ -57,25 +49,23 @@ this.socket.on('connect', () => {
 });
 
 this.socket.on('connect_error', (error) => {
-    console.error('❌ Socket connection error:', error.message);
+    console.error('Socket connection error:', error.message);
     this.isConnecting = false;
     this.connected = false;
     this.reconnectAttempts++;
     
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-    console.error('❌ Max reconnection attempts reached');
+    console.error('Max reconnection attempts reached');
     this.emitToAll('socket:connection_failed', { error: error.message });
     }
 });
 
 this.socket.on('disconnect', (reason) => {
-    //;
     this.connected = false;
     this.emitToAll('socket:disconnected', { reason });
 });
 
 this.socket.on('connection:established', (data) => {
-    //;
     this.connected = true;
     this.emitToAll('connection:established', data);
 });
@@ -115,7 +105,6 @@ return this.connectionPromise;
 
 disconnect() {
 if (this.socket) {
-    //;
     this.socket.disconnect();
     this.socket = null;
 }
@@ -127,11 +116,10 @@ this.listeners.clear();
 
 emit(eventName, data) {
 if (!this.socket?.connected) {
-    console.warn(`⚠️ Cannot emit ${eventName}: Socket not connected`);
+    console.warn(`Cannot emit ${eventName}: Socket not connected`);
     return false;
 }
 
-//;
 this.socket.emit(eventName, data);
 return true;
 }
@@ -196,29 +184,23 @@ return this.emit('user:typing', { conversationId, isTyping });
 
 joinConversation(conversationId) {
 if (!this.socket?.connected) {
-    console.warn(`⚠️ Cannot join conversation ${conversationId}: Socket not connected`);
     // Try to reconnect
     if (this.token) {
-    //;
     this.connect(this.token).then(() => {
-        //;
         this.emit('join:conversation', conversationId);
     }).catch(err => {
-        console.error('❌ Failed to reconnect:', err.message);
+        console.error('Failed to reconnect:', err.message);
     });
     }
     return false;
 }
-//;
 return this.emit('join:conversation', conversationId);
 }
 
 leaveConversation(conversationId) {
 if (!this.socket?.connected) {
-    console.warn(`⚠️ Cannot leave conversation ${conversationId}: Socket not connected`);
     return false;
 }
-//;
 return this.emit('leave:conversation', conversationId);
 }
 
@@ -265,7 +247,7 @@ return new Promise((resolve, reject) => {
 // Create singleton instance
 const socketService = new SocketService();
 
-// Make it globally available for debugging
+// Make it globally available for debugging (optional - you can remove this too)
 if (typeof window !== 'undefined') {
 window.socketService = socketService;
 }
