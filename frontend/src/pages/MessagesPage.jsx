@@ -275,11 +275,34 @@ function MessagesPage() {
     };
 
     const handleMessageDeleted = (data) => {
-      console.log('Message deleted event received:', data); // Add logging to debug
-      if (selectedConversation && data.conversationId.toString() === selectedConversation.id.toString()) {
-        setMessages(prev => prev.filter(m => m.id !== data.messageId));
-        toast.info('A message was deleted');
+      console.log('🔴 MESSAGE DELETED EVENT RECEIVED:', data);
+      
+      if (!selectedConversation) {
+        console.log('No conversation selected');
+        return;
       }
+      
+      if (data.conversationId.toString() !== selectedConversation.id.toString()) {
+        console.log('Conversation mismatch - ignoring');
+        return;
+      }
+      
+      console.log('✅ Removing message:', data.messageId);
+      
+      // Force a new array to trigger re-render
+      setMessages(currentMessages => {
+        const filtered = currentMessages.filter(msg => {
+          const shouldKeep = msg.id !== data.messageId;
+          if (!shouldKeep) {
+            console.log('Removing message:', msg.id);
+          }
+          return shouldKeep;
+        });
+        console.log('Messages after deletion:', filtered.length);
+        return filtered;
+      });
+      
+      toast.info('A message was deleted');
     };
 
     const handleSocketConnected = () => {
