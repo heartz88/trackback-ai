@@ -48,73 +48,104 @@ io.on('connection', (socket) => {
 const userId = socket.user?.id;
 if (!userId) return;
 
-// ── Join conversation room ──────────────────────────
+// Join conversation room
 socket.on('join:conversation', (conversationId) => {
     const room = `conversation:${conversationId}`;
     socket.join(room);
 });
 
-// ── Leave conversation room ─────────────────────────
+// Leave conversation room
 socket.on('leave:conversation', (conversationId) => {
     const room = `conversation:${conversationId}`;
     socket.leave(room);
 });
 
-// ── Send message ────────────────────────────────────
+// Send message
 socket.on('message:send', async ({ conversationId, content }) => {
     try {
-        if (!content || !content.trim()) return;
+    if (!content || !content.trim()) return;
 
-        // Verify user is a participant before saving
-        const check = await db.query(
-            'SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2',
-            [conversationId, userId]
+    // Verify user is a participant
+    const check = await db.query(
+        'SELECT 1 FROM conversation_participants WHERE conversation_id = $1 AND user_id = $2',
+        [conversationId, userId]
+    );
+    if (check.rows.length === 0) {
+        socket.emit('message:error', { error: 'Not a participant in this conversation' });
+        return;
+    }
+
+    // Persist to DB
+    const savedMessage = await persistMessage(conversationId, userId, content);
+
+    // Broadcast the saved message to everyone in the room
+    io.to(`conversation:${conversationId}`).emit('message:new', savedMessage);
+
+    // Email other participants if offline
+    try {
+        const others = await db.query(
+        `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
+        [conversationId, userId]
         );
-        if (check.rows.length === 0) {
-            socket.emit('message:error', { error: 'Not a participant in this conversation' });
-            return;
+        for (const row of others.rows) {
+        const otherUserId = parseInt(row.user_id);
+        if (!onlineUsers?.has(otherUserId)) {
+            triggerNotificationEmail(db, otherUserId, 'message', {
+            senderName: savedMessage.senderName,
+            conversationId,
+            });
         }
-
-        // Persist to DB
-        const savedMessage = await persistMessage(conversationId, userId, content);
-
-        // Broadcast the saved message to everyone in the room
-        io.to(`conversation:${conversationId}`).emit('message:new', savedMessage);
-
-        // Email the other participant(s) if they're not online
-        try {
-            const others = await db.query(
-                `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
-                [conversationId, userId]
-            );
-            for (const row of others.rows) {
-                const otherUserId = parseInt(row.user_id);
-                if (!onlineUsers?.has(otherUserId)) {
-                    console.log(`[messages] User ${otherUserId} is offline, sending message email`);
-                    triggerNotificationEmail(db, otherUserId, 'message', {
-                        senderName: savedMessage.senderName,
-                        conversationId,
-                    });
-                } else {
-                    console.log(`[messages] User ${otherUserId} is online, skipping email`);
-                }
-            }
-        } catch (err) {
-            console.error('[messages] Error checking online status for email:', err.message);
         }
+    } catch (err) {
+        console.error('[messages] Error checking online status for email:', err.message);
+    }
 
     } catch (err) {
-        console.error('Error saving socket message:', err);
-        socket.emit('message:error', { error: 'Failed to send message' });
+    console.error('Error saving socket message:', err);
+    socket.emit('message:error', { error: 'Failed to send message' });
     }
 });
 
-// ── Typing indicator ────────────────────────────────
+// Delete message
+socket.on('message:delete', async ({ messageId, conversationId }) => {
+    try {
+    // Verify user owns this message
+    const check = await db.query(
+        'SELECT sender_id FROM messages WHERE id = $1',
+        [messageId]
+    );
+
+    if (check.rows.length === 0) {
+        socket.emit('message:error', { error: 'Message not found' });
+        return;
+    }
+
+    if (check.rows[0].sender_id !== userId) {
+        socket.emit('message:error', { error: 'Not authorized to delete this message' });
+        return;
+    }
+
+    // Delete the message
+    await db.query('DELETE FROM messages WHERE id = $1', [messageId]);
+
+    // Broadcast deletion to everyone in the conversation
+    io.to(`conversation:${conversationId}`).emit('message:deleted', {
+        messageId,
+        conversationId
+    });
+
+    } catch (err) {
+    console.error('Error deleting message:', err);
+    socket.emit('message:error', { error: 'Failed to delete message' });
+    }
+});
+
+// Typing indicator
 socket.on('user:typing', ({ conversationId, isTyping }) => {
     socket.to(`conversation:${conversationId}`).emit('user:typing', {
-        userId,
-        conversationId,
-        isTyping
+    userId,
+    conversationId,
+    isTyping
     });
 });
 });
@@ -152,7 +183,7 @@ const usersCheck = await db.query(
 if (usersCheck.rows.length !== 2) {
     const foundUserIds = usersCheck.rows.map(r => r.id);
     if (!foundUserIds.includes(userId)) {
-        return res.status(404).json({ error: { message: 'Your user account was not found in database' } });
+    return res.status(404).json({ error: { message: 'Your user account was not found in database' } });
     }
     return res.status(404).json({ error: { message: 'Recipient user not found' } });
 }
@@ -160,10 +191,10 @@ if (usersCheck.rows.length !== 2) {
 // Check if conversation already exists
 const existingConversation = await db.query(
     `SELECT c.id as conversation_id
-        FROM conversations c
-        JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
-        JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
-        WHERE cp1.user_id = $1 AND cp2.user_id = $2`,
+    FROM conversations c
+    JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
+    JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
+    WHERE cp1.user_id = $1 AND cp2.user_id = $2`,
     [userId, parsedParticipantId]
 );
 
@@ -175,34 +206,34 @@ if (existingConversation.rows.length > 0) {
 } else {
     isNew = true;
     const conversationResult = await db.query(
-        'INSERT INTO conversations (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id',
-        []
+    'INSERT INTO conversations (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id',
+    []
     );
     conversationId = conversationResult.rows[0].id;
 
     await db.query(
-        `INSERT INTO conversation_participants (conversation_id, user_id, joined_at, last_read_at)
-            VALUES ($1, $2, NOW(), NOW()), ($1, $3, NOW(), NOW())`,
-        [conversationId, userId, parsedParticipantId]
+    `INSERT INTO conversation_participants (conversation_id, user_id, joined_at, last_read_at)
+        VALUES ($1, $2, NOW(), NOW()), ($1, $3, NOW(), NOW())`,
+    [conversationId, userId, parsedParticipantId]
     );
 }
 
 // Fetch full conversation details
 const conversationDetails = await db.query(
     `SELECT
-        c.id,
-        c.created_at,
-        c.updated_at,
-        (SELECT content   FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_content,
-        (SELECT created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_timestamp,
-        (SELECT sender_id  FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_sender_id,
-        (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != $2 AND NOT ($2 = ANY(m.read_by))) as unread_count,
-        ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
-        FROM conversations c
-        JOIN conversation_participants cp ON c.id = cp.conversation_id
-        JOIN users u ON cp.user_id = u.id
-        WHERE c.id = $1
-        GROUP BY c.id`,
+    c.id,
+    c.created_at,
+    c.updated_at,
+    (SELECT content FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_content,
+    (SELECT created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_timestamp,
+    (SELECT sender_id FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_sender_id,
+    (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != $2 AND NOT ($2 = ANY(m.read_by))) as unread_count,
+    ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
+    FROM conversations c
+    JOIN conversation_participants cp ON c.id = cp.conversation_id
+    JOIN users u ON cp.user_id = u.id
+    WHERE c.id = $1
+    GROUP BY c.id`,
     [conversationId, userId]
 );
 
@@ -217,22 +248,22 @@ const otherParticipants = participantsArray.filter(p => p.id !== userId);
 let lastMessage = null;
 if (conv.last_message_content) {
     lastMessage = {
-        content: conv.last_message_content,
-        timestamp: conv.last_message_timestamp,
-        senderId: conv.last_message_sender_id,
-        senderName: participantsArray.find(p => p.id === conv.last_message_sender_id)?.username || 'Unknown'
+    content: conv.last_message_content,
+    timestamp: conv.last_message_timestamp,
+    senderId: conv.last_message_sender_id,
+    senderName: participantsArray.find(p => p.id === conv.last_message_sender_id)?.username || 'Unknown'
     };
 }
 
 res.status(200).json({
     message: isNew ? 'Conversation created successfully' : 'Conversation found',
     conversation: {
-        id: conv.id,
-        created_at: conv.created_at,
-        updated_at: conv.updated_at,
-        lastMessage,
-        unreadCount: parseInt(conv.unread_count) || 0,
-        participants: otherParticipants
+    id: conv.id,
+    created_at: conv.created_at,
+    updated_at: conv.updated_at,
+    lastMessage,
+    unreadCount: parseInt(conv.unread_count) || 0,
+    participants: otherParticipants
     }
 });
 } catch (error) {
@@ -242,8 +273,8 @@ if (error.code === '23503') errorMessage = 'User does not exist in database';
 if (error.code === '23505') errorMessage = 'Conversation already exists';
 res.status(500).json({
     error: {
-        message: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: errorMessage,
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
 }
@@ -256,20 +287,20 @@ const userId = req.user.id;
 
 const conversations = await db.query(
     `SELECT
-        c.id,
-        c.created_at,
-        c.updated_at,
-        (SELECT m.content    FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_content,
-        (SELECT m.created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_timestamp,
-        (SELECT m.sender_id  FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_sender_id,
-        (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != $1 AND NOT ($1 = ANY(m.read_by))) as unread_count,
-        ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
-        FROM conversations c
-        JOIN conversation_participants cp ON c.id = cp.conversation_id
-        JOIN users u ON cp.user_id = u.id
-        WHERE c.id IN (SELECT conversation_id FROM conversation_participants WHERE user_id = $1)
-        GROUP BY c.id
-        ORDER BY c.updated_at DESC`,
+    c.id,
+    c.created_at,
+    c.updated_at,
+    (SELECT m.content FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_content,
+    (SELECT m.created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_timestamp,
+    (SELECT m.sender_id FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_sender_id,
+    (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != $1 AND NOT ($1 = ANY(m.read_by))) as unread_count,
+    ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
+    FROM conversations c
+    JOIN conversation_participants cp ON c.id = cp.conversation_id
+    JOIN users u ON cp.user_id = u.id
+    WHERE c.id IN (SELECT conversation_id FROM conversation_participants WHERE user_id = $1)
+    GROUP BY c.id
+    ORDER BY c.updated_at DESC`,
     [userId]
 );
 
@@ -279,21 +310,21 @@ const formattedConversations = conversations.rows.map(conv => {
 
     let lastMessage = null;
     if (conv.last_message_content) {
-        lastMessage = {
-            content: conv.last_message_content,
-            timestamp: conv.last_message_timestamp,
-            senderId: conv.last_message_sender_id,
-            senderName: participantsArray.find(p => p.id === conv.last_message_sender_id)?.username || 'You'
-        };
+    lastMessage = {
+        content: conv.last_message_content,
+        timestamp: conv.last_message_timestamp,
+        senderId: conv.last_message_sender_id,
+        senderName: participantsArray.find(p => p.id === conv.last_message_sender_id)?.username || 'You'
+    };
     }
 
     return {
-        id: conv.id,
-        created_at: conv.created_at,
-        updated_at: conv.updated_at,
-        lastMessage,
-        unreadCount: parseInt(conv.unread_count) || 0,
-        participants: otherParticipants
+    id: conv.id,
+    created_at: conv.created_at,
+    updated_at: conv.updated_at,
+    lastMessage,
+    unreadCount: parseInt(conv.unread_count) || 0,
+    participants: otherParticipants
     };
 });
 
@@ -302,8 +333,8 @@ res.json({ conversations: formattedConversations });
 console.error('Error getting conversations:', error);
 res.status(500).json({
     error: {
-        message: 'Failed to fetch conversations',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: 'Failed to fetch conversations',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
 }
@@ -328,57 +359,57 @@ if (participantCheck.rows.length === 0) {
 // Fetch all persisted messages ordered oldest → newest
 const messages = await db.query(
     `SELECT
-        m.id,
-        m.conversation_id   AS "conversationId",
-        m.sender_id         AS "senderId",
-        m.content,
-        m.created_at        AS timestamp,
-        m.read_at,
-        m.read_by,
-        u.username          AS "senderName"
-        FROM messages m
-        JOIN users u ON m.sender_id = u.id
-        WHERE m.conversation_id = $1
-        ORDER BY m.created_at ASC`,
+    m.id,
+    m.conversation_id   AS "conversationId",
+    m.sender_id         AS "senderId",
+    m.content,
+    m.created_at        AS timestamp,
+    m.read_at,
+    m.read_by,
+    u.username          AS "senderName"
+    FROM messages m
+    JOIN users u ON m.sender_id = u.id
+    WHERE m.conversation_id = $1
+    ORDER BY m.created_at ASC`,
     [conversationId]
 );
 
 // Send the response FIRST
 res.json({
     messages: messages.rows.map(msg => ({
-        id: msg.id,
-        conversationId: msg.conversationId,
-        senderId: msg.senderId,
-        senderName: msg.senderName,
-        content: msg.content,
-        timestamp: msg.timestamp,
-        read: msg.read_by && msg.read_by.includes(userId),
-        is_own: msg.senderId === userId
+    id: msg.id,
+    conversationId: msg.conversationId,
+    senderId: msg.senderId,
+    senderName: msg.senderName,
+    content: msg.content,
+    timestamp: msg.timestamp,
+    read: msg.read_by && msg.read_by.includes(userId),
+    is_own: msg.senderId === userId
     }))
 });
 
 // Mark messages as read — fire and forget
 db.query(
     `UPDATE messages
-        SET read_by = array_append(read_by, $1)
-        WHERE conversation_id = $2
-        AND sender_id != $1
-        AND NOT ($1 = ANY(read_by))`,
+    SET read_by = array_append(read_by, $1)
+    WHERE conversation_id = $2
+    AND sender_id != $1
+    AND NOT ($1 = ANY(read_by))`,
     [userId, conversationId]
 ).catch(() => {});
 
 db.query(
     `UPDATE conversation_participants
-        SET last_read_at = NOW()
-        WHERE conversation_id = $1 AND user_id = $2`,
+    SET last_read_at = NOW()
+    WHERE conversation_id = $1 AND user_id = $2`,
     [conversationId, userId]
 ).catch(() => {});
 } catch (error) {
 console.error('Error getting messages:', error);
 res.status(500).json({
     error: {
-        message: 'Failed to fetch messages',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: 'Failed to fetch messages',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
 }
@@ -401,10 +432,10 @@ if (participantCheck.rows.length === 0) {
 
 await db.query(
     `UPDATE messages
-        SET read_by = array_append(read_by, $1)
-        WHERE conversation_id = $2
-        AND sender_id != $1
-        AND NOT ($1 = ANY(read_by))`,
+    SET read_by = array_append(read_by, $1)
+    WHERE conversation_id = $2
+    AND sender_id != $1
+    AND NOT ($1 = ANY(read_by))`,
     [userId, conversationId]
 );
 
@@ -418,8 +449,8 @@ res.json({ success: true, message: 'Conversation marked as read' });
 console.error('Error marking conversation as read:', error);
 res.status(500).json({
     error: {
-        message: 'Failed to mark conversation as read',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: 'Failed to mark conversation as read',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
 }
@@ -451,21 +482,21 @@ const users = await db.query(query, params);
 
 res.json({
     users: users.rows.map(user => ({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        bio: user.bio,
-        skills: user.skills || [],
-        is_online: user.is_online || false,
-        createdAt: user.created_at
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    bio: user.bio,
+    skills: user.skills || [],
+    is_online: user.is_online || false,
+    createdAt: user.created_at
     }))
 });
 } catch (error) {
 console.error('Error searching users:', error);
 res.status(500).json({
     error: {
-        message: 'Failed to search users',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: 'Failed to search users',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
 }
@@ -496,20 +527,17 @@ const savedMessage = await persistMessage(conversationId, userId, content);
 // Email the other participant(s) if they're not online
 try {
     const others = await db.query(
-        `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
-        [conversationId, userId]
+    `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
+    [conversationId, userId]
     );
     for (const row of others.rows) {
-        const otherUserId = parseInt(row.user_id);
-        if (!onlineUsers?.has(otherUserId)) {
-            console.log(`[messages REST] User ${otherUserId} is offline, sending message email`);
-            triggerNotificationEmail(db, otherUserId, 'message', {
-                senderName: savedMessage.senderName,
-                conversationId,
-            });
-        } else {
-            console.log(`[messages REST] User ${otherUserId} is online, skipping email`);
-        }
+    const otherUserId = parseInt(row.user_id);
+    if (!onlineUsers?.has(otherUserId)) {
+        triggerNotificationEmail(db, otherUserId, 'message', {
+        senderName: savedMessage.senderName,
+        conversationId,
+        });
+    }
     }
 } catch (err) {
     console.error('[messages REST] Error checking online status for email:', err.message);
@@ -520,8 +548,8 @@ res.status(201).json({ message: 'Message sent successfully', data: savedMessage 
 console.error('Error sending message via REST:', error);
 res.status(500).json({
     error: {
-        message: 'Failed to send message',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: 'Failed to send message',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
 }
@@ -536,11 +564,11 @@ const userId = req.user.id;
 const conversation = await db.query(
     `SELECT c.id, c.created_at, c.updated_at,
             ARRAY_AGG(jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
-        FROM conversations c
-        JOIN conversation_participants cp ON c.id = cp.conversation_id
-        JOIN users u ON cp.user_id = u.id
-        WHERE c.id = $1
-        GROUP BY c.id`,
+    FROM conversations c
+    JOIN conversation_participants cp ON c.id = cp.conversation_id
+    JOIN users u ON cp.user_id = u.id
+    WHERE c.id = $1
+    GROUP BY c.id`,
     [conversationId]
 );
 
@@ -562,29 +590,30 @@ const filteredParticipants = participantsArray.filter(p => p.id !== userId);
 
 res.json({
     conversation: {
-        ...conversation.rows[0],
-        participants: filteredParticipants
+    ...conversation.rows[0],
+    participants: filteredParticipants
     }
 });
 } catch (error) {
 console.error('Error getting conversation:', error);
 res.status(500).json({
     error: {
-        message: 'Failed to fetch conversation',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    message: 'Failed to fetch conversation',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
 }
 });
 
-// Delete a message
+// Delete a message (REST fallback)
 router.delete('/:messageId', authMiddleware, async (req, res) => {
 try {
 const { messageId } = req.params;
 const userId = req.user.id;
 
+// Get the message to find its conversation
 const msgResult = await db.query(
-    'SELECT id, sender_id FROM messages WHERE id = $1',
+    'SELECT id, sender_id, conversation_id FROM messages WHERE id = $1',
     [messageId]
 );
 
@@ -592,13 +621,19 @@ if (msgResult.rows.length === 0) {
     return res.status(404).json({ error: { message: 'Message not found' } });
 }
 
-if (msgResult.rows[0].sender_id !== userId) {
+const message = msgResult.rows[0];
+
+if (message.sender_id !== userId) {
     return res.status(403).json({ error: { message: 'You can only delete your own messages' } });
 }
 
 await db.query('DELETE FROM messages WHERE id = $1', [messageId]);
 
-res.json({ message: 'Message deleted' });
+res.json({ 
+    message: 'Message deleted',
+    messageId: message.id,
+    conversationId: message.conversation_id 
+});
 } catch (error) {
 console.error('Delete message error:', error);
 res.status(500).json({ error: { message: 'Failed to delete message' } });

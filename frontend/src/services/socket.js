@@ -242,6 +242,9 @@ return new Promise((resolve, reject) => {
     }
 });
 }
+deleteMessage(messageId, conversationId) {
+    return this.emit('message:delete', { messageId, conversationId });
+}
 }
 
 // Create singleton instance
