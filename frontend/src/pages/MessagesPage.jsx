@@ -25,6 +25,7 @@ function MessagesPage() {
   const {
     isConnected,
     sendMessage,
+    deleteMessage,
     setTypingStatus,
     onlineUsers,
     joinConversation,
@@ -95,23 +96,63 @@ function MessagesPage() {
   const handleDeleteMessage = async (messageId) => {
     const ok = await confirm({
       title: 'Delete message?',
-      message: 'This will be permanently removed.',
+      message: 'This will be permanently removed for everyone.',
       confirmText: 'Delete',
       danger: true
     });
     if (!ok) return;
     
     setDeletingMessageId(messageId);
-    try {
-      await api.delete(`/messages/${messageId}`);
-      setMessages(prev => prev.filter(m => m.id !== messageId));
-      toast.success('Message deleted');
-    } catch (err) {
-      toast.error('Failed to delete message');
-    } finally {
-      setDeletingMessageId(null);
+    
+    // Optimistically remove from UI
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+    
+    // Try socket deletion first (real-time)
+    if (isConnected && selectedConversation) {
+      const success = deleteMessage(messageId, selectedConversation.id);
+      if (!success) {
+        // Fallback to REST API
+        try {
+          await api.delete(`/messages/${messageId}`);
+          toast.success('Message deleted');
+        } catch (err) {
+          toast.error('Failed to delete message');
+          // Re-add the message if deletion failed
+          setMessages(prev => [...prev, messages.find(m => m.id === messageId)]);
+        }
+      } else {
+        toast.success('Message deleted');
+      }
+    } else {
+      // Fallback to REST API
+      try {
+        await api.delete(`/messages/${messageId}`);
+        toast.success('Message deleted');
+      } catch (err) {
+        toast.error('Failed to delete message');
+        // Re-add the message if deletion failed
+        setMessages(prev => [...prev, messages.find(m => m.id === messageId)]);
+      }
     }
+    
+    setDeletingMessageId(null);
   };
+
+  // Add socket listener for message deletion
+  useEffect(() => {
+    const handleMessageDeleted = (data) => {
+      if (selectedConversation && data.conversationId.toString() === selectedConversation.id.toString()) {
+        setMessages(prev => prev.filter(m => m.id !== data.messageId));
+        toast.info('A message was deleted');
+      }
+    };
+
+    const unsubscribeMessageDeleted = socketService.on('message:deleted', handleMessageDeleted);
+
+    return () => {
+      unsubscribeMessageDeleted?.();
+    };
+  }, [selectedConversation?.id]);
 
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
@@ -385,8 +426,7 @@ function MessagesPage() {
 
   const filteredUsers = users.filter(u =>
     u.id !== user.id &&
-    (u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+    (u.username?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   if (loadingConversations) return <MessagesLoading />;

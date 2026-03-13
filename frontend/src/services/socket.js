@@ -8,14 +8,11 @@ this.isConnecting = false;
 this.reconnectAttempts = 0;
 this.maxReconnectAttempts = 5;
 this.listeners = new Map();
-
-// Connection state
 this.connected = false;
 this.connectionPromise = null;
 }
 
 connect(token) {
-// Always return a Promise so callers can safely await/then.
 if (this.socket?.connected) {
     return Promise.resolve(this.socket);
 }
@@ -119,7 +116,6 @@ if (!this.socket?.connected) {
     console.warn(`Cannot emit ${eventName}: Socket not connected`);
     return false;
 }
-
 this.socket.emit(eventName, data);
 return true;
 }
@@ -130,7 +126,6 @@ if (!this.listeners.has(eventName)) {
 }
 this.listeners.get(eventName).push(callback);
 
-// Return unsubscribe function
 return () => {
     const listeners = this.listeners.get(eventName);
     if (listeners) {
@@ -165,9 +160,14 @@ if (listeners) {
 }
 }
 
-// Helper methods for common operations
+// Helper methods
 sendMessage(conversationId, content) {
 return this.emit('message:send', { conversationId, content });
+}
+
+// Add deleteMessage method
+deleteMessage(messageId, conversationId) {
+return this.emit('message:delete', { messageId, conversationId });
 }
 
 sendCollaborationRequest(trackId, message) {
@@ -184,7 +184,6 @@ return this.emit('user:typing', { conversationId, isTyping });
 
 joinConversation(conversationId) {
 if (!this.socket?.connected) {
-    // Try to reconnect
     if (this.token) {
     this.connect(this.token).then(() => {
         this.emit('join:conversation', conversationId);
@@ -236,21 +235,15 @@ return new Promise((resolve, reject) => {
 
     this.socket?.once('connect', connectHandler);
     
-    // If socket doesn't exist yet, create it
     if (!this.socket && this.token) {
     this.connect(this.token).then(resolve).catch(reject);
     }
 });
 }
-deleteMessage(messageId, conversationId) {
-    return this.emit('message:delete', { messageId, conversationId });
-}
 }
 
-// Create singleton instance
 const socketService = new SocketService();
 
-// Make it globally available for debugging (optional - you can remove this too)
 if (typeof window !== 'undefined') {
 window.socketService = socketService;
 }

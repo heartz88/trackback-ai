@@ -11,18 +11,29 @@ const [notifications, setNotifications] = useState([]);
 const [unreadCount, setUnreadCount] = useState(0);
 const [onlineUsers, setOnlineUsers] = useState(new Set());
 const [connectionError, setConnectionError] = useState(null);
+const [connectionQueue, setConnectionQueue] = useState([]); // Queue for pending actions
+
+// Process queue when connection is established
+const processQueue = useCallback(() => {
+if (connectionQueue.length > 0 && isConnected) {
+    connectionQueue.forEach(action => {
+    if (action.type === 'join') {
+        socketService.joinConversation(action.conversationId);
+    }
+    });
+    setConnectionQueue([]);
+}
+}, [connectionQueue, isConnected]);
 
 // Connect socket when user is authenticated
 useEffect(() => {
 if (user && token) {
-    //;
-    
     const connectSocket = async () => {
     try {
         setConnectionError(null);
         await socketService.connect(token);
     } catch (error) {
-        console.error('❌ Failed to connect socket:', error.message);
+        console.error('Failed to connect socket:', error.message);
         setConnectionError(error.message);
     }
     };
@@ -31,33 +42,29 @@ if (user && token) {
 
     // Listen for connection status
     const handleConnect = () => {
-    //;
     setIsConnected(true);
     setConnectionError(null);
+    processQueue(); // Process any queued actions
     };
     
     const handleDisconnect = () => {
-    //;
     setIsConnected(false);
     };
 
     const handleConnectionEstablished = (data) => {
-    //;
     setIsConnected(true);
     setConnectionError(null);
+    processQueue(); // Process any queued actions
     };
 
     const handleConnectionFailed = (data) => {
-    console.error('❌ Socket connection failed:', data.error);
+    console.error('Socket connection failed:', data.error);
     setConnectionError(data.error);
     setIsConnected(false);
     };
 
     // Message handlers
     const handleNewMessage = (message) => {
-    //;
-    // The room broadcast means you receive your own message:new event too,
-    // which was incorrectly adding a notification for the sender.
     if (message.senderId === user?.id) return;
     setNotifications(prev => [...prev, {
         id: Date.now(),
@@ -69,8 +76,13 @@ if (user && token) {
     setUnreadCount(prev => prev + 1);
     };
 
+    // Handle message deleted
+    const handleMessageDeleted = (data) => {
+    // You can add a notification if needed
+    console.log('Message deleted:', data);
+    };
+
     const handleCollaborationRequest = (data) => {
-    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'collaboration_request',
@@ -82,7 +94,6 @@ if (user && token) {
     };
 
     const handleCollaborationResponse = (data) => {
-    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'collaboration_response',
@@ -94,7 +105,6 @@ if (user && token) {
     };
 
     const handleNewSubmission = (data) => {
-    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'submission',
@@ -106,7 +116,6 @@ if (user && token) {
     };
 
     const handleNewVote = (data) => {
-    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'vote',
@@ -118,7 +127,6 @@ if (user && token) {
     };
 
     const handleNewComment = (data) => {
-    //;
     setNotifications(prev => [...prev, {
         id: Date.now(),
         type: 'comment',
@@ -130,41 +138,33 @@ if (user && token) {
     };
 
     const handleTrackNew = (data) => {
-    //;
     // Pages listening to this event can update their track lists
     };
 
     const handleTrackCompleted = (data) => {
-    //;
     // Pages listening to this event can update their lists
     };
 
     // Handle online users properly
     const handleUsersOnline = (data) => {
-    //;
     if (data.onlineUsers && Array.isArray(data.onlineUsers)) {
         const onlineUserIds = new Set(data.onlineUsers.map(user => user.id));
-        //;
         setOnlineUsers(onlineUserIds);
     }
     };
 
     const handleUserOnline = (data) => {
-    //;
     setOnlineUsers(prev => {
         const newSet = new Set(prev);
         newSet.add(data.userId);
-        //;
         return newSet;
     });
     };
 
     const handleUserOffline = (data) => {
-    //;
     setOnlineUsers(prev => {
         const newSet = new Set(prev);
         newSet.delete(data.userId);
-        //;
         return newSet;
     });
     };
@@ -175,6 +175,7 @@ if (user && token) {
     const unsubscribeConnectionEstablished = socketService.on('connection:established', handleConnectionEstablished);
     const unsubscribeConnectionFailed = socketService.on('socket:connection_failed', handleConnectionFailed);
     const unsubscribeNewMessage = socketService.on('message:new', handleNewMessage);
+    const unsubscribeMessageDeleted = socketService.on('message:deleted', handleMessageDeleted);
     const unsubscribeCollaborationRequest = socketService.on('collaboration:request', handleCollaborationRequest);
     const unsubscribeCollaborationResponse = socketService.on('collaboration:response', handleCollaborationResponse);
     const unsubscribeNewSubmission = socketService.on('submission:new', handleNewSubmission);
@@ -194,13 +195,13 @@ if (user && token) {
     }, 30000);
 
     return () => {
-    //;
     clearInterval(heartbeatInterval);
     unsubscribeConnected();
     unsubscribeDisconnected();
     unsubscribeConnectionEstablished();
     unsubscribeConnectionFailed();
     unsubscribeNewMessage();
+    unsubscribeMessageDeleted();
     unsubscribeCollaborationRequest();
     unsubscribeCollaborationResponse();
     unsubscribeNewSubmission();
@@ -218,13 +219,13 @@ if (user && token) {
     }
     };
 } else {
-    //;
     socketService.disconnect();
     setIsConnected(false);
     setOnlineUsers(new Set());
     setConnectionError(null);
+    setConnectionQueue([]);
 }
-}, [user, token]); 
+}, [user, token, processQueue]); 
 
 const markAsRead = (notificationId) => {
 setNotifications(prev =>
@@ -245,18 +246,27 @@ setNotifications([]);
 setUnreadCount(0);
 };
 
-// Message functions with connection check
+// Message functions with connection check and queuing
 const sendMessage = useCallback((conversationId, content) => {
 if (!isConnected) {
-    console.warn('⚠️ Cannot send message: Socket not connected');
+    console.warn('Cannot send message: Socket not connected');
     return false;
 }
 return socketService.sendMessage(conversationId, content);
 }, [isConnected]);
 
+// Delete message with real-time sync
+const deleteMessage = useCallback((messageId, conversationId) => {
+if (!isConnected) {
+    console.warn('Cannot delete message: Socket not connected');
+    return false;
+}
+return socketService.deleteMessage(messageId, conversationId);
+}, [isConnected]);
+
 const sendCollaborationRequest = useCallback((trackId, message) => {
 if (!isConnected) {
-    console.warn('⚠️ Cannot send collaboration request: Socket not connected');
+    console.warn('Cannot send collaboration request: Socket not connected');
     return false;
 }
 return socketService.sendCollaborationRequest(trackId, message);
@@ -264,7 +274,7 @@ return socketService.sendCollaborationRequest(trackId, message);
 
 const respondToCollaboration = useCallback((requestId, status, message = '') => {
 if (!isConnected) {
-    console.warn('⚠️ Cannot respond to collaboration: Socket not connected');
+    console.warn('Cannot respond to collaboration: Socket not connected');
     return false;
 }
 return socketService.respondToCollaboration(requestId, status, message);
@@ -272,7 +282,7 @@ return socketService.respondToCollaboration(requestId, status, message);
 
 const setTypingStatus = useCallback((conversationId, isTyping) => {
 if (!isConnected) {
-    console.warn('⚠️ Cannot set typing status: Socket not connected');
+    console.warn('Cannot set typing status: Socket not connected');
     return false;
 }
 return socketService.setTypingStatus(conversationId, isTyping);
@@ -280,23 +290,25 @@ return socketService.setTypingStatus(conversationId, isTyping);
 
 const joinConversation = useCallback(async (conversationId) => {
 if (!isConnected) {
-    console.warn(`⚠️ Socket not connected, waiting for connection before joining conversation ${conversationId}`);
-    try {
+    console.log(`Queueing join for conversation ${conversationId} - waiting for connection`);
+    // Queue the action instead of trying immediately
+    setConnectionQueue(prev => [...prev, { type: 'join', conversationId }]);
+    
     // Wait for connection
+    try {
     await socketService.waitForConnection();
-    //;
-    return socketService.joinConversation(conversationId);
+    // Process will happen via processQueue when connection is established
     } catch (error) {
-    console.error(`❌ Failed to connect for conversation ${conversationId}:`, error.message);
-    return false;
+    console.error(`Failed to connect for conversation ${conversationId}:`, error.message);
     }
+    return false;
 }
 return socketService.joinConversation(conversationId);
 }, [isConnected]);
 
 const leaveConversation = useCallback((conversationId) => {
 if (!isConnected) {
-    console.warn(`⚠️ Cannot leave conversation ${conversationId}: Socket not connected`);
+    console.warn(`Cannot leave conversation ${conversationId}: Socket not connected`);
     return false;
 }
 return socketService.leaveConversation(conversationId);
@@ -326,6 +338,7 @@ markAsRead,
 markAllAsRead,
 clearNotifications,
 sendMessage,
+deleteMessage, // Add this
 sendCollaborationRequest,
 respondToCollaboration,
 setTypingStatus,
