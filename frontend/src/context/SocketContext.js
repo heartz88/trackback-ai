@@ -11,7 +11,7 @@ const [notifications, setNotifications] = useState([]);
 const [unreadCount, setUnreadCount] = useState(0);
 const [onlineUsers, setOnlineUsers] = useState(new Set());
 const [connectionError, setConnectionError] = useState(null);
-const [connectionQueue, setConnectionQueue] = useState([]); // Queue for pending actions
+const [connectionQueue, setConnectionQueue] = useState([]);
 
 // Process queue when connection is established
 const processQueue = useCallback(() => {
@@ -44,7 +44,7 @@ connectSocket();
 const handleConnect = () => {
     setIsConnected(true);
     setConnectionError(null);
-    processQueue(); // Process any queued actions
+    processQueue();
 };
 
 const handleDisconnect = () => {
@@ -54,7 +54,7 @@ const handleDisconnect = () => {
 const handleConnectionEstablished = (data) => {
     setIsConnected(true);
     setConnectionError(null);
-    processQueue(); // Process any queued actions
+    processQueue();
 };
 
 const handleConnectionFailed = (data) => {
@@ -76,10 +76,10 @@ const handleNewMessage = (message) => {
     setUnreadCount(prev => prev + 1);
 };
 
-// Handle message deleted - REMOVE THE CONSOLE LOG AND LET IT PROPAGATE
+// Handle message deleted - let it pass through to components
 const handleMessageDeleted = (data) => {
-    // Don't log here, just let it pass through to components
-    // The event will be handled by individual components
+    // This event will be handled by individual components
+    // No need to do anything here
 };
 
 const handleCollaborationRequest = (data) => {
@@ -261,7 +261,7 @@ if (!isConnected) {
 console.warn('Cannot delete message: Socket not connected');
 return false;
 }
-console.log('Emitting message:delete event:', { messageId, conversationId }); // Add logging
+console.log('Emitting message:delete event:', { messageId, conversationId });
 return socketService.deleteMessage(messageId, conversationId);
 }, [isConnected]);
 
@@ -292,13 +292,10 @@ return socketService.setTypingStatus(conversationId, isTyping);
 const joinConversation = useCallback(async (conversationId) => {
 if (!isConnected) {
 console.log(`Queueing join for conversation ${conversationId} - waiting for connection`);
-// Queue the action instead of trying immediately
 setConnectionQueue(prev => [...prev, { type: 'join', conversationId }]);
 
-// Wait for connection
 try {
     await socketService.waitForConnection();
-    // Process will happen via processQueue when connection is established
 } catch (error) {
     console.error(`Failed to connect for conversation ${conversationId}:`, error.message);
 }

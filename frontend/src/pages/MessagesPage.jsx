@@ -110,30 +110,32 @@ function MessagesPage() {
     // Optimistically remove from UI
     setMessages(prev => prev.filter(m => m.id !== messageId));
     
+    let deleteSuccess = false;
+    
     // Try socket deletion first (real-time)
     if (isConnected && selectedConversation) {
+      console.log('Attempting socket deletion for message:', messageId);
       const success = deleteMessage(messageId, selectedConversation.id);
-      if (!success) {
-        // Fallback to REST API
-        try {
-          await api.delete(`/messages/${messageId}`);
-          toast.success('Message deleted');
-        } catch (err) {
-          toast.error('Failed to delete message');
-          // Re-add the message if deletion failed
-          if (deletedMessage) {
-            setMessages(prev => [...prev, deletedMessage]);
-          }
-        }
+      if (success) {
+        deleteSuccess = true;
+        console.log('Socket deletion successful');
       } else {
-        toast.success('Message deleted');
+        console.log('Socket deletion failed, will rely on REST API');
       }
-    } else {
-      // Fallback to REST API
-      try {
-        await api.delete(`/messages/${messageId}`);
-        toast.success('Message deleted');
-      } catch (err) {
+    }
+    
+    // Always call REST API to ensure database deletion
+    try {
+      console.log('Calling REST API to delete message:', messageId);
+      await api.delete(`/messages/${messageId}`);
+      console.log('REST API deletion successful');
+      deleteSuccess = true;
+      toast.success('Message deleted');
+    } catch (err) {
+      console.error('REST API deletion failed:', err);
+      
+      // Only show error and restore if both methods failed
+      if (!deleteSuccess) {
         toast.error('Failed to delete message');
         // Re-add the message if deletion failed
         if (deletedMessage) {
@@ -237,7 +239,7 @@ function MessagesPage() {
     }
   }, [notifications, selectedConversation?.id, scrollToBottom]);
 
-  // Socket event listeners - COMBINED ALL LISTENERS HERE
+  // Socket event listeners
   useEffect(() => {
     const handleNewMessage = (message) => {
       if (selectedConversation && message.conversationId.toString() === selectedConversation.id.toString()) {
@@ -287,22 +289,19 @@ function MessagesPage() {
         return;
       }
       
-      console.log('✅ Removing message:', data.messageId);
+      console.log('✅ Removing message from UI:', data.messageId);
       
-      // Force a new array to trigger re-render
+      // Remove from UI
       setMessages(currentMessages => {
-        const filtered = currentMessages.filter(msg => {
-          const shouldKeep = msg.id !== data.messageId;
-          if (!shouldKeep) {
-            console.log('Removing message:', msg.id);
-          }
-          return shouldKeep;
-        });
+        const filtered = currentMessages.filter(msg => msg.id !== data.messageId);
         console.log('Messages after deletion:', filtered.length);
         return filtered;
       });
       
-      toast.info('A message was deleted');
+      // Don't show toast for own deletions (to avoid duplicate messages)
+      if (data.deletedBy !== user?.id) {
+        toast.info('A message was deleted');
+      }
     };
 
     const handleSocketConnected = () => {
@@ -324,7 +323,7 @@ function MessagesPage() {
       unsubscribeSocketConnected?.();
       clearTimeout(typingTimeoutRef.current);
     };
-  }, [selectedConversation?.id, joinConversation, scrollToBottom]);
+  }, [selectedConversation?.id, joinConversation, scrollToBottom, user?.id, toast]);
 
   // Handle sending messages
   const handleSendMessage = async (e) => {

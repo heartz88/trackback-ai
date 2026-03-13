@@ -131,7 +131,8 @@ socket.on('message:delete', async ({ messageId, conversationId }) => {
     // Broadcast deletion to everyone in the conversation
     io.to(`conversation:${conversationId}`).emit('message:deleted', {
         messageId,
-        conversationId
+        conversationId,
+        deletedBy: userId
     });
 
     } catch (err) {
