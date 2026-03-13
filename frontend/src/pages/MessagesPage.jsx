@@ -53,7 +53,7 @@ function MessagesPage() {
   const wasAtBottomRef = useRef(true);
   const hasJoinedConversation = useRef(false);
   const lastNotificationCount = useRef(0);
-  const pendingMessagesRef = useRef(new Set()); // Track pending message IDs
+  const pendingMessagesRef = useRef(new Set());
   
   // States
   const [startingConversation, setStartingConversation] = useState(false);
@@ -104,6 +104,9 @@ function MessagesPage() {
     
     setDeletingMessageId(messageId);
     
+    // Store the message being deleted for potential restore
+    const deletedMessage = messages.find(m => m.id === messageId);
+    
     // Optimistically remove from UI
     setMessages(prev => prev.filter(m => m.id !== messageId));
     
@@ -118,7 +121,9 @@ function MessagesPage() {
         } catch (err) {
           toast.error('Failed to delete message');
           // Re-add the message if deletion failed
-          setMessages(prev => [...prev, messages.find(m => m.id === messageId)]);
+          if (deletedMessage) {
+            setMessages(prev => [...prev, deletedMessage]);
+          }
         }
       } else {
         toast.success('Message deleted');
@@ -131,28 +136,14 @@ function MessagesPage() {
       } catch (err) {
         toast.error('Failed to delete message');
         // Re-add the message if deletion failed
-        setMessages(prev => [...prev, messages.find(m => m.id === messageId)]);
+        if (deletedMessage) {
+          setMessages(prev => [...prev, deletedMessage]);
+        }
       }
     }
     
     setDeletingMessageId(null);
   };
-
-  // Add socket listener for message deletion
-  useEffect(() => {
-    const handleMessageDeleted = (data) => {
-      if (selectedConversation && data.conversationId.toString() === selectedConversation.id.toString()) {
-        setMessages(prev => prev.filter(m => m.id !== data.messageId));
-        toast.info('A message was deleted');
-      }
-    };
-
-    const unsubscribeMessageDeleted = socketService.on('message:deleted', handleMessageDeleted);
-
-    return () => {
-      unsubscribeMessageDeleted?.();
-    };
-  }, [selectedConversation?.id]);
 
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
@@ -235,7 +226,6 @@ function MessagesPage() {
       if (latest.type === 'message' && selectedConversation &&
           latest.data.conversationId?.toString() === selectedConversation.id.toString()) {
         
-        // Check if this message is already in our list (to prevent duplicates)
         setMessages(prev => {
           if (prev.some(m => m.id === latest.data.id)) return prev;
           return [...prev, latest.data];
@@ -247,26 +237,21 @@ function MessagesPage() {
     }
   }, [notifications, selectedConversation?.id, scrollToBottom]);
 
-  // Socket event listeners
+  // Socket event listeners - COMBINED ALL LISTENERS HERE
   useEffect(() => {
     const handleNewMessage = (message) => {
       if (selectedConversation && message.conversationId.toString() === selectedConversation.id.toString()) {
-        // Check if this is a temporary message we already added optimistically
         setMessages(prev => {
-          // If message has an ID and it's not a temp ID, replace any temp message with same content
           if (!message.temp) {
-            // Remove any temp messages with the same content from same sender
             const filtered = prev.filter(m => 
               !(m.temp && m.content === message.content && m.senderId === message.senderId)
             );
-            // Add the real message if not already present
             if (!filtered.some(m => m.id === message.id)) {
               return [...filtered, message];
             }
             return filtered;
           }
           
-          // For non-temp messages, just add if not duplicate
           if (!prev.some(m => m.id === message.id)) {
             return [...prev, message];
           }
@@ -289,6 +274,14 @@ function MessagesPage() {
       }
     };
 
+    const handleMessageDeleted = (data) => {
+      console.log('Message deleted event received:', data); // Add logging to debug
+      if (selectedConversation && data.conversationId.toString() === selectedConversation.id.toString()) {
+        setMessages(prev => prev.filter(m => m.id !== data.messageId));
+        toast.info('A message was deleted');
+      }
+    };
+
     const handleSocketConnected = () => {
       if (selectedConversation && !hasJoinedConversation.current) {
         joinConversation(selectedConversation.id);
@@ -298,11 +291,13 @@ function MessagesPage() {
 
     const unsubscribeNewMessage = socketService.on('message:new', handleNewMessage);
     const unsubscribeUserTyping = socketService.on('user:typing', handleUserTyping);
+    const unsubscribeMessageDeleted = socketService.on('message:deleted', handleMessageDeleted);
     const unsubscribeSocketConnected = socketService.on('socket:connected', handleSocketConnected);
 
     return () => {
       unsubscribeNewMessage?.();
       unsubscribeUserTyping?.();
+      unsubscribeMessageDeleted?.();
       unsubscribeSocketConnected?.();
       clearTimeout(typingTimeoutRef.current);
     };
@@ -331,7 +326,7 @@ function MessagesPage() {
       content: messageContent,
       timestamp: new Date().toISOString(),
       read: false,
-      temp: true // Mark as temporary
+      temp: true
     };
     
     setMessages(prev => [...prev, tempMessage]);
@@ -340,7 +335,6 @@ function MessagesPage() {
     // Send actual message
     const success = sendMessage(selectedConversation.id, messageContent);
     if (!success) {
-      // Remove temp message if failed
       setMessages(prev => prev.filter(m => m.id !== tempId));
       toast.error('Failed to send message.');
     }
