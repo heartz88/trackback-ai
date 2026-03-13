@@ -16,7 +16,6 @@ import MessagesLoading from '../components/messages/MessagesLoading';
 import MessageThread from '../components/messages/MessageThread';
 import UserSearch from '../components/messages/UserSearch';
 
-
 function MessagesPage() {
   const toast = useToast();
   const confirm = useConfirm();
@@ -53,6 +52,7 @@ function MessagesPage() {
   const wasAtBottomRef = useRef(true);
   const hasJoinedConversation = useRef(false);
   const lastNotificationCount = useRef(0);
+  const pendingMessagesRef = useRef(new Set()); // Track pending message IDs
   
   // States
   const [startingConversation, setStartingConversation] = useState(false);
@@ -193,10 +193,13 @@ function MessagesPage() {
       const latest = notifications[0];
       if (latest.type === 'message' && selectedConversation &&
           latest.data.conversationId?.toString() === selectedConversation.id.toString()) {
+        
+        // Check if this message is already in our list (to prevent duplicates)
         setMessages(prev => {
           if (prev.some(m => m.id === latest.data.id)) return prev;
           return [...prev, latest.data];
         });
+        
         if (wasAtBottomRef.current) setTimeout(() => scrollToBottom(), 100);
       }
       lastNotificationCount.current = notifications.length;
@@ -207,10 +210,28 @@ function MessagesPage() {
   useEffect(() => {
     const handleNewMessage = (message) => {
       if (selectedConversation && message.conversationId.toString() === selectedConversation.id.toString()) {
+        // Check if this is a temporary message we already added optimistically
         setMessages(prev => {
-          if (prev.some(m => m.id === message.id)) return prev;
-          return [...prev, message];
+          // If message has an ID and it's not a temp ID, replace any temp message with same content
+          if (!message.temp) {
+            // Remove any temp messages with the same content from same sender
+            const filtered = prev.filter(m => 
+              !(m.temp && m.content === message.content && m.senderId === message.senderId)
+            );
+            // Add the real message if not already present
+            if (!filtered.some(m => m.id === message.id)) {
+              return [...filtered, message];
+            }
+            return filtered;
+          }
+          
+          // For non-temp messages, just add if not duplicate
+          if (!prev.some(m => m.id === message.id)) {
+            return [...prev, message];
+          }
+          return prev;
         });
+        
         if (wasAtBottomRef.current) setTimeout(() => scrollToBottom(), 100);
       }
     };
@@ -257,24 +278,29 @@ function MessagesPage() {
     const messageContent = newMessage.trim();
     setNewMessage('');
 
-    // Optimistic update
+    // Generate a temporary ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Optimistic update with temp ID
     const tempMessage = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       conversationId: selectedConversation.id,
       senderId: user.id,
       senderName: user.username,
       content: messageContent,
       timestamp: new Date().toISOString(),
       read: false,
-      temp: true
+      temp: true // Mark as temporary
     };
     
     setMessages(prev => [...prev, tempMessage]);
     setTimeout(() => scrollToBottom(), 50);
 
+    // Send actual message
     const success = sendMessage(selectedConversation.id, messageContent);
     if (!success) {
-      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
+      // Remove temp message if failed
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       toast.error('Failed to send message.');
     }
     setTypingStatus(selectedConversation.id, false);
