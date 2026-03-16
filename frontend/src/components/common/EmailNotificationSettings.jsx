@@ -52,7 +52,7 @@ api.get('/notifications/email-preferences')
     .then(r => setPrefs(r.data.preferences))
     .catch(() => toast.error('Failed to load email preferences'))
     .finally(() => setLoading(false));
-}, []);
+}, [ toast ]);
 
 const toggle = (key) => {
 setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
