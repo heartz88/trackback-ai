@@ -3,7 +3,7 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
-const { onlineUsers } = require('../server');
+const onlineUsers = require('../config/onlineUsers');
 
 async function persistMessage(conversationId, senderId, content) {
 // Insert the message
