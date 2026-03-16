@@ -72,8 +72,8 @@ pingInterval: 25000,
 cookie: false
 });
 
-// Store online users in memory
-const onlineUsers = new Map();
+// Store online users in memory — shared module so routes can import without circular deps
+const onlineUsers = require('./config/onlineUsers');
 
 // Socket.IO authentication middleware
 io.use(async (socket, next) => {

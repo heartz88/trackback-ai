@@ -1,0 +1,121 @@
+const https = require('https');
+const http = require('http');
+
+const BASE_URL = 'https://trackback-backend.onrender.com';
+
+// Endpoints to test (all public/no auth required)
+const ENDPOINTS = [
+    '/api/health',
+    '/api/tracks/completed?sort=recent&limit=20',
+    '/api/tracks/stats/community',
+];
+
+let totalRequests = 0;
+let successCount = 0;
+let failCount = 0;
+let responseTimes = [];
+
+function makeRequest(url) {
+    return new Promise((resolve) => {
+        const start = Date.now();
+        const lib = url.startsWith('https') ? https : http;
+        
+        const req = lib.get(url, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                const duration = Date.now() - start;
+                resolve({ status: res.statusCode, duration, success: res.statusCode < 500 });
+            });
+        });
+        
+        req.on('error', (err) => {
+            const duration = Date.now() - start;
+            resolve({ status: 0, duration, success: false, error: err.message });
+        });
+        
+        req.setTimeout(10000, () => {
+            req.destroy();
+            resolve({ status: 0, duration: 10000, success: false, error: 'timeout' });
+        });
+    });
+}
+
+async function runConcurrentBatch(numUsers, endpoint) {
+    const promises = [];
+    for (let i = 0; i < numUsers; i++) {
+        promises.push(makeRequest(BASE_URL + endpoint));
+    }
+    return Promise.all(promises);
+}
+
+async function main() {
+    console.log('');
+    console.log('='.repeat(60));
+    console.log('  TrackBackAI - Load Test (NFR4: 50 Concurrent Users)');
+    console.log('  Target: ' + BASE_URL);
+    console.log('='.repeat(60));
+    console.log('');
+    
+    // Test each endpoint with 50 concurrent users
+    for (const endpoint of ENDPOINTS) {
+        console.log('Testing: ' + endpoint);
+        console.log('-'.repeat(60));
+        
+        const results = await runConcurrentBatch(50, endpoint);
+        
+        let passed = 0;
+        let failed = 0;
+        let times = [];
+        
+        results.forEach(r => {
+            if (r.success) passed++;
+            else failed++;
+            times.push(r.duration);
+        });
+        
+        times.sort((a, b) => a - b);
+        const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+        const p95 = times[Math.floor(times.length * 0.95)];
+        const min = times[0];
+        const max = times[times.length - 1];
+        
+        totalRequests += results.length;
+        successCount += passed;
+        failCount += failed;
+        responseTimes = responseTimes.concat(times);
+        
+        console.log('  Concurrent users : 50');
+        console.log('  Successful       : ' + passed + '/50');
+        console.log('  Failed           : ' + failed + '/50');
+        console.log('  Avg response     : ' + avg + 'ms');
+        console.log('  P95 response     : ' + p95 + 'ms  (NFR9 target: <2000ms)');
+        console.log('  Min / Max        : ' + min + 'ms / ' + max + 'ms');
+        console.log('  NFR9 result      : ' + (p95 < 2000 ? 'PASS' : 'FAIL'));
+        console.log('');
+        
+        // Small pause between endpoint tests
+        await new Promise(r => setTimeout(r, 1000));
+    }
+    
+    // Overall summary
+    responseTimes.sort((a, b) => a - b);
+    const overallAvg = Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length);
+    const overallP95 = responseTimes[Math.floor(responseTimes.length * 0.95)];
+    const successRate = Math.round(successCount / totalRequests * 100);
+    
+    console.log('='.repeat(60));
+    console.log('  OVERALL RESULTS');
+    console.log('='.repeat(60));
+    console.log('  Total requests   : ' + totalRequests);
+    console.log('  Success rate     : ' + successRate + '%');
+    console.log('  Avg response     : ' + overallAvg + 'ms');
+    console.log('  P95 response     : ' + overallP95 + 'ms');
+    console.log('');
+    console.log('  NFR4 (50 concurrent users) : ' + (successRate >= 95 ? 'PASS' : 'FAIL'));
+    console.log('  NFR9 (P95 < 2000ms)        : ' + (overallP95 < 2000 ? 'PASS' : 'FAIL'));
+    console.log('='.repeat(60));
+    console.log('');
+}
+
+main();

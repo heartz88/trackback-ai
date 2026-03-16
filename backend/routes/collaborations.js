@@ -4,7 +4,7 @@ const db = require('../config/database');
 const multer = require('multer');
 const { uploadToS3, getSignedUrl } = require('../config/s3');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
-const { onlineUsers } = require('../server');
+const onlineUsers = require('../config/onlineUsers');
 
 const router = express.Router();
 

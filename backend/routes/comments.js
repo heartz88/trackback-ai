@@ -2,7 +2,7 @@ const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
-const { onlineUsers } = require('../server');
+const onlineUsers = require('../config/onlineUsers');
 
 const router = express.Router();
 
