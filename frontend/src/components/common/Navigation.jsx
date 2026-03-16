@@ -106,7 +106,7 @@ return (
     }`}>
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-        {/* Brand */}
+        {/* Logo*/}
         <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center space-x-3 group" onClick={closeMenu}>
             <div className="relative">
@@ -144,7 +144,7 @@ return (
             <>
                 <NotificationBell />
 
-                {/* Profile Dropdown - FIXED AVATAR SECTION */}
+                {/* Profile Dropdown*/}
                 <div className="relative" ref={profileMenuRef}>
                 <button
                     onClick={toggleProfileMenu}
@@ -152,7 +152,7 @@ return (
                 >
                     <div className="relative">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 overflow-hidden">
-                        {/* FIXED: Better avatar handling */}
+                        {/* Better avatar handling */}
                         {user.avatar_url && !avatarError ? (
                         <img 
                             src={user.avatar_url} 
@@ -254,7 +254,7 @@ return (
     </div>
     </nav>
 
-    {/* Mobile Menu Overlay - FIXED MOBILE AVATAR SECTION */}
+    {/* Mobile Menu Overlay*/}
     <div className={`md:hidden fixed inset-0 z-40 transition-all duration-500 ${
     isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
     }`}>
@@ -306,7 +306,7 @@ return (
             <div className="flex items-center space-x-3">
                 <div className="relative">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg overflow-hidden">
-                    {/* FIXED: Better avatar handling for mobile */}
+                    {/* Better avatar handling for mobile */}
                     {user.avatar_url && !avatarError ? (
                     <img 
                         src={user.avatar_url} 
@@ -343,7 +343,6 @@ return (
             <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
             <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
             <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
-            <MenuItem to={`/profile/${user.username}`} onClick={closeMenu}>Profile</MenuItem>
             <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
             <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
             
