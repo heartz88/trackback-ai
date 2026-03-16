@@ -29,6 +29,10 @@ function EditProfilePage() {
     const [passwordData, setPasswordData] = useState({
         current_password: '', new_password: '', confirm_password: ''
     });
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState(0);
 
     const [avatarUrl, setAvatarUrl] = useState('');
 
@@ -56,7 +60,31 @@ function EditProfilePage() {
 
     const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     const handleSocialChange = (e) => setSocialLinks(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    const handlePasswordChange = (e) => setPasswordData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const calculatePasswordStrength = (pw) => {
+        let strength = 0;
+        if (pw.length >= 8) strength++;
+        if (pw.length >= 12) strength++;
+        if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) strength++;
+        if (/\d/.test(pw)) strength++;
+        if (/[^a-zA-Z\d]/.test(pw)) strength++;
+        return Math.min(strength, 4);
+    };
+    const getStrengthColor = () => {
+        if (passwordStrength === 0) return 'bg-gray-600';
+        if (passwordStrength <= 2) return 'bg-red-500';
+        if (passwordStrength === 3) return 'bg-yellow-500';
+        return 'bg-primary-500';
+    };
+    const getStrengthText = () => {
+        if (passwordStrength === 0) return '';
+        if (passwordStrength <= 2) return 'Weak';
+        if (passwordStrength === 3) return 'Good';
+        return 'Strong';
+    };
+    const handlePasswordChange = (e) => {
+        setPasswordData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        if (e.target.name === 'new_password') setPasswordStrength(calculatePasswordStrength(e.target.value));
+    };
 
 
     const handleAvatarChange = async (e) => {
@@ -441,33 +469,86 @@ function EditProfilePage() {
                     <form onSubmit={handleSubmitPassword} className="space-y-5">
                         <div className="glass-panel rounded-2xl p-4 sm:p-6 space-y-4">
                             <h2 className="text-base font-semibold text-[var(--text-primary)]">Change Password</h2>
-                            {[
-                                { name: 'current_password', label: 'Current Password' },
-                                { name: 'new_password', label: 'New Password', minLength: 6 },
-                                { name: 'confirm_password', label: 'Confirm New Password' },
-                            ].map(({ name, label, minLength }) => (
-                                <div key={name}>
-                                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">{label}</label>
-                                    <input type="password" name={name} value={passwordData[name]} onChange={handlePasswordChange}
-                                        style={{ fontSize: '16px' }} className={inputClass}
-                                        required minLength={minLength} placeholder="••••••••" />
-                                </div>
-                            ))}
 
-                            {/* Password requirements */}
-                            <div className="bg-[var(--bg-tertiary)]/40 p-4 rounded-xl border border-[var(--border-color)] space-y-2">
-                                <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Requirements</p>
-                                {[
-                                    { label: 'At least 6 characters', met: passwordData.new_password.length >= 6 },
-                                    { label: 'Passwords match', met: passwordData.new_password === passwordData.confirm_password && !!passwordData.new_password },
-                                ].map(({ label, met }) => (
-                                    <div key={label} className="flex items-center gap-2 text-sm">
-                                        <span className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${met ? 'bg-green-500/20 text-green-400' : 'bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]'}`}>
-                                            {met ? '✓' : '○'}
-                                        </span>
-                                        <span className={met ? 'text-green-400' : 'text-[var(--text-tertiary)]'}>{label}</span>
+                            {/* Current Password */}
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Current Password</label>
+                                <div className="relative">
+                                    <input type={showCurrentPassword ? 'text' : 'password'} name="current_password"
+                                        value={passwordData.current_password} onChange={handlePasswordChange}
+                                        style={{ fontSize: '16px' }} className={inputClass + ' pr-12'}
+                                        required placeholder="••••••••" />
+                                    <button type="button" onClick={() => setShowCurrentPassword(p => !p)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors">
+                                        {showCurrentPassword
+                                            ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                                            : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* New Password */}
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">New Password</label>
+                                <div className="relative">
+                                    <input type={showNewPassword ? 'text' : 'password'} name="new_password"
+                                        value={passwordData.new_password} onChange={handlePasswordChange}
+                                        style={{ fontSize: '16px' }} className={inputClass + ' pr-12'}
+                                        required minLength={6} placeholder="••••••••" />
+                                    <button type="button" onClick={() => setShowNewPassword(p => !p)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors">
+                                        {showNewPassword
+                                            ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                                            : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                        }
+                                    </button>
+                                </div>
+                                {passwordData.new_password && (
+                                    <div className="mt-2">
+                                        <div className="flex gap-1 mb-1">
+                                            {[...Array(4)].map((_, i) => (
+                                                <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < passwordStrength ? getStrengthColor() : 'bg-gray-700'}`} />
+                                            ))}
+                                        </div>
+                                        {getStrengthText() && (
+                                            <p className="text-xs text-[var(--text-tertiary)]">Strength: <span className={`font-medium ${passwordStrength <= 2 ? 'text-red-400' : passwordStrength === 3 ? 'text-yellow-400' : 'text-primary-400'}`}>{getStrengthText()}</span></p>
+                                        )}
                                     </div>
-                                ))}
+                                )}
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Confirm New Password</label>
+                                <div className="relative">
+                                    <input type={showConfirmPassword ? 'text' : 'password'} name="confirm_password"
+                                        value={passwordData.confirm_password} onChange={handlePasswordChange}
+                                        style={{ fontSize: '16px' }}
+                                        className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:border-transparent transition-all pr-12 ${
+                                            passwordData.confirm_password && passwordData.new_password !== passwordData.confirm_password
+                                                ? 'border-red-500 focus:ring-red-500'
+                                                : passwordData.confirm_password && passwordData.new_password === passwordData.confirm_password
+                                                ? 'border-primary-500 focus:ring-primary-500'
+                                                : 'border-[var(--border-color)] focus:ring-primary-500'
+                                        }`}
+                                        required placeholder="••••••••" />
+                                    <button type="button" onClick={() => setShowConfirmPassword(p => !p)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors">
+                                        {showConfirmPassword
+                                            ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                                            : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                        }
+                                    </button>
+                                </div>
+                                {passwordData.confirm_password && (
+                                    <p className={`text-xs mt-1 flex items-center gap-1 ${passwordData.new_password === passwordData.confirm_password ? 'text-primary-400' : 'text-red-400'}`}>
+                                        {passwordData.new_password === passwordData.confirm_password
+                                            ? <><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>Passwords match</>
+                                            : <><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>Passwords do not match</>
+                                        }
+                                    </p>
+                                )}
                             </div>
 
                             <Link to="/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors block text-center">
