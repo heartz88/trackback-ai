@@ -15,10 +15,12 @@ function CommunityPage() {
   const [stats, setStats] = useState({ completed: 0, collaborators: 0, votes: 0 });
   const [animating, setAnimating] = useState(false);
   const prevTab = useRef(0);
+  const hasFetched = useRef(false);
   const { on } = useSocket();
 
   useEffect(() => {
-    fetchCommunityData();
+    fetchCommunityData(!hasFetched.current);
+    hasFetched.current = true;
   }, [activeTab]);
 
   useEffect(() => {
@@ -29,8 +31,8 @@ function CommunityPage() {
     return unsub;
   }, [on, activeTab]);
 
-  const fetchCommunityData = async () => {
-    setIsLoading(true);
+  const fetchCommunityData = async (showLoader = false) => {
+    if (showLoader) setIsLoading(true);
     setError('');
     try {
       const sortMap = ['featured', 'recent', 'votes'];
