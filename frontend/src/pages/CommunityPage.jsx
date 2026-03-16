@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CommunityStats from '../components/community/CommunityStats';
 import CommunityTabs from '../components/community/CommunityTabs';
@@ -13,6 +13,8 @@ function CommunityPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [stats, setStats] = useState({ completed: 0, collaborators: 0, votes: 0 });
+  const [animating, setAnimating] = useState(false);
+  const prevTab = useRef(0);
   const { on } = useSocket();
 
   useEffect(() => {
@@ -73,7 +75,17 @@ function CommunityPage() {
     }
   };
 
-  const TABS = ['Featured', 'Recently Completed', 'Most Voted'];
+  const handleTabChange = (i) => {
+    if (i === activeTab) return;
+    setAnimating(true);
+    setTimeout(() => {
+      prevTab.current = activeTab;
+      setActiveTab(i);
+      setAnimating(false);
+    }, 180);
+  };
+
+  const slideDir = activeTab > prevTab.current ? 1 : -1;
 
   if (isLoading) {
     return (
@@ -114,23 +126,33 @@ function CommunityPage() {
       <CommunityStats stats={stats} />
 
       {/* Tabs */}
-      <CommunityTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      <CommunityTabs activeTab={activeTab} setActiveTab={handleTabChange} />
 
-      {/* Tracks */}
-      {tracks.length === 0 ? (
-        <EmptyCommunityState tab={TABS[activeTab]} />
-      ) : (
-        <div className="space-y-4">
-          {tracks.map((track, i) => (
-            <CompletedTrackCard
-              key={track.id}
-              track={track}
-              rank={i + 1}
-              featured={activeTab === 0 && i === 0}
-            />
-          ))}
-        </div>
-      )}
+      {/* Tracks — animated slide in/out on tab change */}
+      <div
+        style={{
+          transition: 'opacity 0.18s ease, transform 0.18s ease',
+          opacity: animating ? 0 : 1,
+          transform: animating
+            ? `translateX(${slideDir * 24}px)`
+            : 'translateX(0)',
+        }}
+      >
+        {tracks.length === 0 ? (
+          <EmptyCommunityState tab={['Featured', 'Recently Completed', 'Most Voted'][activeTab]} />
+        ) : (
+          <div className="space-y-4">
+            {tracks.map((track, i) => (
+              <CompletedTrackCard
+                key={track.id}
+                track={track}
+                rank={i + 1}
+                featured={activeTab === 0 && i === 0}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* CTA */}
       {!isLoading && (
