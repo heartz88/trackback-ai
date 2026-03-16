@@ -15,7 +15,6 @@ const UserSearchItem = ({ user, isOnline, onSelect, disabled }) => (
     </div>
     <div className="flex-1">
       <p className="font-medium text-[var(--text-primary)]">{user.username || 'Unknown User'}</p>
-      <p className="text-sm text-[var(--text-tertiary)]">{user.email}</p>
     </div>
     <button
       className={`px-4 py-1.5 text-white text-sm font-medium rounded-lg transition-all ${
