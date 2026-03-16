@@ -1,0 +1,142 @@
+import sys
+import os
+import random
+import gc
+import librosa
+import numpy as np
+
+def analyze_audio(file_path):
+    try:
+        y, sr = librosa.load(file_path, sr=22050, mono=True, duration=60.0)
+        duration = librosa.get_duration(y=y, sr=sr)
+
+        rms = librosa.feature.rms(y=y)[0]
+        energy_val = float(np.mean(rms))
+        energy_level = 'high' if energy_val > 0.08 else 'medium' if energy_val > 0.03 else 'low'
+
+        hop_length = 512
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop_length)
+        
+        tempo_result = librosa.beat.beat_track(
+            onset_envelope=onset_env, sr=sr,
+            hop_length=hop_length, tightness=100
+        )
+        # Handle both old (array) and new (scalar) librosa versions
+        tempo = tempo_result[0]
+        beats = tempo_result[1]
+        tempo = float(np.atleast_1d(tempo)[0])
+
+        if len(beats) > 1:
+            beat_times = librosa.frames_to_time(beats, sr=sr, hop_length=hop_length)
+            intervals = np.diff(beat_times)
+            median_interval = float(np.median(intervals))
+            valid_intervals = intervals[np.abs(intervals - median_interval) < 0.1]
+            final_bpm = 60.0 / float(np.mean(valid_intervals)) if len(valid_intervals) > 0 else tempo
+        else:
+            final_bpm = tempo
+
+        del onset_env, y
+        gc.collect()
+
+        return round(final_bpm, 2), energy_level, round(duration, 2)
+
+    except Exception as e:
+        raise Exception("Analysis Error: " + str(e))
+
+
+def bpm_reference(file_path):
+    y, sr = librosa.load(file_path, sr=22050, mono=True, duration=60.0)
+    tempo_result = librosa.beat.beat_track(y=y, sr=sr)
+    tempo = float(np.atleast_1d(tempo_result[0])[0])
+    del y
+    gc.collect()
+    return tempo
+
+
+def main():
+    if len(sys.argv) > 1:
+        folder = sys.argv[1]
+    else:
+        folder = os.path.join(os.path.expanduser("~"), "Downloads", "0001-1000-audio-mixes")
+
+    if not os.path.exists(folder):
+        print("ERROR: Folder not found: " + folder)
+        sys.exit(1)
+
+    all_files = [
+        os.path.join(folder, f)
+        for f in os.listdir(folder)
+        if f.lower().endswith('.flac')
+    ]
+
+    if len(all_files) == 0:
+        print("ERROR: No FLAC files found in that folder.")
+        sys.exit(1)
+
+    sample = random.sample(all_files, min(50, len(all_files)))
+    total = len(sample)
+
+    print("")
+    print("=" * 60)
+    print("  TrackBackAI - BPM Accuracy Test")
+    print("  Testing " + str(total) + " tracks")
+    print("=" * 60)
+    print("")
+    print("{:<4} {:<35} {:>9} {:>10} {:>6} {:>5}".format("#", "File", "Detected", "Reference", "Diff", "Pass"))
+    print("-" * 60)
+
+    passed_5 = 0
+    passed_8 = 0
+    errors = 0
+    results = []
+
+    for i, path in enumerate(sample, 1):
+        fname = os.path.basename(path)[:34]
+        try:
+            detected, energy, duration = analyze_audio(path)
+            reference = bpm_reference(path)
+
+            diff = abs(detected - reference)
+            diff_half = abs(detected - reference / 2)
+            diff_double = abs(detected - reference * 2)
+            best_diff = min(diff, diff_half, diff_double)
+
+            ok5 = best_diff <= 5
+            ok8 = best_diff <= 8
+
+            if ok5: passed_5 += 1
+            if ok8: passed_8 += 1
+
+            status = "PASS" if ok5 else ("~OK" if ok8 else "FAIL")
+            print("{:<4} {:<35} {:>9.2f} {:>10.2f} {:>6.2f} {:>5}".format(
+                i, fname, detected, reference, best_diff, status))
+
+            results.append({'energy': energy, 'pass': ok5})
+
+        except Exception as e:
+            print("{:<4} {:<35} ERROR - {}".format(i, fname, str(e)[:30]))
+            errors += 1
+
+    valid = total - errors
+    acc_5 = (passed_5 / valid * 100) if valid > 0 else 0
+    acc_8 = (passed_8 / valid * 100) if valid > 0 else 0
+
+    print("")
+    print("=" * 60)
+    print("  RESULTS (" + str(valid) + " tracks analysed, " + str(errors) + " errors)")
+    print("=" * 60)
+    print("  Accuracy (+-5 BPM): " + str(round(acc_5, 1)) + "% (" + str(passed_5) + "/" + str(valid) + ")  <-- NFR1 target")
+    print("  Accuracy (+-8 BPM): " + str(round(acc_8, 1)) + "% (" + str(passed_8) + "/" + str(valid) + ")")
+    print("  NFR1 target: >=80%")
+    print("  Result: " + ("PASS" if acc_5 >= 80 else "FAIL"))
+    print("=" * 60)
+
+    energy_counts = {}
+    for r in results:
+        energy_counts[r['energy']] = energy_counts.get(r['energy'], 0) + 1
+    print("  Energy distribution: " + str(energy_counts))
+    print("")
+
+
+if __name__ == '__main__':
+    main()
