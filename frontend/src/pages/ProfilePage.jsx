@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ProfileBanner from '../components/profile/ProfileBanner';
 import ProfileCollaborations from '../components/profile/ProfileCollaborations';
@@ -19,10 +19,24 @@ function ProfilePage() {
   const [collaborations, setCollaborations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tracks');
-
+  const [animating, setAnimating] = useState(false);
+  const prevTab = useRef('tracks');
+  
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) return;
+    setAnimating(true);
+    setTimeout(() => {
+      prevTab.current = activeTab;
+      setActiveTab(tab);
+      setAnimating(false);
+    }, 180);
+  };
+  
+  const slideDir = activeTab === 'collabs' ? 1 : -1;
+  
   const isOwnProfile = !usernameParam ||
-    currentUser?.username?.toLowerCase() === usernameParam?.toLowerCase();
-
+  currentUser?.username?.toLowerCase() === usernameParam?.toLowerCase();
+  
   useEffect(() => {
     // Don't fetch if usernameParam is explicitly undefined and no user is logged in
     if (usernameParam === 'undefined' || (!usernameParam && !currentUser)) {
@@ -31,7 +45,7 @@ function ProfilePage() {
     }
     fetchProfileData();
   }, [usernameParam, currentUser, navigate]);
-
+  
   const fetchProfileData = async () => {
     setLoading(true);
     try {
@@ -47,7 +61,7 @@ function ProfilePage() {
         return;
       }
       setProfile(profileData);
-
+      
       const [tracksRes, collabRes] = await Promise.allSettled([
         api.get(`/tracks/user/${profileData.id}`),
         api.get(`/collaborations/user/${profileData.id}`),
@@ -61,46 +75,52 @@ function ProfilePage() {
       setLoading(false);
     }
   };
-
+  
   if (loading) return <ProfileLoading />;
   if (!profile) return <ProfileNotFound />;
-
+  
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
-      <ProfileBanner />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 pb-16 relative z-10">
-        <ProfileHeader 
-          profile={profile}
-          isOwnProfile={isOwnProfile}
-          currentUser={currentUser}
-          tracksCount={tracks.length}
-          collaborationsCount={collaborations.length}
-        />
-
-        <ProfileTabs 
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          tracksCount={tracks.length}
-          collaborationsCount={collaborations.length}
-        />
-
-        {activeTab === 'tracks' && (
-          <ProfileTracks 
-            tracks={tracks}
-            isOwnProfile={isOwnProfile}
-          />
-        )}
-
-        {activeTab === 'collabs' && (
-          <ProfileCollaborations 
-            collaborations={collaborations}
-            profile={profile}
-            currentUser={currentUser}
-            isOwnProfile={isOwnProfile}
-          />
-        )}
-      </div>
+    <ProfileBanner />
+    
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 pb-16 relative z-10">
+    <ProfileHeader 
+    profile={profile}
+    isOwnProfile={isOwnProfile}
+    currentUser={currentUser}
+    tracksCount={tracks.length}
+    collaborationsCount={collaborations.length}
+    />
+    
+    <ProfileTabs 
+    activeTab={activeTab}
+    setActiveTab={handleTabChange}
+    tracksCount={tracks.length}
+    collaborationsCount={collaborations.length}
+    />
+    
+    <div style={{
+      transition: 'opacity 0.18s ease, transform 0.18s ease',
+      opacity: animating ? 0 : 1,
+      transform: animating ? `translateX(${slideDir * 24}px)` : 'translateX(0)',
+    }}>
+    {activeTab === 'tracks' && (
+      <ProfileTracks 
+      tracks={tracks}
+      isOwnProfile={isOwnProfile}
+      />
+    )}
+    
+    {activeTab === 'collabs' && (
+      <ProfileCollaborations 
+      collaborations={collaborations}
+      profile={profile}
+      currentUser={currentUser}
+      isOwnProfile={isOwnProfile}
+      />
+    )}
+    </div>
+    </div>
     </div>
   );
 }

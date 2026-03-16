@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../components/common/Toast';
 import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
+
+const TABS_ORDER = ['pending', 'history'];
 
 function CollaborationsPage() {
 const [received, setReceived] = useState([]);
@@ -10,8 +12,22 @@ const [sent, setSent] = useState([]);
 const [history, setHistory] = useState({ received: [], sent: [] });
 const [loading, setLoading] = useState(true);
 const [activeTab, setActiveTab] = useState('pending');
+const [animating, setAnimating] = useState(false);
+const prevTab = useRef('pending');
 const toast = useToast();
 const { on } = useSocket();
+
+const handleTabChange = (tab) => {
+  if (tab === activeTab) return;
+  setAnimating(true);
+  setTimeout(() => {
+    prevTab.current = activeTab;
+    setActiveTab(tab);
+    setAnimating(false);
+  }, 180);
+};
+
+const slideDir = TABS_ORDER.indexOf(activeTab) > TABS_ORDER.indexOf(prevTab.current) ? 1 : -1;
 
 useEffect(() => {
 const fetchRequests = async () => {
@@ -57,7 +73,7 @@ const unsubRequest = on('collaboration:request', (data) => {
     };
     return [newRequest, ...prev];
     });
-    toast.success(`🤝 New collaboration request from ${data.requesterName}!`);
+    toast.success(`New collaboration request from ${data.requesterName}!`);
 });
 
 const unsubResponse = on('collaboration:response', (data) => {
@@ -70,7 +86,7 @@ const unsubResponse = on('collaboration:response', (data) => {
     ]
     }));
     if (data.status === 'approved') {
-    toast.success(`✅ Your request for "${data.trackTitle}" was approved!`);
+    toast.success(`Your request for "${data.trackTitle}" was approved!`);
     } else {
     toast.error(`Your request for "${data.trackTitle}" was declined`);
     }
@@ -117,33 +133,52 @@ return (
     </div>
 
     {/* Tabs */}
-    <div className="flex gap-2 mb-6 border-b border-[var(--border-color)] pb-4">
-        <button
-        onClick={() => setActiveTab('pending')}
-        className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
-            activeTab === 'pending' ? 'bg-primary-600 text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-        }`}
-        >
-        Pending
-        {received.length + sent.length > 0 && (
-            <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">{received.length + sent.length}</span>
-        )}
-        </button>
-        <button
-        onClick={() => setActiveTab('history')}
-        className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${
-            activeTab === 'history' ? 'bg-primary-600 text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-        }`}
-        >
-        History
-        {history.received.length + history.sent.length > 0 && (
-            <span className="ml-1 px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] text-xs rounded-full">
-            {history.received.length + history.sent.length}
+    <div className="relative mb-6">
+      <div
+        className="absolute bottom-0 h-0.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+        style={{
+          left: activeTab === 'pending' ? 0 : '50%',
+          width: '50%',
+          background: 'linear-gradient(90deg, var(--accent-primary, #14b8a6), #06b6d4)',
+          boxShadow: '0 0 12px rgba(20,184,166,0.6)',
+        }}
+      />
+      <div className="flex border-b border-[var(--border-color)]/40">
+        {[
+          { id: 'pending', label: 'Pending', icon: '⏳', count: received.length + sent.length },
+          { id: 'history', label: 'History', icon: '📋', count: history.received.length + history.sent.length },
+        ].map(({ id, label, icon, count }) => (
+          <button
+            key={id}
+            onClick={() => handleTabChange(id)}
+            className="relative flex-1 px-4 py-3 text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 group"
+            style={{ color: activeTab === id ? 'var(--accent-primary, #14b8a6)' : 'var(--text-tertiary)' }}
+          >
+            <span className="absolute inset-0 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              style={{ background: 'rgba(20,184,166,0.06)' }} />
+            {activeTab === id && (
+              <span className="absolute inset-0 rounded-t-xl" style={{ background: 'rgba(20,184,166,0.08)' }} />
+            )}
+            <span className="relative flex items-center gap-2">
+              <span style={{ transform: activeTab === id ? 'scale(1.2)' : 'scale(1)', transition: 'transform 0.3s' }}>{icon}</span>
+              {label}
+              {count > 0 && (
+                <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
+                  id === 'pending' ? 'bg-red-500 text-white' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
+                }`}>{count}</span>
+              )}
             </span>
-        )}
-        </button>
+          </button>
+        ))}
+      </div>
     </div>
 
+    {/* Animated content */}
+    <div style={{
+      transition: 'opacity 0.18s ease, transform 0.18s ease',
+      opacity: animating ? 0 : 1,
+      transform: animating ? `translateX(${slideDir * 24}px)` : 'translateX(0)',
+    }}>
     {activeTab === 'pending' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Received Requests */}
@@ -404,6 +439,7 @@ return (
         )}
         </div>
     )}
+    </div>
     </div>
 </div>
 );
