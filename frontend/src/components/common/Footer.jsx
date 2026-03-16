@@ -72,7 +72,7 @@ return (
                 My Tracks
                 </Link>
             </li>
-                        <li>
+                <li>
                 <Link to="/community" className="text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors text-sm">
                 Community
                 </Link>
