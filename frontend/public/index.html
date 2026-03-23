@@ -4,34 +4,20 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="%PUBLIC_URL%/logo.png" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#20918b" />
-    
     <title>TrackBackAI | Music Collaboration</title>
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script>
-      // Fix for Double Tap Delay on Mobile Safari
       document.addEventListener('touchend', function(e) {
         var el = e.target;
-        // Walk up the DOM to find a clickable element
         while (el && el !== document.body) {
           var tag = el.tagName ? el.tagName.toLowerCase() : '';
-          if (
-            tag === 'button' ||
-            tag === 'a' ||
-            tag === 'input' ||
-            tag === 'select' ||
-            tag === 'textarea' ||
-            tag === 'label' ||
-            el.getAttribute('role') === 'button' ||
-            el.getAttribute('tabindex') !== null ||
-            el.onclick
-          ) {
+          if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+          if (tag === 'button' || tag === 'a' || el.getAttribute('role') === 'button') {
             e.preventDefault();
             el.click();
             return;
