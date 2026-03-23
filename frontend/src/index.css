@@ -2,74 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== GLOBAL TOUCH OPTIMIZATIONS ===== */
+/* ===== ONE-TAP FIXES - CRITICAL ===== */
 * {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Prevent double-tap zoom on all interactive elements - using CSS only */
+/* Force all interactive elements to work with one tap */
 button,
 a,
 input,
 textarea,
 select,
 [role="button"],
-[onClick] {
-  touch-action: manipulation;
+[onClick],
+.btn-primary,
+.btn-secondary,
+.action-btn,
+.tdp-message-btn,
+.row-action-btn,
+.sp-like-btn,
+.sp-action-btn,
+.filter-toggle-btn,
+.genre-tag,
+.music-card,
+.collab-card {
+  touch-action: manipulation !important;
+  cursor: pointer !important;
 }
 
-/* Ensure all form inputs are at least 16px to prevent iOS zoom */
+/* Ensure all form inputs are 16px to prevent iOS zoom */
 input, 
 textarea, 
 select {
   font-size: 16px !important;
+  touch-action: manipulation !important;
 }
 
-/* Make touch targets larger on mobile - but don't break existing styles */
-@media (max-width: 768px) {
-  button,
-  a[role="button"],
-  .btn-primary,
-  .btn-secondary {
-    min-height: 44px;
-  }
-  
-  /* Only add min-height to buttons that don't already have it */
-  button:not([style*="height"]),
-  .btn-primary:not([style*="height"]),
-  .btn-secondary:not([style*="height"]) {
-    min-height: 44px;
-  }
+/* Make touch targets large enough for fingers */
+button,
+[role="button"],
+.btn-primary,
+.btn-secondary,
+.action-btn,
+.tdp-message-btn,
+.row-action-btn,
+.sp-like-btn,
+.sp-action-btn,
+.filter-toggle-btn {
+  min-height: 44px !important;
+  min-width: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-/* Disable hover effects on touch devices - but keep clickable */
+/* Visual feedback on tap */
+button:active,
+a:active,
+[role="button"]:active,
+.btn-primary:active,
+.btn-secondary:active,
+.action-btn:active {
+  transform: scale(0.97) !important;
+  transition: transform 0.05s ease !important;
+}
+
+/* Disable ALL hover effects on touch devices - prevents stuck states */
 @media (hover: none) and (pointer: coarse) {
-  .music-card:hover {
+  *:hover {
     transform: none !important;
+    background-color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+    transition: none !important;
   }
   
-  .music-card:hover::before {
-    left: -100%;
-  }
-}
-  
-  /* Disable card hover effects */
-  .music-card:hover {
+  button:hover,
+  a:hover,
+  [role="button"]:hover,
+  .music-card:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover {
     transform: none !important;
+    background: inherit !important;
+    color: inherit !important;
     border-color: var(--border-color) !important;
     box-shadow: none !important;
   }
   
-  /* Disable button scale effects */
-  .btn-primary:hover:not(:disabled),
-  .btn-secondary:hover:not(:disabled) {
-    transform: none !important;
+  .music-card:hover::before {
+    left: -100% !important;
   }
   
-  /* Disable link hover effects */
-  a:hover {
-    text-decoration: none !important;
+  .btn-primary:hover:not(:disabled) {
+    transform: none !important;
+    box-shadow: none !important;
   }
+  
+  .genre-tag:hover {
+    transform: none !important;
+  }
+}
 
 /* CSS Variables for Light/Dark Mode - Clean Teal Theme */
 :root {

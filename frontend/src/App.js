@@ -42,7 +42,7 @@ function App() {
       <SocketProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
+          <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] touch-manipulation">
             <Navigation />
             <main className="flex-grow pt-20">
               <Routes>

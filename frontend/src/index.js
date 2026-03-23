@@ -3,22 +3,44 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
+// Simple wrapper - ensures one-tap works without blocking events
 const AppWrapper = () => {
   React.useEffect(() => {
-    // Ensure all interactive elements have proper touch behavior
-    const fixTouchElements = () => {
-      const interactive = document.querySelectorAll('button, a, input, textarea, select');
-      interactive.forEach(el => {
-        // Only add touch-action if not already set
-        if (getComputedStyle(el).touchAction !== 'manipulation') {
-          el.style.touchAction = 'manipulation';
+    // Ensure all interactive elements are touch-optimized
+    const optimizeAllElements = () => {
+      const selectors = [
+        'button', 'a', 'input', 'textarea', 'select', 
+        '[role="button"]', '.btn-primary', '.btn-secondary', 
+        '.action-btn', '.tdp-message-btn', '.row-action-btn',
+        '.sp-like-btn', '.sp-action-btn', '.filter-toggle-btn'
+      ];
+      
+      const elements = document.querySelectorAll(selectors.join(','));
+      
+      elements.forEach(el => {
+        if (el.getAttribute('data-touch-optimized')) return;
+        el.setAttribute('data-touch-optimized', 'true');
+        
+        // Ensure no pointer-events blocking
+        if (el.style.pointerEvents === 'none') {
+          el.style.pointerEvents = 'auto';
+        }
+        
+        // Apply touch-manipulation class if not already applied
+        if (!el.classList.contains('touch-manipulation')) {
+          el.classList.add('touch-manipulation');
         }
       });
     };
     
-    fixTouchElements();
+    // Run immediately
+    optimizeAllElements();
     
-    const observer = new MutationObserver(fixTouchElements);
+    // Watch for dynamically added elements
+    const observer = new MutationObserver(() => {
+      optimizeAllElements();
+    });
+    
     observer.observe(document.body, { childList: true, subtree: true });
     
     return () => observer.disconnect();
