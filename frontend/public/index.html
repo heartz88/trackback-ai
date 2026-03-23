@@ -4,57 +4,70 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="%PUBLIC_URL%/logo.png" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
     <meta name="theme-color" content="#20918b" />
-    
     <title>TrackBackAI | Music Collaboration</title>
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
 
-  <script>
-    // Fix iOS Safari double-tap requirement on all interactive elements
-    document.addEventListener('touchstart', function() {}, {passive: true});
-    
-    document.addEventListener('DOMContentLoaded', function() {
-      function fixTouchElement(el) {
-        el.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          var clickEvent = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-          });
-          el.dispatchEvent(clickEvent);
-        }, {passive: false});
-      }
-
-      function applyFixes() {
-        var selector = 'button, a, input, select, textarea, label, [role="button"], [tabindex]';
-        document.querySelectorAll(selector).forEach(fixTouchElement);
-      }
-
-      applyFixes();
-
-      // Re-apply when React renders new elements
-      var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-          mutation.addedNodes.forEach(function(node) {
-            if (node.nodeType === 1) {
-              var selector = 'button, a, input, select, textarea, label, [role="button"], [tabindex]';
-              if (node.matches && node.matches(selector)) fixTouchElement(node);
-              node.querySelectorAll && node.querySelectorAll(selector).forEach(fixTouchElement);
+    <script>
+      // Simple touch optimization - doesn't interfere with normal tap behavior
+      (function() {
+        // Store the last tap time to detect double taps
+        let lastTap = 0;
+        
+        // Prevent double-tap zoom ONLY on interactive elements
+        document.addEventListener('touchstart', function(e) {
+          const target = e.target;
+          const isFormElement = 
+            target.tagName === 'INPUT' || 
+            target.tagName === 'TEXTAREA' || 
+            target.tagName === 'SELECT' ||
+            target.isContentEditable;
+          
+          // If it's a form element and it's a double tap (2 fingers or 2 quick taps)
+          if (isFormElement && e.touches.length === 2) {
+            e.preventDefault();
+            return false;
+          }
+          
+          // For single tap detection on buttons - only handle quick double taps
+          const isButton = 
+            target.tagName === 'BUTTON' || 
+            target.tagName === 'A' ||
+            target.closest('button') ||
+            target.closest('a');
+          
+          if (isButton) {
+            const now = Date.now();
+            const timeDiff = now - lastTap;
+            if (timeDiff < 300 && timeDiff > 0) {
+              // This is a double tap on a button - prevent zoom
+              e.preventDefault();
+            }
+            lastTap = now;
+          }
+        }, { passive: false });
+        
+        // Ensure inputs have proper font size to prevent iOS zoom
+        const ensureInputFontSize = function() {
+          const inputs = document.querySelectorAll('input, textarea, select');
+          inputs.forEach(input => {
+            if (window.getComputedStyle(input).fontSize === '16px') return;
+            // Only set if not already 16px
+            if (parseInt(window.getComputedStyle(input).fontSize) < 16) {
+              input.style.fontSize = '16px';
             }
           });
-        });
-      });
-
-      observer.observe(document.body, { childList: true, subtree: true });
-    });
-  </script>
+        };
+        
+        // Run on load and after DOM changes
+        ensureInputFontSize();
+        const observer = new MutationObserver(ensureInputFontSize);
+        observer.observe(document.body, { childList: true, subtree: true });
+      })();
+    </script>
 </body>
 </html>

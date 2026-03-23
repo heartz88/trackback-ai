@@ -2,6 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== GLOBAL TOUCH OPTIMIZATIONS ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent double-tap zoom on all interactive elements */
+button,
+a,
+input,
+textarea,
+select,
+[role="button"],
+[onClick],
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Ensure all form inputs are at least 16px to prevent iOS zoom */
+input, 
+textarea, 
+select {
+  font-size: 16px;
+}
+
+/* Form-specific touch optimizations */
+.form-input-touch {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure all form fields have proper sizing */
+.form-field {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Prevent double-tap zoom on modals and dialogs */
+.modal-content,
+.drawer-content {
+  touch-action: pan-y pinch-zoom; /* Allow vertical scroll but prevent zoom on double-tap */
+}
+
+/* Make touch targets larger on mobile */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"],
+  .btn-primary,
+  .btn-secondary,
+  .action-btn,
+  .tdp-message-btn,
+  .row-action-btn,
+  .sp-like-btn,
+  .sp-action-btn,
+  .filter-toggle-btn,
+  .genre-tag,
+  .comment-actions .action-btn,
+  .submission-actions .action-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Ensure all clickable elements have proper touch area */
+  .comment-actions .action-btn,
+  .submission-actions .action-btn {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+  
+  /* Ensure all form elements are touch-friendly */
+  input, 
+  textarea, 
+  select {
+    min-height: 44px;
+  }
+}
+
+/* Disable hover effects on touch devices to prevent stuck states */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:scale-105:hover,
+  .hover\:bg-primary-500\/10:hover,
+  .hover\:text-primary-400:hover,
+  .hover\:border-primary-500\/50:hover,
+  .group-hover\:scale-105:hover,
+  .group-hover\:text-primary-400:hover {
+    transform: none !important;
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Keep active states for buttons */
+  .music-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .music-card:hover::before {
+    left: -100%;
+  }
+  
+  /* Disable card hover effects */
+  .music-card:hover {
+    transform: none !important;
+    border-color: var(--border-color) !important;
+    box-shadow: none !important;
+  }
+  
+  /* Disable button scale effects */
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled) {
+    transform: none !important;
+  }
+  
+  /* Disable link hover effects */
+  a:hover {
+    text-decoration: none !important;
+  }
+}
+
 /* CSS Variables for Light/Dark Mode - Clean Teal Theme */
 :root {
 /* Dark Mode Colors (Default) */
@@ -70,23 +190,6 @@
 *, *::before, *::after {
 box-sizing: border-box;
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-}
-
-/* iOS Safari fix — prevent double-tap requirement on all interactive elements */
-button,
-a,
-input,
-select,
-textarea,
-label,
-[role="button"],
-[onClick],
-[tabindex] {
--webkit-touch-callout: none;
-touch-action: manipulation;
--webkit-tap-highlight-color: transparent;
-transition: none !important;
-cursor: pointer;
 }
 
 body {
@@ -798,9 +901,7 @@ height: 40px;
 .glow-teal {
 box-shadow: none;
 }
-
-
-
+}
 
 /* ===== PRINT STYLES ===== */
 
@@ -822,11 +923,7 @@ box-shadow: none !important;
 audio {
 display: none;
 }
-
 }
-}
-
-
 
 /* ===== RESPONSIVE BREAKPOINTS ===== */
 
@@ -858,7 +955,6 @@ width: 160px;
 height: 160px;
 }
 }
-
 
 /* Medium devices (tablets, 768px and up) */
 @media (min-width: 768px) {
@@ -894,7 +990,7 @@ flex: 1 1 calc(25% - 1.5rem);
 width: 200px;
 height: 200px;
 }
-
+}
 
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) {
@@ -908,7 +1004,7 @@ width: 220px;
 height: 220px;
 }
 }
-}
+
 /* ===== MOBILE-FIRST RESPONSIVE UTILITIES ===== */
 
 /* Container responsive behavior */
@@ -994,12 +1090,22 @@ flex-direction: row;
 }
 }
 
-/* ===== TOUCH-FRIENDLY ELEMENTS ===== */
+/* ===== TOUCH-FRIENDLY ELEMENTS (Enhanced) ===== */
 @media (hover: none) and (pointer: coarse) {
 /* Increase tap targets for mobile */
 button,
 .genre-tag,
-.music-card {
+.music-card,
+.btn-primary,
+.btn-secondary,
+.action-btn,
+.tdp-message-btn,
+.row-action-btn,
+.sp-like-btn,
+.sp-action-btn,
+.filter-toggle-btn,
+.comment-actions .action-btn,
+.submission-actions .action-btn {
 min-height: 44px;
 min-width: 44px;
 }
@@ -1410,6 +1516,7 @@ padding-bottom: max(1rem, env(safe-area-inset-bottom));
 @media (max-width: 640px) {
 input, textarea, select {
 font-size: 16px; /* Prevents iOS zoom on focus */
+min-height: 44px;
 }
 
 /* Stack form elements on mobile */

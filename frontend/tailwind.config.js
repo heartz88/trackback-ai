@@ -53,7 +53,28 @@ extend: {
     'teal': '0 0 20px rgba(20, 184, 166, 0.5), 0 0 40px rgba(20, 184, 166, 0.3)',
     'teal-lg': '0 0 30px rgba(20, 184, 166, 0.6), 0 0 60px rgba(20, 184, 166, 0.4)',
     },
+    spacing: {
+    'touch': '44px', 
+    },
 },
 },
-plugins: [],
+plugins: [
+    // Add custom utilities for touch optimization
+    function({ addUtilities }) {
+    addUtilities({
+        '.touch-manipulation': {
+        'touch-action': 'manipulation',
+        '-webkit-tap-highlight-color': 'transparent',
+        },
+        '.no-tap-highlight': {
+        '-webkit-tap-highlight-color': 'transparent',
+        },
+        '.prevent-double-tap': {
+        'touch-action': 'manipulation',
+        'user-select': 'none',
+        '-webkit-user-select': 'none',
+        },
+    });
+    },
+],
 }
