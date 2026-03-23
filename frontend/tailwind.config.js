@@ -59,22 +59,39 @@ extend: {
 },
 },
 plugins: [
-    // Add custom utilities for touch optimization
-    function({ addUtilities }) {
-    addUtilities({
+    // Touch optimization + iOS one-tap fix
+    function({ addUtilities, addBase }) {
+      // Override transition-all/transition-colors on interactive elements.
+      // These Tailwind utilities re-introduce the iOS 300ms tap delay because
+      // WebKit waits to see if the transition is part of a double-tap gesture.
+      // Setting transition:none on buttons/links/roles beats all utility classes.
+      addBase({
+        'button, a, [role="button"], [class*="btn-"]': {
+          'touch-action': 'manipulation',
+          '-webkit-tap-highlight-color': 'transparent',
+          'transition': 'none !important',
+        },
+        // Inputs still get focus-ring transitions — just not tap-delay ones
+        'input, textarea, select': {
+          'touch-action': 'manipulation',
+          '-webkit-tap-highlight-color': 'transparent',
+        },
+      });
+      addUtilities({
         '.touch-manipulation': {
-        'touch-action': 'manipulation',
-        '-webkit-tap-highlight-color': 'transparent',
+          'touch-action': 'manipulation',
+          '-webkit-tap-highlight-color': 'transparent',
+          'transition': 'none !important',
         },
         '.no-tap-highlight': {
-        '-webkit-tap-highlight-color': 'transparent',
+          '-webkit-tap-highlight-color': 'transparent',
         },
         '.prevent-double-tap': {
-        'touch-action': 'manipulation',
-        'user-select': 'none',
-        '-webkit-user-select': 'none',
+          'touch-action': 'manipulation',
+          'user-select': 'none',
+          '-webkit-user-select': 'none',
         },
-    });
+      });
     },
 ],
 }
