@@ -7,15 +7,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Prevent double-tap zoom on all interactive elements */
+/* Prevent double-tap zoom on all interactive elements - using CSS only */
 button,
 a,
 input,
 textarea,
 select,
 [role="button"],
-[onClick],
-.touch-manipulation {
+[onClick] {
   touch-action: manipulation;
 }
 
@@ -23,85 +22,36 @@ select,
 input, 
 textarea, 
 select {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
-/* Form-specific touch optimizations */
-.form-input-touch {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Ensure all form fields have proper sizing */
-.form-field {
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-/* Prevent double-tap zoom on modals and dialogs */
-.modal-content,
-.drawer-content {
-  touch-action: pan-y pinch-zoom; /* Allow vertical scroll but prevent zoom on double-tap */
-}
-
-/* Make touch targets larger on mobile */
+/* Make touch targets larger on mobile - but don't break existing styles */
 @media (max-width: 768px) {
   button,
-  a,
-  [role="button"],
+  a[role="button"],
   .btn-primary,
-  .btn-secondary,
-  .action-btn,
-  .tdp-message-btn,
-  .row-action-btn,
-  .sp-like-btn,
-  .sp-action-btn,
-  .filter-toggle-btn,
-  .genre-tag,
-  .comment-actions .action-btn,
-  .submission-actions .action-btn {
+  .btn-secondary {
     min-height: 44px;
-    min-width: 44px;
   }
   
-  /* Ensure all clickable elements have proper touch area */
-  .comment-actions .action-btn,
-  .submission-actions .action-btn {
-    min-height: 40px;
-    padding: 8px 12px;
-  }
-  
-  /* Ensure all form elements are touch-friendly */
-  input, 
-  textarea, 
-  select {
+  /* Only add min-height to buttons that don't already have it */
+  button:not([style*="height"]),
+  .btn-primary:not([style*="height"]),
+  .btn-secondary:not([style*="height"]) {
     min-height: 44px;
   }
 }
 
-/* Disable hover effects on touch devices to prevent stuck states */
+/* Disable hover effects on touch devices - but keep clickable */
 @media (hover: none) and (pointer: coarse) {
-  .hover\:scale-105:hover,
-  .hover\:bg-primary-500\/10:hover,
-  .hover\:text-primary-400:hover,
-  .hover\:border-primary-500\/50:hover,
-  .group-hover\:scale-105:hover,
-  .group-hover\:text-primary-400:hover {
-    transform: none !important;
-    background-color: inherit !important;
-    color: inherit !important;
-    border-color: var(--border-color) !important;
-  }
-  
-  /* Keep active states for buttons */
   .music-card:hover {
-    transform: none;
-    box-shadow: none;
+    transform: none !important;
   }
   
   .music-card:hover::before {
     left: -100%;
   }
+}
   
   /* Disable card hover effects */
   .music-card:hover {
