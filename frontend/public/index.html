@@ -10,15 +10,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>TrackBackAI | Music Collaboration</title>
     <style>
-      /* Belt-and-braces iOS one-tap fix — runs before React, before Tailwind,
-         before anything. This is the last line of defence. */
       * {
         -webkit-tap-highlight-color: transparent !important;
-        touch-action: manipulation !important;
       }
-      a, button, input, select, textarea, [role="button"] {
+      a, button, [role="button"] {
         touch-action: manipulation !important;
         cursor: pointer;
+      }
+      input, select, textarea {
+        touch-action: auto !important;
+        cursor: auto;
       }
     </style>
 </head>
@@ -26,38 +27,43 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script>
-      // iOS 300ms tap delay killer — runs before React mounts.
-      // Converts touchend directly to click so iOS never gets
-      // a chance to wait for a double-tap.
+      // iOS 300ms tap delay fix — only targets buttons and links,
+      // never touches inputs/textareas so keyboard still works.
       (function() {
-        var needsFix = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        if (!needsFix) return;
+        if (!/iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+
+        var IGNORE_TAGS = { INPUT: 1, TEXTAREA: 1, SELECT: 1, LABEL: 1 };
+        var touchStartX, touchStartY;
+
+        document.addEventListener('touchstart', function(e) {
+          if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          }
+        }, { passive: true });
 
         document.addEventListener('touchend', function(e) {
+          if (!e.changedTouches || e.changedTouches.length !== 1) return;
+
+          var touch = e.changedTouches[0];
+          var dx = Math.abs(touch.clientX - touchStartX);
+          var dy = Math.abs(touch.clientY - touchStartY);
+
+          // If finger moved more than 10px it's a scroll, not a tap
+          if (dx > 10 || dy > 10) return;
+
           var t = e.target;
-          // Walk up to find the real interactive element
           while (t && t !== document.body) {
+            // Never intercept inputs — let iOS handle keyboard focus naturally
+            if (IGNORE_TAGS[t.tagName]) return;
+
             var tag = t.tagName;
             var role = t.getAttribute('role');
-            if (
-              tag === 'BUTTON' ||
-              tag === 'A' ||
-              tag === 'INPUT' ||
-              tag === 'SELECT' ||
-              tag === 'TEXTAREA' ||
-              role === 'button'
-            ) {
-              // Only fire if this was a real tap (not a scroll)
-              if (e.changedTouches && e.changedTouches.length === 1) {
-                var touch = e.changedTouches[0];
-                // If finger barely moved it's a tap not a scroll
-                if (Math.abs(touch.clientX - touch.clientX) < 10 &&
-                    Math.abs(touch.clientY - touch.clientY) < 10) {
-                  e.preventDefault();
-                  t.click();
-                }
-              }
-              break;
+
+            if (tag === 'BUTTON' || tag === 'A' || role === 'button') {
+              e.preventDefault();
+              t.click();
+              return;
             }
             t = t.parentElement;
           }
