@@ -86,7 +86,7 @@ return (
         <p className="text-[var(--text-secondary)] mb-6">This password reset link is invalid or has expired.</p>
         <Link
             to="/forgot-password"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color]"
         >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -159,7 +159,7 @@ return (
               <div className="mt-2">
                 <div className="flex gap-1 mb-1">
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < passwordStrength ? getStrengthColor() : 'bg-gray-700'}`} />
+                    <div key={i} className={`h-1 flex-1 rounded-full transition-[box-shadow,border-color] duration-300 ${i < passwordStrength ? getStrengthColor() : 'bg-gray-700'}`} />
                   ))}
                 </div>
                 {getStrengthText() && (
@@ -178,7 +178,7 @@ return (
                 type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:border-transparent transition-all pr-12 ${
+                className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:border-transparent transition-[box-shadow,border-color] pr-12 ${
                   confirmPassword && password !== confirmPassword
                     ? 'border-red-500 focus:ring-red-500'
                     : confirmPassword && password === confirmPassword
@@ -209,7 +209,7 @@ return (
             <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20 disabled:shadow-none"
+            className="w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20 disabled:shadow-none"
             >
             {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

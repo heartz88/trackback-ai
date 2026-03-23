@@ -20,13 +20,13 @@ export default function MessageInput({
           value={value}
           onChange={onChange}
           placeholder={isConnected ? placeholder : "Connecting..."}
-          className="flex-1 px-4 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all disabled:opacity-50"
+          className="flex-1 px-4 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color] disabled:opacity-50"
           disabled={!isConnected || disabled}
         />
         <button
           type="submit"
           disabled={!value.trim() || !isConnected || disabled}
-          className={`px-4 py-2.5 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center ${
+          className={`px-4 py-2.5 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg flex items-center justify-center ${
             !value.trim() || !isConnected || disabled
               ? 'bg-gray-600 cursor-not-allowed opacity-50'
               : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-500/20'

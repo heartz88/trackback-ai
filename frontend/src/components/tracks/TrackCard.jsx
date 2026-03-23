@@ -40,7 +40,7 @@ const getEnergyColor = (level) => {
 return (
 <div className={`
     glass-panel rounded-2xl overflow-hidden
-    hover:border-primary-500/50 transition-all duration-500
+    hover:border-primary-500/50 transition-[box-shadow,border-color] duration-500
     group music-card hover:shadow-xl
     hover:shadow-primary-500/20 animate-fade-in
     ${isOwner ? 'border-primary-500/30' : ''}
@@ -74,7 +74,7 @@ return (
 
                 {track.description && (
                     <div className="mt-2">
-                        <p className={`text-sm text-[var(--text-tertiary)] transition-all ${!showFullDescription ? 'line-clamp-2' : ''}`}>
+                        <p className={`text-sm text-[var(--text-tertiary)] transition-[box-shadow,border-color] ${!showFullDescription ? 'line-clamp-2' : ''}`}>
                             {track.description}
                         </p>
                         {track.description.length > 100 && (
@@ -90,7 +90,7 @@ return (
             </div>
 
             <div className="relative flex-shrink-0">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl flex items-center justify-center border-2 border-primary-500/30 group-hover:border-primary-500/50 transition-all">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-xl flex items-center justify-center border-2 border-primary-500/30 group-hover:border-primary-500/50 transition-[box-shadow,border-color]">
                     <svg className="w-8 h-8 text-primary-400 group-hover:text-primary-300 transition-colors" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
                     </svg>
@@ -128,7 +128,7 @@ return (
                 <p className="text-xs text-[var(--text-tertiary)] mb-2">Looking for collaborators that can contribute with:</p>
                 <div className="flex flex-wrap gap-1.5">
                     {track.desired_skills.slice(0, 3).map((skill, i) => (
-                        <span key={i} className="px-2.5 py-1 bg-primary-500/10 text-primary-400 text-xs rounded-full border border-primary-500/20 hover:bg-primary-500/20 transition-all cursor-default">
+                        <span key={i} className="px-2.5 py-1 bg-primary-500/10 text-primary-400 text-xs rounded-full border border-primary-500/20 hover:bg-primary-500/20 transition-[box-shadow,border-color] cursor-default">
                             {skill}
                         </span>
                     ))}
@@ -157,7 +157,7 @@ return (
         {isOwner ? (
             <Link
                 to={`/tracks/${track.id}`}
-                className="w-full py-3 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl text-center border border-[var(--border-color)] hover:border-primary-500/50 hover:text-primary-400 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl text-center border border-[var(--border-color)] hover:border-primary-500/50 hover:text-primary-400 transition-[box-shadow,border-color] flex items-center justify-center gap-2"
             >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -170,7 +170,7 @@ return (
                 {/* Primary: view & vote — for everyone */}
                 <Link
                     to={`/tracks/${track.id}`}
-                    className="w-full py-2.5 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl text-center border border-[var(--border-color)] hover:border-primary-500/50 hover:text-primary-400 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl text-center border border-[var(--border-color)] hover:border-primary-500/50 hover:text-primary-400 transition-[box-shadow,border-color] flex items-center justify-center gap-2"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -185,7 +185,7 @@ return (
                         onClick={requestCollaboration}
                         disabled={requesting}
                         className={`
-                            w-full py-2.5 font-semibold rounded-xl transition-all duration-300
+                            w-full py-2.5 font-semibold rounded-xl transition-[box-shadow,border-color] duration-300
                             flex items-center justify-center gap-2
                             bg-gradient-to-r from-primary-600 to-primary-500
                             hover:from-primary-500 hover:to-primary-400
@@ -213,7 +213,7 @@ return (
                 ) : (
                     <Link
                         to="/login"
-                        className="w-full py-2.5 font-semibold rounded-xl transition-all text-center
+                        className="w-full py-2.5 font-semibold rounded-xl transition-[box-shadow,border-color] text-center
                             bg-gradient-to-r from-primary-600 to-primary-500
                             hover:from-primary-500 hover:to-primary-400
                             text-white flex items-center justify-center gap-2"

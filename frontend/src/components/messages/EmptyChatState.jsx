@@ -12,7 +12,7 @@ return (
     </p>
     <button
     onClick={onStartNewChat}
-    className={`px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg ${
+    className={`px-6 py-3 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg ${
         !isConnected
         ? 'bg-gray-600 cursor-not-allowed shadow-none'
         : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-500/20'

@@ -19,7 +19,7 @@ return (
     {isOwnProfile && (
         <Link 
         to="/upload" 
-        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
         >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -36,7 +36,7 @@ return (
     {tracks.map(track => (
     <div 
         key={track.id} 
-        className="group glass-panel rounded-2xl overflow-hidden hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/10"
+        className="group glass-panel rounded-2xl overflow-hidden hover:border-primary-500/50 transition-[box-shadow,border-color] hover:shadow-lg hover:shadow-primary-500/10"
     >
         <div className="relative h-28 bg-gradient-to-br from-primary-600/20 to-primary-800/20 flex items-center justify-center">
         <svg className="w-10 h-10 text-primary-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,13 +95,13 @@ return (
         <div className="flex gap-2 pt-3 border-t border-[var(--border-color)]">
             <Link 
             to={`/tracks/${track.id}`} 
-            className="flex-1 text-center px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-all"
+            className="flex-1 text-center px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color]"
             >
             Details
             </Link>
             <Link 
             to={`/tracks/${track.id}/submissions`} 
-            className="flex-1 text-center px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-blue-500/10 text-[var(--text-secondary)] hover:text-blue-400 rounded-lg text-sm transition-all"
+            className="flex-1 text-center px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-blue-500/10 text-[var(--text-secondary)] hover:text-blue-400 rounded-lg text-sm transition-[box-shadow,border-color]"
             >
             Submissions
             </Link>

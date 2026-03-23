@@ -16,7 +16,7 @@ return (
     {isOwnProfile && (
         <Link 
         to="/discover" 
-        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
         >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -38,7 +38,7 @@ return (
     return (
         <div 
         key={collab.id} 
-        className="glass-panel p-4 rounded-xl hover:border-primary-500/50 transition-all hover:shadow-lg hover:shadow-primary-500/5"
+        className="glass-panel p-4 rounded-xl hover:border-primary-500/50 transition-[box-shadow,border-color] hover:shadow-lg hover:shadow-primary-500/5"
         >
         <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -73,14 +73,14 @@ return (
             <div className="flex items-center gap-2">
             <Link 
                 to={`/tracks/${collab.track_id}/submissions`} 
-                className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all"
+                className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
             >
                 Submissions
             </Link>
             {currentUser && !isOwnProfile && (
                 <Link 
                 to={`/messages/new?userId=${otherPersonId}`} 
-                className="px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-tertiary)] hover:text-primary-400 rounded-lg text-xs font-medium transition-all border border-[var(--border-color)]"
+                className="px-3 py-1.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-tertiary)] hover:text-primary-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color] border border-[var(--border-color)]"
                 >
                 Message
                 </Link>

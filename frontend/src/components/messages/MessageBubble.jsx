@@ -60,7 +60,7 @@ return (
         <button
             onClick={() => onDelete(message.id)}
             disabled={isDeleting}
-            className={`absolute -top-2 -right-2 w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-all duration-200 ${
+            className={`absolute -top-2 -right-2 w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-[box-shadow,border-color] duration-200 ${
             isHovered 
                 ? 'opacity-100 scale-100' 
                 : 'opacity-0 scale-90 pointer-events-none'

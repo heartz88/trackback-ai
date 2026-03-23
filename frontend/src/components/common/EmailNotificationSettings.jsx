@@ -137,7 +137,7 @@ return (
     <button
     onClick={save}
     disabled={saving}
-    className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+    className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-[box-shadow,border-color] disabled:opacity-60 disabled:cursor-not-allowed"
     >
     {saving ? 'Saving...' : 'Save Email Preferences'}
     </button>

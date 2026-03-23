@@ -61,7 +61,7 @@ extend: {
 plugins: [
     // Touch optimization + iOS one-tap fix
     function({ addUtilities, addBase }) {
-      // Override transition-all/transition-colors on interactive elements.
+      // Override transition-[box-shadow,border-color]/transition-colors on interactive elements.
       // These Tailwind utilities re-introduce the iOS 300ms tap delay because
       // WebKit waits to see if the transition is part of a double-tap gesture.
       // Setting transition:none on buttons/links/roles beats all utility classes.

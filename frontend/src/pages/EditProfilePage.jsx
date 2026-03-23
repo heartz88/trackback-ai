@@ -31,7 +31,7 @@ function EditProfilePage() {
     });
     const [avatarUrl, setAvatarUrl] = useState('');
 
-    const inputClass = "w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all";
+    const inputClass = "w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color]";
 
     // ── Fetch profile ──────────────────────────────────────────
     useEffect(() => {
@@ -157,7 +157,7 @@ function EditProfilePage() {
                 <div className="mb-6">
                     <div className="flex items-center gap-3 mb-1">
                         <Link to={`/profile/${formData.username}`}
-                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary-400 hover:bg-primary-500/10 transition-all">
+                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-primary-400 hover:bg-primary-500/10 transition-[box-shadow,border-color]">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>

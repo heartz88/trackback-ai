@@ -85,7 +85,7 @@ return (
             <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20 disabled:shadow-none"
+            className="w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20 disabled:shadow-none"
             >
             {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

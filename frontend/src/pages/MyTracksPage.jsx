@@ -84,7 +84,7 @@ return (
         </div>
         <Link
         to="/upload"
-        className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
+        className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
         >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -100,7 +100,7 @@ return (
         </svg>
         <p className="text-[var(--text-secondary)] text-xl mb-2 font-semibold">No tracks yet</p>
         <p className="text-[var(--text-tertiary)] mb-6">Upload your first track to start finding collaborators</p>
-        <Link to="/upload" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all">
+        <Link to="/upload" className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color]">
             Upload your first track
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -110,7 +110,7 @@ return (
     ) : (
         <div className="space-y-5">
         {tracks.map((track) => (
-            <div key={track.id} className="glass-panel rounded-2xl overflow-hidden hover:border-primary-500/40 transition-all">
+            <div key={track.id} className="glass-panel rounded-2xl overflow-hidden hover:border-primary-500/40 transition-[box-shadow,border-color]">
             {/* Track Top Bar */}
             <div className="p-6 pb-4">
                 <div className="flex items-start justify-between gap-4 mb-4">
@@ -151,7 +151,7 @@ return (
                     <Link
                     to={`/tracks/${track.id}`}
                     title="View Track Details"
-                    className="p-2 text-[var(--text-secondary)] hover:text-primary-400 hover:bg-primary-500/10 rounded-lg transition-all"
+                    className="p-2 text-[var(--text-secondary)] hover:text-primary-400 hover:bg-primary-500/10 rounded-lg transition-[box-shadow,border-color]"
                     >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -161,7 +161,7 @@ return (
                     <button
                     onClick={() => handleDelete(track.id)}
                     title="Delete Track"
-                    className="p-2 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                    className="p-2 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-[box-shadow,border-color]"
                     >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -202,7 +202,7 @@ return (
                 {/* View Details */}
                 <Link
                     to={`/tracks/${track.id}`}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm font-medium transition-all border border-[var(--border-color)]"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm font-medium transition-[box-shadow,border-color] border border-[var(--border-color)]"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
@@ -213,7 +213,7 @@ return (
                 {/* View Submissions */}
                 <Link
                     to={`/tracks/${track.id}/submissions`}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-blue-500/10 text-[var(--text-secondary)] hover:text-blue-400 rounded-lg text-sm font-medium transition-all border border-[var(--border-color)]"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-blue-500/10 text-[var(--text-secondary)] hover:text-blue-400 rounded-lg text-sm font-medium transition-[box-shadow,border-color] border border-[var(--border-color)]"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
@@ -227,7 +227,7 @@ return (
                 {/* Collaborations */}
                 <Link
                     to="/collaborations"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-green-500/10 text-[var(--text-secondary)] hover:text-green-400 rounded-lg text-sm font-medium transition-all border border-[var(--border-color)]"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-green-500/10 text-[var(--text-secondary)] hover:text-green-400 rounded-lg text-sm font-medium transition-[box-shadow,border-color] border border-[var(--border-color)]"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -245,7 +245,7 @@ return (
                     navigator.clipboard.writeText(`${window.location.origin}/tracks/${track.id}`);
                     toast.info('Track link copied!');
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] rounded-lg text-sm transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] rounded-lg text-sm transition-[box-shadow,border-color]"
                 >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />

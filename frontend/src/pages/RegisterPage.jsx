@@ -156,7 +156,7 @@ return (
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="Choose a username"
-                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color]"
                 required
                 disabled={isLoading}
             />
@@ -172,7 +172,7 @@ return (
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color]"
                 required
                 disabled={isLoading}
             />
@@ -191,7 +191,7 @@ return (
                 value={formData.password}
                 onChange={(e) => handlePasswordChange(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all pr-12"
+                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color] pr-12"
                 required
                 disabled={isLoading}
                 />
@@ -219,7 +219,7 @@ return (
                     {[...Array(4)].map((_, i) => (
                     <div
                         key={i}
-                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                        className={`h-1 flex-1 rounded-full transition-[box-shadow,border-color] duration-300 ${
                         i < passwordStrength ? getStrengthColor() : 'bg-gray-700'
                         }`}
                     />
@@ -249,7 +249,7 @@ return (
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 placeholder="••••••••"
-                className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:border-transparent transition-all pr-12 ${
+                className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:border-transparent transition-[box-shadow,border-color] pr-12 ${
                     formData.confirmPassword && formData.password !== formData.confirmPassword
                     ? 'border-red-500 focus:ring-red-500'
                     : formData.confirmPassword && formData.password === formData.confirmPassword
@@ -319,7 +319,7 @@ return (
             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
             placeholder="Tell others about yourself, your music style, what you're working on..."
             rows="3"
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all resize-none"
+            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-[box-shadow,border-color] resize-none"
             disabled={isLoading}
             />
         </div>
@@ -334,7 +334,7 @@ return (
             value={formData.skills}
             onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
             placeholder="e.g., mixing, mastering, vocals, guitar, production"
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-[box-shadow,border-color]"
             disabled={isLoading}
             />
             <p className="text-xs text-[var(--text-tertiary)] mt-1">
@@ -347,7 +347,7 @@ return (
         <button
         type="submit"
         disabled={isLoading}
-        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 animate-slide-up ${
+        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 animate-slide-up ${
             isLoading ? 'opacity-60 cursor-not-allowed' : ''
         }`}
         style={{ animationDelay: '0.4s', animationFillMode: 'both' }}

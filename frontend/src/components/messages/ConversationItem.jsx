@@ -13,7 +13,7 @@ currentUser
 }) {
 return (
 <div
-    className={`p-3 rounded-xl cursor-pointer transition-all duration-200 ${
+    className={`p-3 rounded-xl cursor-pointer transition-[box-shadow,border-color] duration-200 ${
     isSelected
         ? 'bg-primary-500/10 border border-primary-500/30'
         : 'hover:bg-[var(--bg-tertiary)]'

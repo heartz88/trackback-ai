@@ -21,7 +21,7 @@ export default function ProfileTabs({ activeTab, setActiveTab, tracksCount, coll
     <div className="relative mb-6">
       {/* Sliding underline */}
       <div
-        className="absolute bottom-0 h-0.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+        className="absolute bottom-0 h-0.5 rounded-full transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
         style={{
           left: pillStyle.left,
           width: pillStyle.width,
@@ -36,7 +36,7 @@ export default function ProfileTabs({ activeTab, setActiveTab, tracksCount, coll
             key={tab.id}
             ref={el => (tabRefs.current[i] = el)}
             onClick={() => setActiveTab(tab.id)}
-            className="relative px-5 py-3 text-sm font-semibold transition-all duration-300 whitespace-nowrap flex items-center gap-2 group"
+            className="relative px-5 py-3 text-sm font-semibold transition-[box-shadow,border-color] duration-300 whitespace-nowrap flex items-center gap-2 group"
             style={{ color: activeTab === tab.id ? '#14b8a6' : 'var(--text-tertiary)' }}
           >
             {/* Hover bg */}

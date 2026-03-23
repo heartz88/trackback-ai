@@ -23,7 +23,7 @@ export default function CommunityTabs({ activeTab, setActiveTab }) {
         <div className="relative mb-6" ref={containerRef}>
         {/* Glow line under active tab */}
         <div
-        className="absolute bottom-0 h-0.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+        className="absolute bottom-0 h-0.5 rounded-full transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
         style={{
             left: pillStyle.left,
             width: pillStyle.width,
@@ -39,7 +39,7 @@ export default function CommunityTabs({ activeTab, setActiveTab }) {
             key={tab}
             ref={el => (tabRefs.current[i] = el)}
             onClick={() => setActiveTab(i)}
-            className="relative px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl group"
+            className="relative px-4 py-3 text-sm font-semibold transition-[box-shadow,border-color] duration-300 rounded-t-xl group"
             style={{
                 color: activeTab === i ? 'var(--accent-primary)' : 'var(--text-tertiary)',
             }}

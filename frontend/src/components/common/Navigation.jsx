@@ -73,17 +73,17 @@ setAvatarError(false);
 const HamburgerIcon = () => (
 <button
     onClick={toggleMenu}
-    className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--border-color)] transition-all duration-300 group"
+    className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--border-color)] transition-[box-shadow,border-color] duration-300 group"
     aria-label="Toggle menu"
 >
     <div className="relative w-5 h-5">
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-all duration-300 ${
+    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-[box-shadow,border-color] duration-300 ${
         isMenuOpen ? 'rotate-45 top-2.5' : 'rotate-0 top-1'
     }`} />
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-all duration-300 ${
+    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-[box-shadow,border-color] duration-300 ${
         isMenuOpen ? 'opacity-0' : 'opacity-100 top-2.5'
     }`} />
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-all duration-300 ${
+    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-[box-shadow,border-color] duration-300 ${
         isMenuOpen ? '-rotate-45 top-2.5' : 'rotate-0 top-4'
     }`} />
     </div>
@@ -99,7 +99,7 @@ const HamburgerIcon = () => (
 
 return (
 <>
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-[box-shadow,border-color] duration-500 ${
     scrolled
         ? 'bg-[var(--bg-primary)]/95 backdrop-blur-xl border-b border-[var(--border-color)]/50 shadow-lg' 
         : 'bg-[var(--bg-primary)] border-b border-[var(--border-color)]/10'
@@ -148,7 +148,7 @@ return (
                 <div className="relative" ref={profileMenuRef}>
                 <button
                     onClick={toggleProfileMenu}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--border-color)] transition-all duration-300 border border-transparent hover:border-[var(--accent-primary)]/30 group"
+                    className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--border-color)] transition-[box-shadow,border-color] duration-300 border border-transparent hover:border-[var(--accent-primary)]/30 group"
                 >
                     <div className="relative">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 overflow-hidden">
@@ -236,7 +236,7 @@ return (
                 </Link>
                 <Link 
                 to="/register" 
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary-light)] text-white font-medium transition-all duration-300 shadow-lg shadow-[var(--accent-primary)]/20 hover:shadow-[var(--accent-primary)]/30"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary-light)] text-white font-medium transition-[box-shadow,border-color] duration-300 shadow-lg shadow-[var(--accent-primary)]/20 hover:shadow-[var(--accent-primary)]/30"
                 >
                 Get Started
                 </Link>
@@ -255,7 +255,7 @@ return (
     </nav>
 
     {/* Mobile Menu Overlay*/}
-    <div className={`md:hidden fixed inset-0 z-40 transition-all duration-500 ${
+    <div className={`md:hidden fixed inset-0 z-40 transition-[box-shadow,border-color] duration-500 ${
     isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
     }`}>
     <div
@@ -265,7 +265,7 @@ return (
         onClick={closeMenu}
     />
     
-    <div className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transform transition-all duration-500 ease-out ${
+    <div className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transform transition-[box-shadow,border-color] duration-500 ease-out ${
         isMenuOpen ? 'translate-x-0' : 'translate-x-full'
     }`}>
         
@@ -301,7 +301,7 @@ return (
             <Link 
             to={`/profile/${user.username}`} 
             onClick={closeMenu}
-            className="block p-4 rounded-xl bg-gradient-to-r from-[var(--accent-primary)]/5 to-transparent border border-[var(--border-color)] hover:border-[var(--accent-primary)]/30 transition-all duration-300"
+            className="block p-4 rounded-xl bg-gradient-to-r from-[var(--accent-primary)]/5 to-transparent border border-[var(--border-color)] hover:border-[var(--accent-primary)]/30 transition-[box-shadow,border-color] duration-300"
             >
             <div className="flex items-center space-x-3">
                 <div className="relative">
@@ -393,7 +393,7 @@ const MenuItem = ({ to, children, badge, onClick }) => (
 <Link
 to={to}
 onClick={onClick}
-className="flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertiary)] rounded-xl transition-all duration-300 group"
+className="flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertiary)] rounded-xl transition-[box-shadow,border-color] duration-300 group"
 >
 <span className="font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">
     {children}
@@ -404,7 +404,7 @@ className="flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertia
         {badge > 9 ? '9+' : badge}
     </span>
     )}
-    <svg className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-1 transition-[box-shadow,border-color]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
 </div>

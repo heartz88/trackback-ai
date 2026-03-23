@@ -37,7 +37,7 @@ export default function EditMusicTab({ formData, setFormData, saving, onSubmit, 
             </div>
 
             <button type="submit" disabled={saving}
-                className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20">
+                className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20">
                 {saving ? 'Saving…' : 'Save Details'}
             </button>
         </form>

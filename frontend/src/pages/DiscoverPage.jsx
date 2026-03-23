@@ -60,7 +60,7 @@ return (
         {user && (
         <Link
             to="/upload"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
         >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -76,7 +76,7 @@ return (
         <span>🎵 New tracks available!</span>
         <button
             onClick={() => { fetchTracks(); setNewTrackBanner(false); }}
-            className="px-3 py-1 bg-primary-600 hover:bg-primary-500 text-white text-xs rounded-lg transition-all"
+            className="px-3 py-1 bg-primary-600 hover:bg-primary-500 text-white text-xs rounded-lg transition-[box-shadow,border-color]"
         >
             Refresh
         </button>
@@ -160,7 +160,7 @@ return (
             <div className="space-y-2 flex items-end">
                 <button
                 onClick={fetchTracks}
-                className="w-full px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-lg transition-all shadow-lg shadow-primary-500/20"
+                className="w-full px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-lg transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
                 >
                 Apply Filters
                 </button>
@@ -227,10 +227,10 @@ return (
         <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Want to collaborate?</h3>
         <p className="text-[var(--text-secondary)] mb-4">Sign up to request collaborations and submit your versions</p>
         <div className="flex gap-3 justify-center">
-            <Link to="/register" className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-all">
+            <Link to="/register" className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color]">
             Get Started Free
             </Link>
-            <Link to="/login" className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] font-semibold rounded-xl transition-all border border-[var(--border-color)]">
+            <Link to="/login" className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] font-semibold rounded-xl transition-[box-shadow,border-color] border border-[var(--border-color)]">
             Sign In
             </Link>
         </div>

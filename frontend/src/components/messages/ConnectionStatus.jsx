@@ -17,7 +17,7 @@ export default function ConnectionStatus({
       {!isConnected && (
         <button
           onClick={onReconnect}
-          className="ml-auto px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-medium rounded-lg transition-all text-sm"
+          className="ml-auto px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-medium rounded-lg transition-[box-shadow,border-color] text-sm"
         >
           Reconnect
         </button>

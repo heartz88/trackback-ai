@@ -88,7 +88,7 @@ return (
         {user && user.id !== submission.collaborator_id && (
             <Link
             to={`/messages/new?userId=${submission.collaborator_id}`}
-            className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-tertiary)] hover:text-primary-400 rounded-lg text-xs transition-all border border-[var(--border-color)]"
+            className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-tertiary)] hover:text-primary-400 rounded-lg text-xs transition-[box-shadow,border-color] border border-[var(--border-color)]"
             >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -119,7 +119,7 @@ return (
         {/* Actions row */}
         <div className="submission-actions">
         <button
-            className={`action-btn flex items-center gap-1.5 transition-all ${
+            className={`action-btn flex items-center gap-1.5 transition-[box-shadow,border-color] ${
             showComments
                 ? 'text-primary-400 bg-primary-500/10 border-primary-500/30'
                 : 'text-[var(--text-secondary)] hover:text-primary-400'

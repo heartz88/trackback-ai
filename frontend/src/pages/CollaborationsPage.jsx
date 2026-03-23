@@ -135,7 +135,7 @@ return (
     {/* Tabs */}
     <div className="relative mb-6">
       <div
-        className="absolute bottom-0 h-0.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+        className="absolute bottom-0 h-0.5 rounded-full transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
         style={{
           left: activeTab === 'pending' ? 0 : '50%',
           width: '50%',
@@ -151,7 +151,7 @@ return (
           <button
             key={id}
             onClick={() => handleTabChange(id)}
-            className="relative flex-1 px-4 py-3 text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 group"
+            className="relative flex-1 px-4 py-3 text-sm font-semibold transition-[box-shadow,border-color] duration-300 flex items-center justify-center gap-2 group"
             style={{ color: activeTab === id ? 'var(--accent-primary, #14b8a6)' : 'var(--text-tertiary)' }}
           >
             <span className="absolute inset-0 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"
@@ -233,13 +233,13 @@ return (
                 <div className="flex gap-2">
                     <button
                     onClick={() => handleResponse(req.id, 'approved')}
-                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-all text-sm"
+                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color] text-sm"
                     >
                     ✓ Approve
                     </button>
                     <Link
                     to={`/messages/new?userId=${req.collaborator_id}`}
-                    className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-xl transition-all text-sm border border-[var(--border-color)] flex items-center gap-1"
+                    className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-xl transition-[box-shadow,border-color] text-sm border border-[var(--border-color)] flex items-center gap-1"
                     >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -248,7 +248,7 @@ return (
                     </Link>
                     <button
                     onClick={() => handleResponse(req.id, 'rejected')}
-                    className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-red-500/10 hover:text-red-400 text-[var(--text-secondary)] font-medium rounded-xl transition-all text-sm border border-[var(--border-color)]"
+                    className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-red-500/10 hover:text-red-400 text-[var(--text-secondary)] font-medium rounded-xl transition-[box-shadow,border-color] text-sm border border-[var(--border-color)]"
                     >
                     Decline
                     </button>
@@ -299,13 +299,13 @@ return (
                 <div className="flex gap-2 mt-3">
                     <Link
                     to={`/tracks/${req.track_id}`}
-                    className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-all border border-[var(--border-color)]"
+                    className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]"
                     >
                     View Track
                     </Link>
                     <Link
                     to={`/messages/new?userId=${req.owner_id}`}
-                    className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-all border border-[var(--border-color)]"
+                    className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]"
                     >
                     Message Owner
                     </Link>
@@ -355,7 +355,7 @@ return (
                         {req.status === 'approved' && (
                         <Link
                             to={`/tracks/${req.track_id}/submissions`}
-                            className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-all"
+                            className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
                         >
                             View Submissions
                         </Link>
@@ -400,7 +400,7 @@ return (
                         {req.status === 'approved' && (
                         <Link
                             to={`/tracks/${req.track_id}/submissions`}
-                            className="px-3 py-1.5 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 rounded-lg text-xs font-medium transition-all"
+                            className="px-3 py-1.5 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
                         >
                             Submit Version →
                         </Link>

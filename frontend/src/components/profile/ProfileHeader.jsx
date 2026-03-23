@@ -21,7 +21,7 @@ tracksCount,
 collaborationsCount 
 }) {
 return (
-<div className="glass-panel rounded-3xl p-8 mb-8 hover:border-primary-500/30 transition-all">
+<div className="glass-panel rounded-3xl p-8 mb-8 hover:border-primary-500/30 transition-[box-shadow,border-color]">
     <div className="flex flex-col lg:flex-row gap-8">
     {/* Avatar */}
     <div className="flex-shrink-0 text-center lg:text-left">

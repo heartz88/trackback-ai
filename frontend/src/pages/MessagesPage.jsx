@@ -462,7 +462,7 @@ function MessagesPage() {
             />
             <button
               onClick={() => setShowUserSearch(!showUserSearch)}
-              className="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
+              className="px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-sm font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
             >
               {showUserSearch ? 'Cancel' : '+ New Message'}
             </button>

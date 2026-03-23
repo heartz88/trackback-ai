@@ -17,7 +17,7 @@ const UserSearchItem = ({ user, isOnline, onSelect, disabled }) => (
       <p className="font-medium text-[var(--text-primary)]">{user.username || 'Unknown User'}</p>
     </div>
     <button
-      className={`px-4 py-1.5 text-white text-sm font-medium rounded-lg transition-all ${
+      className={`px-4 py-1.5 text-white text-sm font-medium rounded-lg transition-[box-shadow,border-color] ${
         disabled
           ? 'bg-gray-600 cursor-not-allowed opacity-50'
           : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400'
@@ -56,7 +56,7 @@ export default function UserSearch({
           placeholder="Search users by name or email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color]"
           autoFocus
           disabled={startingConversation || !isConnected}
         />

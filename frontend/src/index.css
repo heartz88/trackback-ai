@@ -9,19 +9,27 @@
 
 /* ===== iOS ONE-TAP FIX =====
    touch-action: manipulation removes the 300ms delay.
-   transition: none !important beats Tailwind's transition-all utility
+   transition: none !important beats Tailwind's transition-[box-shadow,border-color] utility
    which would otherwise re-introduce the tap delay on iOS WebKit. */
+/* Buttons and links - no transition so iOS fires on first tap */
 button,
 a,
-input,
-textarea,
-select,
 [role="button"],
 [onClick],
 [class*="btn-"] {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: none !important;
+}
+
+/* Inputs - touch-action manipulation to prevent zoom delay,
+   but keep box-shadow/border transitions so focus rings animate */
+input,
+textarea,
+select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
 }
 
 /* Ensure all form inputs are at least 16px to prevent iOS zoom */

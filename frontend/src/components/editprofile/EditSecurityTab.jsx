@@ -71,7 +71,7 @@ export default function EditSecurityTab({ saving, onSubmit, inputClass }) {
                         <div className="mt-2">
                             <div className="flex gap-1 mb-1">
                                 {[...Array(4)].map((_, i) => (
-                                    <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < strength ? strengthColor : 'bg-gray-700'}`} />
+                                    <div key={i} className={`h-1 flex-1 rounded-full transition-[box-shadow,border-color] duration-300 ${i < strength ? strengthColor : 'bg-gray-700'}`} />
                                 ))}
                             </div>
                             {strengthText && <p className="text-xs text-[var(--text-tertiary)]">Strength: <span className={`font-medium ${strengthTextColor}`}>{strengthText}</span></p>}
@@ -86,7 +86,7 @@ export default function EditSecurityTab({ saving, onSubmit, inputClass }) {
                         <input type={show.confirm ? 'text' : 'password'} name="confirm_password"
                             value={passwordData.confirm_password} onChange={handleChange}
                             style={{ fontSize: '16px' }}
-                            className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:border-transparent transition-all pr-12 ${
+                            className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:border-transparent transition-[box-shadow,border-color] pr-12 ${
                                 passwordData.confirm_password && passwordData.new_password !== passwordData.confirm_password
                                     ? 'border-red-500 focus:ring-red-500'
                                     : passwordData.confirm_password && passwordData.new_password === passwordData.confirm_password
@@ -115,7 +115,7 @@ export default function EditSecurityTab({ saving, onSubmit, inputClass }) {
             </div>
 
             <button type="submit" disabled={saving}
-                className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20">
+                className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20">
                 {saving ? 'Updating…' : 'Update Password'}
             </button>
         </form>

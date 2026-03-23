@@ -35,12 +35,12 @@ export default function EditProfileTab({ formData, setFormData, avatarUrl, setAv
                         <div className="flex flex-wrap gap-2">
                             <button type="button" onClick={() => avatarInputRef.current?.click()}
                                 disabled={uploadingAvatar}
-                                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white text-sm font-semibold rounded-xl transition-all">
+                                className="px-4 py-2 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white text-sm font-semibold rounded-xl transition-[box-shadow,border-color]">
                                 {uploadingAvatar ? 'Uploading…' : 'Upload Photo'}
                             </button>
                             {avatarUrl && (
                                 <button type="button" onClick={onRemoveAvatar} disabled={uploadingAvatar}
-                                    className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 text-sm font-semibold rounded-xl transition-all border border-[var(--border-color)] disabled:opacity-50">
+                                    className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 text-sm font-semibold rounded-xl transition-[box-shadow,border-color] border border-[var(--border-color)] disabled:opacity-50">
                                     Remove
                                 </button>
                             )}
@@ -87,7 +87,7 @@ export default function EditProfileTab({ formData, setFormData, avatarUrl, setAv
                 </div>
 
                 {/* Collab toggle */}
-                <label className="flex items-center gap-3 p-3 sm:p-4 bg-[var(--bg-tertiary)]/40 rounded-xl border border-[var(--border-color)] cursor-pointer hover:border-primary-500/40 transition-all">
+                <label className="flex items-center gap-3 p-3 sm:p-4 bg-[var(--bg-tertiary)]/40 rounded-xl border border-[var(--border-color)] cursor-pointer hover:border-primary-500/40 transition-[box-shadow,border-color]">
                     <div className="relative flex-shrink-0">
                         <input type="checkbox" checked={formData.looking_for_collab}
                             onChange={e => setFormData(p => ({ ...p, looking_for_collab: e.target.checked }))}
@@ -105,11 +105,11 @@ export default function EditProfileTab({ formData, setFormData, avatarUrl, setAv
 
             <div className="flex gap-3">
                 <button type="submit" disabled={saving}
-                    className="flex-1 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20 disabled:shadow-none">
+                    className="flex-1 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20 disabled:shadow-none">
                     {saving ? 'Saving…' : 'Save Changes'}
                 </button>
                 <Link to={`/profile/${formData.username}`}
-                    className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-semibold rounded-xl transition-all border border-[var(--border-color)] text-center">
+                    className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-semibold rounded-xl transition-[box-shadow,border-color] border border-[var(--border-color)] text-center">
                     Cancel
                 </Link>
             </div>

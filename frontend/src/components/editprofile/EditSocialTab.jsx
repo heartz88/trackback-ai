@@ -42,7 +42,7 @@ export default function EditSocialTab({ socialLinks, setSocialLinks, saving, onS
                                 </span>
                                 {label}
                             </label>
-                            <div className="flex items-center bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
+                            <div className="flex items-center bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-[box-shadow,border-color]">
                                 <span className="px-3 text-[var(--text-tertiary)] text-sm border-r border-[var(--border-color)] py-3 flex-shrink-0">{prefix}</span>
                                 <input type="text" name={name} value={socialLinks[name]} onChange={handleChange}
                                     style={{ fontSize: '16px' }}
@@ -85,7 +85,7 @@ export default function EditSocialTab({ socialLinks, setSocialLinks, saving, onS
             </div>
 
             <button type="submit" disabled={saving}
-                className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20">
+                className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 disabled:from-gray-700 disabled:to-gray-700 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20">
                 {saving ? 'Saving…' : 'Save Social Links'}
             </button>
         </form>

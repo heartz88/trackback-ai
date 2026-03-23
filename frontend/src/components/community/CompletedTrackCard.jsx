@@ -64,7 +64,7 @@ return 'bg-green-500/10 text-green-400 border-green-500/30';
 
 return (
 <div
-    className={`relative rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-1 ${
+    className={`relative rounded-xl overflow-hidden transition-[box-shadow,border-color] duration-200 hover:-translate-y-1 ${
     featured 
         ? 'border-2 border-primary-500 bg-gradient-to-br from-primary-500/5 to-transparent' 
         : 'border border-[var(--border-color)] bg-[var(--surface-1)]'
@@ -175,7 +175,7 @@ return (
             <button
                 onClick={handleLike}
                 disabled={likeLoading}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-[box-shadow,border-color] ${
                 liked 
                     ? 'bg-red-500/10 text-red-400 border border-red-500/30' 
                     : 'bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:text-primary-400'
@@ -189,7 +189,7 @@ return (
 
             <button
                 onClick={handleCommentToggle}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-[box-shadow,border-color] ${
                 showComments
                     ? 'bg-primary-500/10 text-primary-400 border border-primary-500/30'
                     : 'bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:text-primary-400'
