@@ -7,15 +7,21 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Prevent double-tap zoom on all interactive elements - using CSS only */
+/* ===== iOS ONE-TAP FIX =====
+   touch-action: manipulation removes the 300ms delay.
+   transition: none !important beats Tailwind's transition-all utility
+   which would otherwise re-introduce the tap delay on iOS WebKit. */
 button,
 a,
 input,
 textarea,
 select,
 [role="button"],
-[onClick] {
+[onClick],
+[class*="btn-"] {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: none !important;
 }
 
 /* Ensure all form inputs are at least 16px to prevent iOS zoom */
@@ -42,26 +48,20 @@ select {
   }
 }
 
-/* Disable hover effects on touch devices - but keep clickable */
+/* Disable hover effects on touch devices */
 @media (hover: none) and (pointer: coarse) {
-  /* Disable card hover effects */
   .music-card:hover {
     transform: none !important;
     border-color: var(--border-color) !important;
     box-shadow: none !important;
   }
-
   .music-card:hover::before {
     left: -100%;
   }
-
-  /* Disable button scale effects */
   .btn-primary:hover:not(:disabled),
   .btn-secondary:hover:not(:disabled) {
     transform: none !important;
   }
-
-  /* Disable link hover effects */
   a:hover {
     text-decoration: none !important;
   }
@@ -137,13 +137,13 @@ box-sizing: border-box;
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
+/* Override: interactive elements must NEVER have transitions — they cause
+   iOS WebKit to wait 300ms before firing onClick on first tap */
 button,
 a,
-input,
-textarea,
-select,
-[role="button"] {
-  transition: none;
+[role="button"],
+[class*="btn-"] {
+  transition: none !important;
 }
 
 body {
