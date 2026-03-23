@@ -219,7 +219,7 @@ return (
                     {[...Array(4)].map((_, i) => (
                     <div
                         key={i}
-                        className={`h-1 flex-1 rounded-full transition-[box-shadow,border-color] duration-300 ${
+                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
                         i < passwordStrength ? getStrengthColor() : 'bg-gray-700'
                         }`}
                     />
@@ -347,8 +347,8 @@ return (
         <button
         type="submit"
         disabled={isLoading}
-        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 animate-slide-up ${
-            isLoading ? 'opacity-60 cursor-not-allowed' : ''
+        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-[1.02] active:scale-[0.98] animate-slide-up ${
+            isLoading ? 'opacity-60 cursor-not-allowed hover:scale-100' : ''
         }`}
         style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
         >
