@@ -92,7 +92,7 @@ return (
     </div>
     <button
         onClick={() => setPrefs(prev => ({ ...prev, enabled: !prev.enabled }))}
-        className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+        className={`relative w-12 h-6 rounded-full focus:outline-none ${
         prefs.enabled ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'
         }`}
     >
@@ -121,7 +121,7 @@ return (
         </div>
         <button
             onClick={() => toggle(key)}
-            className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 ${
+            className={`relative w-10 h-5 rounded-full  focus:outline-none flex-shrink-0 ${
             prefs[key] ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'
             }`}
         >

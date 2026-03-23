@@ -92,7 +92,7 @@ export default function EditProfileTab({ formData, setFormData, avatarUrl, setAv
                         <input type="checkbox" checked={formData.looking_for_collab}
                             onChange={e => setFormData(p => ({ ...p, looking_for_collab: e.target.checked }))}
                             className="sr-only" />
-                        <div className={`w-10 h-6 rounded-full transition-colors duration-200 ${formData.looking_for_collab ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'}`}>
+                        <div className={`w-10 h-6 rounded-full ${formData.looking_for_collab ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'}`}>
                             <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${formData.looking_for_collab ? 'translate-x-5' : 'translate-x-1'}`} />
                         </div>
                     </div>

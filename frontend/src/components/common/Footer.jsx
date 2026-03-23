@@ -5,7 +5,7 @@ function Footer() {
 const currentYear = new Date().getFullYear();
 
 return (
-<footer className="bg-[var(--bg-secondary)] border-t border-[var(--border-color)] transition-colors duration-300">
+<footer className="bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     {/* Main Footer Grid */}
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 mb-12">

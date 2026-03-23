@@ -49,7 +49,7 @@ const clearFilters = () => setFilters({ bpm_min: '', bpm_max: '', energy_level: 
 const activeFilterCount = Object.values(filters).filter((v) => v !== '').length;
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] px-4 transition-colors duration-300">
+<div className="min-h-screen bg-[var(--bg-primary)] px-4">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {/* Header */}
     <div className="flex items-center justify-between mb-8 flex-wrap gap-4">

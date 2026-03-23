@@ -11,7 +11,7 @@ function HomePage() {
 const { user } = useAuth();
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
+<div className="min-h-screen bg-[var(--bg-primary)] ">
     
     {/* Hero Section */}
     <section className="relative overflow-hidden">
