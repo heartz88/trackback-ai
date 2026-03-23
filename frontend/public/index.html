@@ -9,66 +9,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>TrackBackAI | Music Collaboration</title>
-    <style>
-      * {
-        -webkit-tap-highlight-color: transparent !important;
-      }
-      a, button, [role="button"] {
-        touch-action: manipulation !important;
-        cursor: pointer;
-      }
-      input, select, textarea {
-        touch-action: auto !important;
-        cursor: auto;
-      }
-    </style>
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <script>
-      // iOS 300ms tap delay fix — only targets buttons and links,
-      // never touches inputs/textareas so keyboard still works.
-      (function() {
-        if (!/iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
-
-        var IGNORE_TAGS = { INPUT: 1, TEXTAREA: 1, SELECT: 1, LABEL: 1 };
-        var touchStartX, touchStartY;
-
-        document.addEventListener('touchstart', function(e) {
-          if (e.touches.length === 1) {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-          }
-        }, { passive: true });
-
-        document.addEventListener('touchend', function(e) {
-          if (!e.changedTouches || e.changedTouches.length !== 1) return;
-
-          var touch = e.changedTouches[0];
-          var dx = Math.abs(touch.clientX - touchStartX);
-          var dy = Math.abs(touch.clientY - touchStartY);
-
-          // If finger moved more than 10px it's a scroll, not a tap
-          if (dx > 10 || dy > 10) return;
-
-          var t = e.target;
-          while (t && t !== document.body) {
-            // Never intercept inputs — let iOS handle keyboard focus naturally
-            if (IGNORE_TAGS[t.tagName]) return;
-
-            var tag = t.tagName;
-            var role = t.getAttribute('role');
-
-            if (tag === 'BUTTON' || tag === 'A' || role === 'button') {
-              e.preventDefault();
-              t.click();
-              return;
-            }
-            t = t.parentElement;
-          }
-        }, { passive: false });
-      })();
-    </script>
 </body>
 </html>
