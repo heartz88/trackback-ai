@@ -194,7 +194,7 @@ return (
                 <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-yellow-500">
                 <div className="flex items-start space-x-4 mb-4">
                     <Link to={`/profile/${req.collaborator_name}`} className="flex-shrink-0">
-                    <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg hover:scale-105 transition-transform">
+                    <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
                         {req.collaborator_name?.[0]?.toUpperCase() || '?'}
                     </div>
                     </Link>
@@ -335,7 +335,7 @@ return (
                     <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-3">
                         <Link to={`/profile/${req.collaborator_name}`}>
-                        <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-transform">
+                        <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                             {req.collaborator_name?.[0]?.toUpperCase() || '?'}
                         </div>
                         </Link>

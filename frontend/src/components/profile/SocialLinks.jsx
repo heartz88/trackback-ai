@@ -5,7 +5,7 @@ const SocialIcon = ({ href, bgColor, icon, label }) => {
       href={href} 
       target="_blank" 
       rel="noopener noreferrer" 
-      className={`w-10 h-10 ${bgColor} rounded-xl flex items-center justify-center hover:scale-110 transition-transform shadow-lg`}
+      className={`w-10 h-10 ${bgColor} rounded-xl flex items-center justify-center shadow-lg`}
       title={label}
     >
       <img src={icon} className="w-5 h-5" alt={label} />

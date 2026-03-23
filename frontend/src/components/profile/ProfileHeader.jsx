@@ -30,7 +30,7 @@ return (
             <img 
             src={profile.avatar_url} 
             alt={profile.username}
-            className="w-32 h-32 lg:w-36 lg:h-36 rounded-full object-cover border-4 border-white/20 shadow-2xl hover:scale-105 transition-transform duration-300" 
+            className="w-32 h-32 lg:w-36 lg:h-36 rounded-full object-cover border-4 border-white/20 shadow-2xl" 
             onError={(e) => {
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'flex';

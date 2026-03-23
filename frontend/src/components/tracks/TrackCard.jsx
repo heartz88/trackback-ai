@@ -41,7 +41,7 @@ return (
 <div className={`
     glass-panel rounded-2xl overflow-hidden
     hover:border-primary-500/50 transition-all duration-500
-    group music-card hover:scale-[1.02] hover:shadow-xl
+    group music-card hover:shadow-xl
     hover:shadow-primary-500/20 animate-fade-in
     ${isOwner ? 'border-primary-500/30' : ''}
 `}>
@@ -190,7 +190,7 @@ return (
                             bg-gradient-to-r from-primary-600 to-primary-500
                             hover:from-primary-500 hover:to-primary-400
                             text-white shadow-lg shadow-primary-500/20
-                            ${requesting ? 'opacity-75 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}
+                            ${requesting ? 'opacity-75 cursor-not-allowed' : ' active:scale-[0.98]'}
                         `}
                     >
                         {requesting ? (

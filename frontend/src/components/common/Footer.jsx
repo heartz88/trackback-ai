@@ -13,7 +13,7 @@ return (
         <div className="lg:col-span-5 space-y-6">
         <Link to="/" className="inline-flex items-center gap-3 group">
             <div className="relative">
-            <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-12 h-12 flex items-center justify-center group">
                 <img src={logo} className="w-full h-full object-cover rounded-xl" alt="TrackBack AI" />
             </div>
             </div>

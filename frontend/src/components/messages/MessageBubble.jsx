@@ -64,7 +64,7 @@ return (
             isHovered 
                 ? 'opacity-100 scale-100' 
                 : 'opacity-0 scale-90 pointer-events-none'
-            } hover:bg-red-600 hover:scale-110 active:scale-95`}
+            } hover:bg-red-600 active:scale-95`}
             title="Delete message"
         >
             {isDeleting ? <Spinner /> : <TrashIcon />}

@@ -43,7 +43,7 @@ return (
         <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
             <Link to={`/profile/${otherPersonName}`}>
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm hover:scale-105 transition-transform shadow-md">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
                 {otherPersonName?.[0]?.toUpperCase() || '?'}
                 </div>
             </Link>

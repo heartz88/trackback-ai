@@ -110,7 +110,7 @@ return (
         <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center space-x-3 group" onClick={closeMenu}>
             <div className="relative">
-                <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div className="w-12 h-12 flex items-center justify-center group">
                 <img src={logo} className="w-full h-full object-cover rounded-xl" alt="Trackback AI"/>
                 </div>
             </div>
@@ -384,7 +384,7 @@ className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] h
     {badge > 9 ? '9+' : badge}
     </span>
 )}
-<span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+<span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-full transform scale-x-0 group" />
 </Link>
 );
 
