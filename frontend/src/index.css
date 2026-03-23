@@ -9,7 +9,7 @@
 
 /* ===== iOS ONE-TAP FIX =====
    touch-action: manipulation removes the 300ms delay.
-   transition: none !important beats Tailwind's transition-[box-shadow,border-color] utility
+   transition: none !important beats Tailwind's transition-all utility
    which would otherwise re-introduce the tap delay on iOS WebKit. */
 /* Buttons and links - no transition so iOS fires on first tap */
 button,
