@@ -72,10 +72,21 @@ box-sizing: border-box;
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Fix iOS Safari double-tap issue — remove transition delay from interactive elements */
-button, a, input, select, textarea, [role="button"] {
+/* iOS Safari fix — prevent double-tap requirement on all interactive elements */
+button,
+a,
+input,
+select,
+textarea,
+label,
+[role="button"],
+[onClick],
+[tabindex] {
+-webkit-touch-callout: none;
 touch-action: manipulation;
-transition: none;
+-webkit-tap-highlight-color: transparent;
+transition: none !important;
+cursor: pointer;
 }
 
 body {
@@ -5659,6 +5670,9 @@ h1.text-4xl { font-size: 26px !important; }
 
 }
 
+/* ============================================================
+EXTRA SMALL — max-width: 390px (iPhone SE / small Android)
+============================================================ */
 @media (max-width: 390px) {
 
 .min-h-screen { padding-left: 12px; padding-right: 12px; }
