@@ -47,6 +47,10 @@
 --glass-border-strong: rgba(20, 184, 166, 0.2);
 }
 
+* {
+    touch-action: manipulation;
+}
+
 /* Light Mode Override when .light class is present */
 .light {
 --bg-primary: var(--bg-primary-light);
