@@ -5,7 +5,7 @@
     <link rel="icon" type="image/png" href="%PUBLIC_URL%/logo.png" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
     
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, viewport-fit=cover" />
     
     <meta name="theme-color" content="#20918b" />
     
@@ -15,46 +15,36 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
 
-  <script>
-    // Fix iOS Safari double-tap requirement on all interactive elements
-    document.addEventListener('touchstart', function() {}, {passive: true});
-    
-    document.addEventListener('DOMContentLoaded', function() {
-      function fixTouchElement(el) {
-        el.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          var clickEvent = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-          });
-          el.dispatchEvent(clickEvent);
-        }, {passive: false});
-      }
-
-      function applyFixes() {
-        var selector = 'button, a, input, select, textarea, label, [role="button"], [tabindex]';
-        document.querySelectorAll(selector).forEach(fixTouchElement);
-      }
-
-      applyFixes();
-
-      // Re-apply when React renders new elements
-      var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-          mutation.addedNodes.forEach(function(node) {
-            if (node.nodeType === 1) {
-              var selector = 'button, a, input, select, textarea, label, [role="button"], [tabindex]';
-              if (node.matches && node.matches(selector)) fixTouchElement(node);
-              node.querySelectorAll && node.querySelectorAll(selector).forEach(fixTouchElement);
+    <script>
+      (function() {
+        // Check if we need to handle the 300ms delay (older iOS versions)
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isIOS) {
+          // Add touch-action: manipulation to all interactive elements via CSS
+          var style = document.createElement('style');
+          style.textContent = `
+            button, a, input, select, textarea, label, [role="button"] {
+              touch-action: manipulation;
             }
-          });
-        });
-      });
-
-      observer.observe(document.body, { childList: true, subtree: true });
-    });
-  </script>
+          `;
+          document.head.appendChild(style);
+        }
+        
+        // Prevent double-tap zoom on buttons (optional)
+        document.addEventListener('touchstart', function(e) {
+          var el = e.target;
+          var isInteractive = el.matches && (
+            el.matches('button, a, input, select, textarea, [role="button"]') ||
+            el.closest('button, a, input, select, textarea, [role="button"]')
+          );
+          
+          if (isInteractive) {
+            // Prevent double-tap zoom on interactive elements
+            e.preventDefault();
+          }
+        }, { passive: false });
+      })();
+    </script>
 </body>
 </html>
