@@ -347,7 +347,7 @@ return (
         <button
         type="submit"
         disabled={isLoading}
-        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 active:scale-[0.98] animate-slide-up ${
+        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 animate-slide-up ${
             isLoading ? 'opacity-60 cursor-not-allowed' : ''
         }`}
         style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
