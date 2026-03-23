@@ -4,27 +4,57 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="%PUBLIC_URL%/logo.png" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
     <meta name="theme-color" content="#20918b" />
+    
     <title>TrackBackAI | Music Collaboration</title>
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <script>
-      document.addEventListener('touchend', function(e) {
-        var el = e.target;
-        while (el && el !== document.body) {
-          var tag = el.tagName ? el.tagName.toLowerCase() : '';
-          if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-          if (tag === 'button' || tag === 'a' || el.getAttribute('role') === 'button') {
-            e.preventDefault();
-            el.click();
-            return;
-          }
-          el = el.parentElement;
-        }
-      }, { passive: false });
-    </script>
+
+  <script>
+    // Fix iOS Safari double-tap requirement on all interactive elements
+    document.addEventListener('touchstart', function() {}, {passive: true});
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      function fixTouchElement(el) {
+        el.addEventListener('touchend', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          });
+          el.dispatchEvent(clickEvent);
+        }, {passive: false});
+      }
+
+      function applyFixes() {
+        var selector = 'button, a, input, select, textarea, label, [role="button"], [tabindex]';
+        document.querySelectorAll(selector).forEach(fixTouchElement);
+      }
+
+      applyFixes();
+
+      // Re-apply when React renders new elements
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          mutation.addedNodes.forEach(function(node) {
+            if (node.nodeType === 1) {
+              var selector = 'button, a, input, select, textarea, label, [role="button"], [tabindex]';
+              if (node.matches && node.matches(selector)) fixTouchElement(node);
+              node.querySelectorAll && node.querySelectorAll(selector).forEach(fixTouchElement);
+            }
+          });
+        });
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  </script>
 </body>
 </html>
