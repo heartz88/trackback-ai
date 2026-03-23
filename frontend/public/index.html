@@ -4,8 +4,11 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="%PUBLIC_URL%/logo.png" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
+    
     <meta name="theme-color" content="#20918b" />
+    
     <title>TrackBackAI | Music Collaboration</title>
 </head>
 <body>
@@ -13,58 +16,26 @@
     <div id="root"></div>
 
     <script>
-      // Simple touch optimization - doesn't interfere with normal tap behavior
+      // Simple fix to ensure inputs have proper font size to prevent iOS zoom
       (function() {
-        // Store the last tap time to detect double taps
-        let lastTap = 0;
-        
-        // Prevent double-tap zoom ONLY on interactive elements
-        document.addEventListener('touchstart', function(e) {
-          const target = e.target;
-          const isFormElement = 
-            target.tagName === 'INPUT' || 
-            target.tagName === 'TEXTAREA' || 
-            target.tagName === 'SELECT' ||
-            target.isContentEditable;
-          
-          // If it's a form element and it's a double tap (2 fingers or 2 quick taps)
-          if (isFormElement && e.touches.length === 2) {
-            e.preventDefault();
-            return false;
-          }
-          
-          // For single tap detection on buttons - only handle quick double taps
-          const isButton = 
-            target.tagName === 'BUTTON' || 
-            target.tagName === 'A' ||
-            target.closest('button') ||
-            target.closest('a');
-          
-          if (isButton) {
-            const now = Date.now();
-            const timeDiff = now - lastTap;
-            if (timeDiff < 300 && timeDiff > 0) {
-              // This is a double tap on a button - prevent zoom
-              e.preventDefault();
-            }
-            lastTap = now;
-          }
-        }, { passive: false });
-        
-        // Ensure inputs have proper font size to prevent iOS zoom
+        // Only ensure inputs have proper font size - NO event blocking
         const ensureInputFontSize = function() {
           const inputs = document.querySelectorAll('input, textarea, select');
           inputs.forEach(input => {
-            if (window.getComputedStyle(input).fontSize === '16px') return;
-            // Only set if not already 16px
-            if (parseInt(window.getComputedStyle(input).fontSize) < 16) {
+            const fontSize = window.getComputedStyle(input).fontSize;
+            if (parseInt(fontSize) < 16) {
               input.style.fontSize = '16px';
             }
           });
         };
         
         // Run on load and after DOM changes
-        ensureInputFontSize();
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', ensureInputFontSize);
+        } else {
+          ensureInputFontSize();
+        }
+        
         const observer = new MutationObserver(ensureInputFontSize);
         observer.observe(document.body, { childList: true, subtree: true });
       })();
