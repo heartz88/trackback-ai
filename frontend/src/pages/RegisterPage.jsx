@@ -199,6 +199,7 @@ return (
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                style={{ transform: 'translateY(-50%)' }}
                 disabled={isLoading}
                 >
                 {showPassword ? (

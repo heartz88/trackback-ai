@@ -22,6 +22,7 @@ select,
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: none !important;
+  cursor: pointer;
 }
 
 /* Ensure all form inputs are at least 16px to prevent iOS zoom */
@@ -45,6 +46,15 @@ select {
   .btn-primary:not([style*="height"]),
   .btn-secondary:not([style*="height"]) {
     min-height: 44px;
+  }
+  
+  /* Fix password toggle button positioning */
+  .relative button.absolute {
+    min-height: auto !important;
+    height: auto !important;
+    transform: translateY(-50%) !important;
+    top: 50% !important;
+    bottom: auto !important;
   }
 }
 
@@ -664,11 +674,12 @@ border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
 transform: translateY(-2px);
 }
 
-/* ===== SMOOTH TRANSITIONS ===== */
-
-button, a, input, textarea, select {
-transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* ===== REMOVED CONFLICTING TRANSITIONS ===== */
+/* The following block was removed to fix iOS double-tap issue:
+   button, a, input, textarea, select {
+     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+   }
+*/
 
 /* ===== FOCUS STATES ===== */
 
@@ -1714,7 +1725,6 @@ border-radius: 8px;
 font-size: 16px;
 font-weight: 600;
 cursor: pointer;
-transition: all 0.2s;
 border: none;
 text-decoration: none;
 display: inline-flex;
