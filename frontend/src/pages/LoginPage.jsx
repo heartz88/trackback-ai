@@ -117,13 +117,13 @@ return (
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="w-4 h-4 rounded border-[var(--border-color)] text-primary-600 focus:ring-primary-500 focus:ring-offset-0 bg-[var(--bg-tertiary)] cursor-pointer"
                 />
-                <span className="ml-2 text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+                <span className="ml-2 text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">
                     Remember me for 30 days
                 </span>
             </label>
             <Link 
                 to="/forgot-password" 
-                className="text-sm text-primary-400 hover:text-primary-300 font-medium transition-colors"
+                className="text-sm text-primary-400 hover:text-primary-300 font-medium"
             >
                 Forgot password?
             </Link>
@@ -140,7 +140,7 @@ return (
         
         <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
         Don't have an account?{' '}
-        <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+        <Link to="/register" className="text-primary-400 hover:text-primary-300 font-medium">
             Sign up
         </Link>
         </p>

@@ -277,7 +277,7 @@ return (
                 <Link to={`/profile/${collab.username}`} className="flex items-center gap-3 flex-1 min-w-0 group">
                     <Avatar user={collab} size={32} />
                     <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-primary-400 transition-colors truncate">
+                    <div className="font-semibold text-[var(--text-primary)] text-sm group-hover:text-primary-400 truncate">
                         @{collab.username}
                     </div>
                     <span className="text-xs text-[var(--text-tertiary)]">{collab.role || 'Collaborator'}</span>

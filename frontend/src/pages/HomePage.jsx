@@ -35,7 +35,7 @@ return (
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link
                 to="/register"
-                className="px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-lg font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
+                className="px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-lg font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
             >
                 Get Started Free
             </Link>
@@ -250,7 +250,7 @@ return (
             </p>
             <Link
             to="/register"
-            className="inline-block px-10 py-5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-lg font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
+            className="inline-block px-10 py-5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-lg font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
             >
             Get Started Free →
             </Link>

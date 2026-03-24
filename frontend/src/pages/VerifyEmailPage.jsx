@@ -110,7 +110,7 @@ function VerifyEmailPage() {
                                 </Link>
                                 <Link
                                     to="/resend-verification"
-                                    className="block text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                                    className="block text-sm text-primary-400 hover:text-primary-300"
                                 >
                                     Resend verification email
                                 </Link>

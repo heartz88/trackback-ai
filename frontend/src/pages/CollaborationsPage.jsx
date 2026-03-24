@@ -199,7 +199,7 @@ return (
                     </div>
                     </Link>
                     <div className="flex-1 min-w-0">
-                    <Link to={`/profile/${req.collaborator_name}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400 transition-colors">
+                    <Link to={`/profile/${req.collaborator_name}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">
                         {req.collaborator_name}
                     </Link>
                     <p className="text-sm text-[var(--text-secondary)] mt-0.5">
@@ -276,7 +276,7 @@ return (
                 <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500">
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                    <Link to={`/tracks/${req.track_id}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400 transition-colors">
+                    <Link to={`/tracks/${req.track_id}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">
                         "{req.track_title}"
                     </Link>
                     <p className="text-sm text-[var(--text-secondary)] mt-0.5">
@@ -340,7 +340,7 @@ return (
                         </div>
                         </Link>
                         <div>
-                        <Link to={`/profile/${req.collaborator_name}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 transition-colors text-sm">
+                        <Link to={`/profile/${req.collaborator_name}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">
                             {req.collaborator_name}
                         </Link>
                         <p className="text-xs text-[var(--text-secondary)]">
@@ -386,7 +386,7 @@ return (
                 <div key={req.id} className="glass-panel p-4 rounded-xl opacity-80 hover:opacity-100 transition-opacity">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
-                        <Link to={`/tracks/${req.track_id}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 transition-colors text-sm">
+                        <Link to={`/tracks/${req.track_id}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">
                         "{req.track_title}"
                         </Link>
                         <p className="text-xs text-[var(--text-secondary)]">

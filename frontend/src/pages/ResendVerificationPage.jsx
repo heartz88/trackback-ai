@@ -86,7 +86,7 @@ function ResendVerificationPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-primary-500/20"
+                        className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-primary-500/20"
                     >
                         {loading ? (
                             <span className="flex items-center justify-center gap-2">
@@ -103,7 +103,7 @@ function ResendVerificationPage() {
 
                     <div className="space-y-3 text-center">
                         <p className="text-sm text-[var(--text-tertiary)]">
-                            <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                            <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">
                                 ← Back to Login
                             </Link>
                         </p>
