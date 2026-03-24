@@ -59,7 +59,7 @@ return (
             onClick={() => setPlayingTrackId(playingTrackId === track.id ? null : track.id)} 
             className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
         >
-            <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center shadow-xl transform group">
+            <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center shadow-xl">
             {playingTrackId === track.id ? (
                 <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="4" width="4" height="16" rx="1" />

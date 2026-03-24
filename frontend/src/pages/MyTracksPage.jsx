@@ -84,7 +84,7 @@ return (
         </div>
         <Link
         to="/upload"
-        className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
+        className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/20"
         >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -110,7 +110,7 @@ return (
     ) : (
         <div className="space-y-5">
         {tracks.map((track) => (
-            <div key={track.id} className="glass-panel rounded-2xl overflow-hidden hover:border-primary-500/40 transition-[box-shadow,border-color]">
+            <div key={track.id} className="glass-panel rounded-2xl overflow-hidden hover:border-primary-500/40 transition-all">
             {/* Track Top Bar */}
             <div className="p-6 pb-4">
                 <div className="flex items-start justify-between gap-4 mb-4">
