@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 /* ===== GLOBAL TOUCH OPTIMIZATIONS ===== */
 * {
   -webkit-tap-highlight-color: transparent;
