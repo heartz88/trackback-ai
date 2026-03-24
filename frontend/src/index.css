@@ -11,25 +11,17 @@
    touch-action: manipulation removes the 300ms delay.
    transition: none !important beats Tailwind's transition-all utility
    which would otherwise re-introduce the tap delay on iOS WebKit. */
-/* Buttons and links - no transition so iOS fires on first tap */
 button,
 a,
+input,
+textarea,
+select,
 [role="button"],
 [onClick],
 [class*="btn-"] {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: none !important;
-}
-
-/* Inputs - touch-action manipulation to prevent zoom delay,
-   but keep box-shadow/border transitions so focus rings animate */
-input,
-textarea,
-select {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
 }
 
 /* Ensure all form inputs are at least 16px to prevent iOS zoom */
@@ -143,6 +135,21 @@ select {
 *, *::before, *::after {
 box-sizing: border-box;
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* iOS Safari fix — cursor:pointer tells iOS this is clickable (fires on first tap) */
+button, a, input, textarea, select, label,
+[role="button"], [tabindex] {
+cursor: pointer;
+touch-action: manipulation;
+-webkit-tap-highlight-color: transparent;
+}
+
+/* Scope all :hover effects to real pointer devices only (not iOS touch) */
+@media (hover: none) {
+  * {
+    transition: none !important;
+  }
 }
 
 /* Override: interactive elements must NEVER have transitions — they cause
