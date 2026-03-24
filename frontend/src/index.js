@@ -3,51 +3,48 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-// Touch optimization wrapper - ensures one-tap works on iOS
-const TouchOptimizedApp = () => {
-  React.useEffect(() => {
-    // Ensure all interactive elements respond to touch immediately
-    const enhanceTouchElements = () => {
-      const interactiveElements = document.querySelectorAll(
-        'button, a, [role="button"], .btn-primary, .btn-secondary, .action-btn, input, textarea, select'
-      );
+// iOS touch fix - removes hover effects on touch devices
+const removeHoverOnTouch = () => {
+  // Check if it's a touch device
+  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    // Add a class to the body to disable hover styles
+    document.body.classList.add('touch-device');
+    
+    // Also add inline styles to all buttons to prevent transforms
+    const style = document.createElement('style');
+    style.textContent = `
+      .touch-device button:hover,
+      .touch-device a:hover,
+      .touch-device [role="button"]:hover,
+      .touch-device .btn-primary:hover,
+      .touch-device .btn-secondary:hover,
+      .touch-device [class*="hover:"]:hover {
+        transform: none !important;
+        box-shadow: none !important;
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        transition: none !important;
+      }
       
-      interactiveElements.forEach(el => {
-        // Mark as processed to avoid duplicate work
-        if (el.getAttribute('data-touch-ready')) return;
-        el.setAttribute('data-touch-ready', 'true');
-        
-        // Ensure no pointer-events blocking
-        if (window.getComputedStyle(el).pointerEvents === 'none') {
-          el.style.pointerEvents = 'auto';
-        }
-        
-        // Force touch-action if not already set
-        if (window.getComputedStyle(el).touchAction !== 'manipulation') {
-          el.style.touchAction = 'manipulation';
-        }
-      });
-    };
-    
-    // Run immediately
-    enhanceTouchElements();
-    
-    // Watch for dynamically added elements
-    const observer = new MutationObserver(() => {
-      enhanceTouchElements();
-    });
-    
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    return () => observer.disconnect();
-  }, []);
-  
-  return <App />;
+      .touch-device .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary)) !important;
+      }
+      
+      .touch-device .hover\:-translate-y-0\.5:hover {
+        transform: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
 };
+
+// Run the fix
+removeHoverOnTouch();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <TouchOptimizedApp />
+    <App />
   </React.StrictMode>
 );

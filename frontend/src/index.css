@@ -3,51 +3,6 @@
 @tailwind utilities;
 
 
-@media (hover: none) and (pointer: coarse) {
-  /* Disable ALL transform hover effects */
-  [class*="hover:translate-"]:hover,
-  [class*="hover:-translate-"]:hover,
-  [class*="hover:scale-"]:hover,
-  .hover\:translate-y-0\.5:hover,
-  .hover\:-translate-y-0\.5:hover,
-  .hover\:scale-105:hover,
-  .hover\:scale-110:hover,
-  button:hover,
-  a:hover,
-  .btn-primary:hover,
-  .btn-secondary:hover,
-  .action-btn:hover {
-    transform: none !important;
-    transition: none !important;
-  }
-  
-  /* Disable shadow hover effects */
-  [class*="hover:shadow-"]:hover {
-    box-shadow: none !important;
-  }
-  
-  /* Disable background hover effects */
-  [class*="hover:bg-"]:hover {
-    background-color: inherit !important;
-  }
-  
-  /* Disable text color hover effects */
-  [class*="hover:text-"]:hover {
-    color: inherit !important;
-  }
-  
-  /* Keep the gradient but remove hover transform */
-  .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary)) !important;
-    transform: none !important;
-  }
-  
-  /* Remove the translateY from your specific button class */
-  .hover\:-translate-y-0\.5:hover {
-    transform: none !important;
-  }
-}
-
 /* ===== GLOBAL TOUCH OPTIMIZATIONS ===== */
 * {
   -webkit-tap-highlight-color: transparent;
@@ -57,40 +12,49 @@
    touch-action: manipulation removes the 300ms delay.
    transition: none !important beats Tailwind's transition-all utility
    which would otherwise re-introduce the tap delay on iOS WebKit. */
-button,
-a,
-input,
-textarea,
-select,
-[role="button"],
-[onClick],
-[class*="btn-"] {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  transition: none !important;
-}
-
-/* Ensure all form inputs are at least 16px to prevent iOS zoom */
-input, 
-textarea, 
-select {
-  font-size: 16px !important;
-}
-
-/* Make touch targets larger on mobile - but don't break existing styles */
-@media (max-width: 768px) {
+@media (hover: none) and (pointer: coarse) {
+  /* Disable ALL transform/hover effects on buttons and links */
   button,
-  a[role="button"],
+  a,
+  [role="button"],
   .btn-primary,
-  .btn-secondary {
-    min-height: 44px;
+  .btn-secondary,
+  [class*="btn-"],
+  [class*="hover:translate-"],
+  [class*="hover:scale-"],
+  [class*="hover:shadow-"],
+  [class*="hover:bg-"],
+  [class*="hover:text-"] {
+    transition: none !important;
+    transform: none !important;
   }
   
-  /* Only add min-height to buttons that don't already have it */
-  button:not([style*="height"]),
-  .btn-primary:not([style*="height"]),
-  .btn-secondary:not([style*="height"]) {
-    min-height: 44px;
+  /* Specifically target the hover classes */
+  .hover\:translate-y-0\.5:hover,
+  .hover\:-translate-y-0\.5:hover,
+  .hover\:scale-105:hover,
+  .hover\:shadow-lg:hover,
+  .hover\:from-primary-500:hover,
+  .hover\:to-primary-400:hover,
+  .hover\:shadow-primary-500\/40:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background: inherit !important;
+  }
+  
+  /* Force all buttons to NOT have any hover transform */
+  button:hover,
+  a:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Keep the gradient but remove transform */
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary)) !important;
+    transform: none !important;
   }
 }
 
