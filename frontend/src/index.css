@@ -11,7 +11,7 @@
    touch-action: manipulation removes the 300ms delay.
    transition: none !important beats Tailwind's transition-all utility
    which would otherwise re-introduce the tap delay on iOS WebKit. */
-/* Buttons and links: no transition, one-tap fires immediately */
+/* Buttons and links - no transition so iOS fires on first tap */
 button,
 a,
 [role="button"],
@@ -22,18 +22,22 @@ a,
   transition: none !important;
 }
 
-/* Inputs: touch-action:auto so Safari focuses on first tap.
-   manipulation causes a second-tap-to-focus bug in iOS Safari. */
+/* Inputs - touch-action manipulation to prevent zoom delay,
+   but keep box-shadow/border transitions so focus rings animate */
 input,
 textarea,
 select {
-  touch-action: auto;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  cursor: text;
-  font-size: 16px;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease !important;
 }
 
-/* font-size:16px is set above on input/textarea/select to prevent iOS zoom */
+/* Ensure all form inputs are at least 16px to prevent iOS zoom */
+input, 
+textarea, 
+select {
+  font-size: 16px !important;
+}
 
 /* Make touch targets larger on mobile - but don't break existing styles */
 @media (max-width: 768px) {
