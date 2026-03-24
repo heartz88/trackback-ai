@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -12,6 +12,9 @@ const [rememberMe, setRememberMe] = useState(false);
 const [error, setError] = useState('');
 const { login } = useAuth();
 const navigate = useNavigate();
+const location = useLocation();
+
+const from = location.state?.from || '/discover';
 
 const handleSubmit = async (e) => {
 e.preventDefault();
@@ -25,8 +28,8 @@ try {
     
     // Pass rememberMe to login function for storage
     login(response.data.token, response.data.user, rememberMe);
+    navigate(from, { replace: true });
     
-    navigate('/discover');
 } catch (err) {
     const errorData = err.response?.data?.error;
     
