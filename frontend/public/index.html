@@ -11,55 +11,52 @@
     <title>TrackBackAI | Music Collaboration</title>
     
     <script>
-            // iOS ONE-TAP FIX - Disable double-tap detection
-        (function() {
+      // iOS ONE-TAP FIX - Run immediately before React loads
+      (function() {
         // Check if this is a touch device
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
+        
         if (isTouchDevice) {
-            // Disable double-tap detection by preventing the browser from waiting
-            let lastTouchEnd = 0;
+          // Add a style that disables ALL hover transforms on touch devices
+          const style = document.createElement('style');
+          style.textContent = `
+            /* Disable ALL hover effects on touch devices */
+            button:hover,
+            a:hover,
+            [role="button"]:hover,
+            .btn-primary:hover,
+            .btn-secondary:hover,
+            [class*="btn-"]:hover,
+            [class*="hover:translate-"]:hover,
+            [class*="hover:scale-"]:hover,
+            .hover\\:-translate-y-0\\.5:hover,
+            .hover\\:translate-y-0\\.5:hover {
+              transform: none !important;
+              box-shadow: none !important;
+              transition: none !important;
+            }
             
-            document.addEventListener('touchend', function(e) {
-            const now = Date.now();
-            // If this is a double-tap (within 300ms), prevent it
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-                // Immediately trigger a click event
-                const target = e.target;
-                const clickEvent = new MouseEvent('click', {
-                view: window,
-                bubbles: true,
-                cancelable: true
-                });
-                target.dispatchEvent(clickEvent);
+            /* Keep gradient buttons looking normal */
+            .btn-primary:hover:not(:disabled) {
+              background: linear-gradient(135deg, #0d9488, #14B8A6) !important;
             }
-            lastTouchEnd = now;
-            }, false);
             
-            // Also add a style to disable hover effects
-            const style = document.createElement('style');
-            style.textContent = `
-            button, a, [role="button"], .btn-primary, .btn-secondary {
-                transition: none !important;
-                transform: none !important;
+            /* Disable card hover effects */
+            .music-card:hover {
+              transform: none !important;
+              border-color: var(--border-color, #475569) !important;
+              box-shadow: none !important;
             }
-            button:hover, a:hover, [role="button"]:hover,
-            .btn-primary:hover, .btn-secondary:hover,
-            [class*="hover:"]:hover {
-                transform: none !important;
-                box-shadow: none !important;
-                transition: none !important;
-            }
-            .hover\\:-translate-y-0\\.5:hover {
-                transform: none !important;
-            }
-            `;
-            document.head.appendChild(style);
             
-            console.log('✅ iOS one-tap fix applied');
+            .music-card:hover::before {
+              left: -100% !important;
+            }
+          `;
+          document.head.appendChild(style);
+          
+          console.log('✅ iOS touch fix applied - hover effects disabled');
         }
-        })();
+      })();
     </script>
 </head>
 <body>
