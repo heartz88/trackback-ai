@@ -7,63 +7,104 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ===== iOS ONE-TAP FIX =====
-   touch-action: manipulation removes the 300ms delay.
-   transition: none !important beats Tailwind's transition-all utility
-   which would otherwise re-introduce the tap delay on iOS WebKit. */
-button,
-a,
-input,
-textarea,
-select,
-[role="button"],
-[onClick],
-[class*="btn-"] {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  transition: none !important;
-}
-
-/* Ensure all form inputs are at least 16px to prevent iOS zoom */
-input, 
-textarea, 
-select {
-  font-size: 16px !important;
-}
-
-/* Make touch targets larger on mobile - but don't break existing styles */
-@media (max-width: 768px) {
-  button,
-  a[role="button"],
-  .btn-primary,
-  .btn-secondary {
-    min-height: 44px;
+/* ===== iOS ONE-TAP FIX - DISABLE ALL HOVER EFFECTS ON TOUCH ===== */
+@media (hover: none) and (pointer: coarse) {
+  /* Completely disable ALL hover effects on touch devices */
+  *:hover {
+    transform: none !important;
+    background: none !important;
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    transition: none !important;
+    filter: none !important;
+    opacity: inherit !important;
   }
   
-  /* Only add min-height to buttons that don't already have it */
-  button:not([style*="height"]),
-  .btn-primary:not([style*="height"]),
-  .btn-secondary:not([style*="height"]) {
-    min-height: 44px;
+  /* Specifically target all button hover states */
+  button:hover,
+  a:hover,
+  [role="button"]:hover,
+  .btn:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .action-btn:hover,
+  .music-card:hover,
+  .track-card:hover,
+  .genre-tag:hover,
+  .tdp-message-btn:hover,
+  .row-action-btn:hover,
+  .sp-like-btn:hover,
+  .sp-action-btn:hover,
+  .filter-toggle-btn:hover {
+    transform: none !important;
+    background: inherit !important;
+    background-color: inherit !important;
+    border-color: var(--border-color) !important;
+    color: inherit !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
   }
-}
-
-/* Disable hover effects on touch devices */
-@media (hover: none) and (pointer: coarse) {
+  
+  /* Fix for gradient buttons - keep the gradient but remove hover effects */
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary)) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Fix for secondary buttons */
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--glass-bg) !important;
+    transform: none !important;
+  }
+  
+  /* Disable card hover animations */
+  .music-card:hover::before {
+    left: -100% !important;
+  }
+  
   .music-card:hover {
     transform: none !important;
     border-color: var(--border-color) !important;
     box-shadow: none !important;
   }
-  .music-card:hover::before {
-    left: -100%;
+  
+  /* Disable all Tailwind hover utilities */
+  [class*="hover:"]:hover {
+    transform: none !important;
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
   }
-  .btn-primary:hover:not(:disabled),
-  .btn-secondary:hover:not(:disabled) {
+  
+  /* Specifically target scale transforms */
+  [class*="hover:scale-"]:hover {
     transform: none !important;
   }
-  a:hover {
-    text-decoration: none !important;
+  
+  /* Specifically target translate transforms */
+  [class*="hover:translate-"]:hover,
+  [class*="hover:-translate-"]:hover {
+    transform: none !important;
+  }
+  
+  /* Specifically target shadow utilities */
+  [class*="hover:shadow-"]:hover {
+    box-shadow: none !important;
+  }
+  
+  /* Specifically target text color utilities */
+  [class*="hover:text-"]:hover {
+    color: inherit !important;
+  }
+  
+  /* Specifically target background utilities */
+  [class*="hover:bg-"]:hover {
+    background-color: inherit !important;
   }
 }
 
