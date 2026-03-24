@@ -365,7 +365,7 @@ return (
         )}
         </button>
 
-        <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.45s', animationFillMode: 'both' }}>
+        <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up cursor-pointer" style={{ animationDelay: '0.45s', animationFillMode: 'both' }}>
         Already have an account?{' '}
         <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
             Sign in
