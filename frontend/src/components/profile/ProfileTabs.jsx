@@ -55,7 +55,7 @@ export default function ProfileTabs({ activeTab, setActiveTab, tracksCount, coll
                 {TAB_ICONS[tab.id]}
               </span>
               {tab.label}
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold transition-colors ${
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                 activeTab === tab.id
                   ? 'bg-primary-500/20 text-primary-400'
                   : 'bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]'

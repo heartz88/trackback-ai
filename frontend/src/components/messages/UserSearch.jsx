@@ -1,6 +1,6 @@
 const UserSearchItem = ({ user, isOnline, onSelect, disabled }) => (
   <div
-    className={`flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--bg-tertiary)] cursor-pointer transition-colors ${
+    className={`flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--bg-tertiary)] cursor-pointer ${
       disabled ? 'opacity-50 cursor-not-allowed' : ''
     }`}
     onClick={() => !disabled && onSelect()}

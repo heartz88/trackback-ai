@@ -51,7 +51,7 @@ return (
                 <div className="flex items-center gap-2">
                 <Link 
                     to={`/profile/${otherPersonName}`} 
-                    className="font-semibold text-[var(--text-primary)] hover:text-primary-400 transition-colors text-sm"
+                    className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm"
                 >
                     {otherPersonName}
                 </Link>
