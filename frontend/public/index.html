@@ -9,6 +9,55 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>TrackBackAI | Music Collaboration</title>
+    
+    <script>
+      // iOS ONE-TAP FIX - Run immediately before React loads
+      (function() {
+        // Check if this is a touch device
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        if (isTouchDevice) {
+          // Add a style that disables ALL hover transforms on touch devices
+          const style = document.createElement('style');
+          style.textContent = `
+            /* Disable ALL hover effects on touch devices */
+            button:hover,
+            a:hover,
+            [role="button"]:hover,
+            .btn-primary:hover,
+            .btn-secondary:hover,
+            [class*="btn-"]:hover,
+            [class*="hover:translate-"]:hover,
+            [class*="hover:scale-"]:hover,
+            .hover\\:-translate-y-0\\.5:hover,
+            .hover\\:translate-y-0\\.5:hover {
+              transform: none !important;
+              box-shadow: none !important;
+              transition: none !important;
+            }
+            
+            /* Keep gradient buttons looking normal */
+            .btn-primary:hover:not(:disabled) {
+              background: linear-gradient(135deg, #0d9488, #14B8A6) !important;
+            }
+            
+            /* Disable card hover effects */
+            .music-card:hover {
+              transform: none !important;
+              border-color: var(--border-color, #475569) !important;
+              box-shadow: none !important;
+            }
+            
+            .music-card:hover::before {
+              left: -100% !important;
+            }
+          `;
+          document.head.appendChild(style);
+          
+          console.log('✅ iOS touch fix applied - hover effects disabled');
+        }
+      })();
+    </script>
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
