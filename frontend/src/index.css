@@ -2,92 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-@media (hover: none) and (pointer: coarse) {
-  /* Completely disable ALL hover effects on mobile */
-  *:hover,
-  button:hover,
-  a:hover,
-  [role="button"]:hover,
-  .btn-primary:hover,
-  .btn-secondary:hover,
-  .action-btn:hover,
-  .music-card:hover,
-  .track-card:hover,
-  .genre-tag:hover,
-  .tdp-message-btn:hover,
-  .row-action-btn:hover,
-  .sp-like-btn:hover,
-  .sp-action-btn:hover,
-  .filter-toggle-btn:hover,
-  .group:hover,
-  .group-hover\:*:hover,
-  [class*="hover:"]:hover {
-    transform: none !important;
-    background: inherit !important;
-    background-color: inherit !important;
-    color: inherit !important;
-    border-color: var(--border-color) !important;
-    box-shadow: none !important;
-    text-decoration: none !important;
-    transition: none !important;
-    animation: none !important;
-  }
-  
-  /* Keep gradient buttons looking normal */
-  .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary)) !important;
-    transform: none !important;
-  }
-  
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--glass-bg) !important;
-    transform: none !important;
-  }
-  
-  /* Disable card hover effects */
-  .music-card:hover::before {
-    left: -100% !important;
-  }
-  
-  .music-card:hover {
-    transform: none !important;
-    border-color: var(--border-color) !important;
-    box-shadow: none !important;
-  }
-  
-  /* Disable scale transforms */
-  [class*="hover:scale-"]:hover {
-    transform: none !important;
-  }
-  
-  /* Disable translate transforms */
-  [class*="hover:translate-"]:hover,
-  [class*="hover:-translate-"]:hover {
-    transform: none !important;
-  }
-  
-  /* Disable shadow on hover */
-  [class*="hover:shadow-"]:hover {
-    box-shadow: none !important;
-  }
-  
-  /* Disable text color on hover */
-  [class*="hover:text-"]:hover {
-    color: inherit !important;
-  }
-  
-  /* Disable background on hover */
-  [class*="hover:bg-"]:hover {
-    background-color: inherit !important;
-  }
-}
-
 /* ===== GLOBAL TOUCH OPTIMIZATIONS ===== */
 * {
-  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Make ALL interactive elements work with one tap */
+/* ===== iOS ONE-TAP FIX =====
+   touch-action: manipulation removes the 300ms delay.
+   transition: none !important beats Tailwind's transition-all utility
+   which would otherwise re-introduce the tap delay on iOS WebKit. */
 button,
 a,
 input,
@@ -95,20 +18,10 @@ textarea,
 select,
 [role="button"],
 [onClick],
-[class*="btn-"],
-.btn-primary,
-.btn-secondary,
-.action-btn,
-.tdp-message-btn,
-.row-action-btn,
-.sp-like-btn,
-.sp-action-btn,
-.filter-toggle-btn,
-.genre-tag,
-.music-card,
-.track-card {
-  touch-action: manipulation !important;
-  cursor: pointer !important;
+[class*="btn-"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: none !important;
 }
 
 /* Ensure all form inputs are at least 16px to prevent iOS zoom */
@@ -118,71 +31,39 @@ select {
   font-size: 16px !important;
 }
 
-/* Active state for immediate visual feedback on tap */
-button:active,
-a:active,
-[role="button"]:active,
-.btn-primary:active,
-.btn-secondary:active,
-.action-btn:active,
-.music-card:active,
-.track-card:active {
-  transform: scale(0.98) !important;
-  transition: transform 0.05s ease !important;
-}
-
-/* Make touch targets larger on mobile */
+/* Make touch targets larger on mobile - but don't break existing styles */
 @media (max-width: 768px) {
   button,
   a[role="button"],
-  [role="button"],
   .btn-primary,
-  .btn-secondary,
-  .action-btn,
-  .tdp-message-btn,
-  .row-action-btn,
-  .sp-like-btn,
-  .sp-action-btn,
-  .filter-toggle-btn,
-  .genre-tag {
-    min-height: 44px !important;
-    min-width: 44px !important;
+  .btn-secondary {
+    min-height: 44px;
   }
   
-  input, textarea, select {
-    min-height: 44px !important;
+  /* Only add min-height to buttons that don't already have it */
+  button:not([style*="height"]),
+  .btn-primary:not([style*="height"]),
+  .btn-secondary:not([style*="height"]) {
+    min-height: 44px;
   }
 }
 
-/* ===== HOVER EFFECTS ONLY FOR DEVICES THAT SUPPORT HOVER ===== */
-@media (hover: hover) {
-  .btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px color-mix(in srgb, var(--accent-primary) 40%, transparent);
-  }
-  
-  .btn-secondary:hover {
-    background: var(--glass-bg-strong);
-  }
-  
+/* Disable hover effects on touch devices */
+@media (hover: none) and (pointer: coarse) {
   .music-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
-    box-shadow: 0 20px 60px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+    transform: none !important;
+    border-color: var(--border-color) !important;
+    box-shadow: none !important;
   }
-  
   .music-card:hover::before {
-    left: 100%;
+    left: -100%;
   }
-  
-  .genre-tag:hover {
-    background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
-    border-color: color-mix(in srgb, var(--accent-primary) 50%, transparent);
-    transform: translateY(-2px);
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled) {
+    transform: none !important;
   }
-  
-  .track-card:hover {
-    transform: translateY(-4px);
+  a:hover {
+    text-decoration: none !important;
   }
 }
 
@@ -254,6 +135,15 @@ a:active,
 *, *::before, *::after {
 box-sizing: border-box;
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Override: interactive elements must NEVER have transitions — they cause
+   iOS WebKit to wait 300ms before firing onClick on first tap */
+button,
+a,
+[role="button"],
+[class*="btn-"] {
+  transition: none !important;
 }
 
 body {
