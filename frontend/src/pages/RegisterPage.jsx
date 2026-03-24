@@ -198,8 +198,7 @@ return (
                 <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors w-10 h-10 flex items-center justify-center"
-                style={{ transform: 'translateY(-50%)' }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
                 disabled={isLoading}
                 >
                 {showPassword ? (
@@ -345,9 +344,12 @@ return (
         </div>
 
         {/* Submit Button */}
-        <button type="submit"  disabled={isLoading}  
-        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 active:scale-[0.98] animate-slide-up ${
-        isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+        <button
+        type="submit"
+        disabled={isLoading}
+        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:scale-[1.02] active:scale-[0.98] animate-slide-up ${
+            isLoading ? 'opacity-60 cursor-not-allowed hover:scale-100' : ''
+        }`}
         style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
         >
         {isLoading ? (
@@ -363,7 +365,7 @@ return (
         )}
         </button>
 
-        <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up cursor-pointer" style={{ animationDelay: '0.45s', animationFillMode: 'both' }}>
+        <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.45s', animationFillMode: 'both' }}>
         Already have an account?{' '}
         <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
             Sign in

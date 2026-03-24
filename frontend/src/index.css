@@ -2,57 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== iOS ONE-TAP FIX ===== */
-/* Disable ALL transform hover effects on touch devices */
-button, a {
-  touch-action: manipulation !important;
-  cursor: pointer !important;
-}
-
-/* Disable ALL hover transforms on touch devices */
-@media (hover: none) and (pointer: coarse) {
-  *:hover,
-  button:hover,
-  a:hover,
-  [role="button"]:hover,
-  .btn-primary:hover,
-  .btn-secondary:hover,
-  [class*="btn-"]:hover,
-  [class*="hover:translate-"]:hover,
-  [class*="hover:scale-"]:hover,
-  [class*="hover:shadow-"]:hover,
-  .hover\:scale-\[1\.02\]:hover,
-  .hover\:-translate-y-0\.5:hover {
-    transform: none !important;
-    box-shadow: none !important;
-    transition: none !important;
-    background-color: inherit !important;
-    color: inherit !important;
-    border-color: inherit !important;
-  }
-  
-  /* Keep gradient buttons looking normal */
-  .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary)) !important;
-    transform: none !important;
-  }
-  
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--glass-bg) !important;
-    transform: none !important;
-  }
-  
-  /* Disable active scale on non-button elements that might cause movement */
-  .absolute.right-3.top-1\/2:active {
-    transform: translateY(-50%) scale(0.98) !important;
-  }
-}
-
 /* ===== GLOBAL TOUCH OPTIMIZATIONS ===== */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ===== iOS ONE-TAP FIX =====
+   touch-action: manipulation removes the 300ms delay.
+   transition: none !important beats Tailwind's transition-all utility
+   which would otherwise re-introduce the tap delay on iOS WebKit. */
 button,
 a,
 input,
@@ -73,7 +31,7 @@ select {
   font-size: 16px !important;
 }
 
-/* Make touch targets larger on mobile */
+/* Make touch targets larger on mobile - but don't break existing styles */
 @media (max-width: 768px) {
   button,
   a[role="button"],
@@ -82,28 +40,15 @@ select {
     min-height: 44px;
   }
   
+  /* Only add min-height to buttons that don't already have it */
   button:not([style*="height"]),
   .btn-primary:not([style*="height"]),
   .btn-secondary:not([style*="height"]) {
     min-height: 44px;
   }
-  
-  /* Fix password toggle button - prevent movement */
-  .absolute.right-3.top-1\/2 {
-    transform: translateY(-50%) !important;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .absolute.right-3.top-1\/2:active {
-    transform: translateY(-50%) scale(0.95) !important;
-  }
 }
 
-/* Remove hover effects on touch devices */
+/* Disable hover effects on touch devices */
 @media (hover: none) and (pointer: coarse) {
   .music-card:hover {
     transform: none !important;
@@ -119,36 +64,6 @@ select {
   }
   a:hover {
     text-decoration: none !important;
-  }
-}
-
-/* ===== RESPONSIVE FORM ELEMENTS ===== */
-@media (max-width: 640px) {
-  input, textarea, select {
-    font-size: 16px;
-    min-height: 44px;
-  }
-  
-  /* Fix password toggle button on mobile */
-  .relative .absolute {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  
-  .relative .absolute:active {
-    transform: translateY(-50%) scale(0.95);
-  }
-  
-  /* Stack form elements on mobile */
-  .form-responsive > * {
-    width: 100%;
-    margin-bottom: 1rem;
   }
 }
 
@@ -222,7 +137,8 @@ box-sizing: border-box;
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Override: interactive elements must NEVER have transitions */
+/* Override: interactive elements must NEVER have transitions — they cause
+   iOS WebKit to wait 300ms before firing onClick on first tap */
 button,
 a,
 [role="button"],
