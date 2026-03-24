@@ -2,6 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+
+@media (hover: none) and (pointer: coarse) {
+  /* Disable ALL transform hover effects */
+  [class*="hover:translate-"]:hover,
+  [class*="hover:-translate-"]:hover,
+  [class*="hover:scale-"]:hover,
+  .hover\:translate-y-0\.5:hover,
+  .hover\:-translate-y-0\.5:hover,
+  .hover\:scale-105:hover,
+  .hover\:scale-110:hover,
+  button:hover,
+  a:hover,
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .action-btn:hover {
+    transform: none !important;
+    transition: none !important;
+  }
+  
+  /* Disable shadow hover effects */
+  [class*="hover:shadow-"]:hover {
+    box-shadow: none !important;
+  }
+  
+  /* Disable background hover effects */
+  [class*="hover:bg-"]:hover {
+    background-color: inherit !important;
+  }
+  
+  /* Disable text color hover effects */
+  [class*="hover:text-"]:hover {
+    color: inherit !important;
+  }
+  
+  /* Keep the gradient but remove hover transform */
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--accent-primary-dark), var(--accent-primary)) !important;
+    transform: none !important;
+  }
+  
+  /* Remove the translateY from your specific button class */
+  .hover\:-translate-y-0\.5:hover {
+    transform: none !important;
+  }
+}
+
 /* ===== GLOBAL TOUCH OPTIMIZATIONS ===== */
 * {
   -webkit-tap-highlight-color: transparent;
