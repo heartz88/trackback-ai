@@ -137,6 +137,21 @@ box-sizing: border-box;
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
+/* iOS Safari fix — cursor:pointer tells iOS this is clickable (fires on first tap) */
+button, a, input, textarea, select, label,
+[role="button"], [tabindex] {
+cursor: pointer;
+touch-action: manipulation;
+-webkit-tap-highlight-color: transparent;
+}
+
+/* Scope all :hover effects to real pointer devices only (not iOS touch) */
+@media (hover: none) {
+  * {
+    transition: none !important;
+  }
+}
+
 /* Override: interactive elements must NEVER have transitions — they cause
    iOS WebKit to wait 300ms before firing onClick on first tap */
 button,
@@ -5754,23 +5769,4 @@ h2 { font-size: 18px !important; }
 
 /* Tab labels shorten */
 .community-tabs button { font-size: 11px !important; }
-}
-/* ===== iOS HOVER FIX =====
-Touch devices fire :hover on first tap (visual change) then click on second.
-This prevents any visual change on hover for touch-only devices so first
-tap fires the click directly. Fix created to prevent confusion where users think they need 
-to tap twice to activate buttons/links.
-*/
-@media (hover: none) and (pointer: coarse) {
-  button:hover,
-  a:hover,
-  [role="button"]:hover {
-    opacity: 1 !important;
-    background: revert !important;
-    color: revert !important;
-    transform: none !important;
-    box-shadow: revert !important;
-    border-color: revert !important;
-    scale: none !important;
-  }
 }
