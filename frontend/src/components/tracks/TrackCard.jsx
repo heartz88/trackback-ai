@@ -39,10 +39,9 @@ const getEnergyColor = (level) => {
 
 return (
 <div className={`
-    glass-panel rounded-2xl overflow-hidden
-    hover:border-primary-500/50 transition-[box-shadow,border-color] duration-500
-    group music-card hover:shadow-xl
-    hover:shadow-primary-500/20 animate-fade-in
+    glass-panel rounded-2xl overflow-hidden 
+    hover:border-primary-500/50 transition-all duration-500
+    group music-card animate-fade-in
     ${isOwner ? 'border-primary-500/30' : ''}
 `}>
     {isOwner && <div className="h-1 w-full bg-gradient-to-r from-primary-500 to-primary-400" />}
