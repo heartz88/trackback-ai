@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Footer from './components/common/Footer';
 import Navigation from './components/common/Navigation';
@@ -25,24 +24,25 @@ import TrackDetailPage from './pages/TrackDetailPage';
 import UploadPage from './pages/UploadPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 
-function App() {
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    }
-  }, []);
+(function applyTheme() {
+  const saved = localStorage.getItem('theme');
+  const html = document.documentElement;
+  if (saved === 'light') {
+    html.classList.add('light');
+    html.classList.remove('dark');
+  } else {
+    html.classList.add('dark');
+    html.classList.remove('light');
+  }
+})();
 
+function App() {
   return (
     <AuthProvider>
       <SocketProvider>
         <BrowserRouter>
           <ScrollToTop />
-          <div className="flex flex-col min-h-screen bg-[var(--bg-primary)] touch-manipulation">
+          <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
             <Navigation />
             <main className="flex-grow pt-20">
               <Routes>

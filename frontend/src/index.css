@@ -32,29 +32,20 @@ select {
   font-size: 16px !important;
 }
 
-/* Make touch targets larger on mobile - but don't break existing styles */
+/* Touch targets — exclude absolute-positioned buttons (e.g. password toggles) */
 @media (max-width: 768px) {
-  button,
-  a[role="button"],
+  button:not(.absolute),
   .btn-primary,
   .btn-secondary {
     min-height: 44px;
   }
-  
-  /* Only add min-height to buttons that don't already have it */
-  button:not([style*="height"]),
-  .btn-primary:not([style*="height"]),
-  .btn-secondary:not([style*="height"]) {
-    min-height: 44px;
-  }
-  
-  /* Fix password toggle button positioning */
-  .relative button.absolute {
+
+  /* Password toggle and other absolute buttons stay compact */
+  button.absolute,
+  .absolute > button,
+  button[style*="min-height: auto"] {
     min-height: auto !important;
     height: auto !important;
-    transform: translateY(-50%) !important;
-    top: 50% !important;
-    bottom: auto !important;
   }
 }
 

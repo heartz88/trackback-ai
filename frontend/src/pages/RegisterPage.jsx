@@ -156,7 +156,7 @@ return (
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="Choose a username"
-                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color]"
+                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 required
                 disabled={isLoading}
             />
@@ -172,7 +172,7 @@ return (
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color]"
+                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 required
                 disabled={isLoading}
             />
@@ -191,15 +191,14 @@ return (
                 value={formData.password}
                 onChange={(e) => handlePasswordChange(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color] pr-12"
+                className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent "
                 required
                 disabled={isLoading}
                 />
                 <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
-                style={{ transform: 'translateY(-50%)' }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] w-8 h-8 flex items-center justify-center" style={{minHeight:"auto"}}
                 disabled={isLoading}
                 >
                 {showPassword ? (
@@ -250,7 +249,7 @@ return (
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 placeholder="••••••••"
-                className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:border-transparent transition-[box-shadow,border-color] pr-12 ${
+                className={`w-full px-4 py-3 bg-[var(--bg-tertiary)] border rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:border-transparent pr-12 ${
                     formData.confirmPassword && formData.password !== formData.confirmPassword
                     ? 'border-red-500 focus:ring-red-500'
                     : formData.confirmPassword && formData.password === formData.confirmPassword
@@ -263,7 +262,7 @@ return (
                 <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] w-8 h-8 flex items-center justify-center" style={{minHeight:"auto"}}
                 disabled={isLoading}
                 >
                 {showConfirmPassword ? (
@@ -320,7 +319,7 @@ return (
             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
             placeholder="Tell others about yourself, your music style, what you're working on..."
             rows="3"
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-[box-shadow,border-color] resize-none"
+            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             disabled={isLoading}
             />
         </div>
@@ -335,7 +334,7 @@ return (
             value={formData.skills}
             onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
             placeholder="e.g., mixing, mastering, vocals, guitar, production"
-            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 transition-[box-shadow,border-color]"
+            className="w-full px-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
             disabled={isLoading}
             />
             <p className="text-xs text-[var(--text-tertiary)] mt-1">

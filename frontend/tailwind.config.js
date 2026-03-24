@@ -7,7 +7,6 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Teal color palette
         primary: {
           50: '#f0fdfa',
           100: '#ccfbf1',
@@ -41,12 +40,8 @@ module.exports = {
           '50%': { transform: 'translateY(-10px)' },
         },
         pulseGlow: {
-          '0%, 100%': {
-            boxShadow: '0 0 20px rgba(20, 184, 166, 0.4)'
-          },
-          '50%': {
-            boxShadow: '0 0 40px rgba(20, 184, 166, 0.8)'
-          },
+          '0%, 100%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.4)' },
+          '50%': { boxShadow: '0 0 40px rgba(20, 184, 166, 0.8)' },
         },
       },
       boxShadow: {
@@ -59,21 +54,30 @@ module.exports = {
     },
   },
   plugins: [
-    function({ addUtilities, addVariant }) {
+    function({ addBase, addUtilities }) {
+      // This runs at the CSS base layer — beats ALL Tailwind utilities
+      // including transition-all, transition-colors on buttons and links
+      addBase({
+        'button, a, [role="button"]': {
+          'touch-action': 'manipulation',
+          '-webkit-tap-highlight-color': 'transparent',
+          'transition': 'none !important',
+        },
+        'input, textarea, select': {
+          'touch-action': 'manipulation',
+          '-webkit-tap-highlight-color': 'transparent',
+          'font-size': '16px', // prevents iOS zoom on focus
+        },
+      });
       addUtilities({
         '.touch-manipulation': {
           'touch-action': 'manipulation',
+          '-webkit-tap-highlight-color': 'transparent',
         },
         '.no-transition': {
           'transition': 'none !important',
         },
-        '.cursor-pointer-force': {
-          'cursor': 'pointer !important',
-        },
       });
-      
-      // Add iOS variant
-      addVariant('ios', '@supports (-webkit-touch-callout: none)');
     },
   ],
 };
