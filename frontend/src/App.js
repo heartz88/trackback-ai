@@ -49,25 +49,45 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
   if (!isIos) return;
 
   document.documentElement.classList.add('ios-touch');
+  // Classic WebKit trick — makes :active work on all elements
   document.body.setAttribute('ontouchstart', '');
 
+  var CLICKABLE = 'a, button, [role="button"], [role="tab"], [role="menuitem"], label, summary';
+  var FOCUSABLE = 'input, textarea, select';
+
   var _el = null;
-  var _t = 0;
+  var _t  = 0;
 
   document.addEventListener('touchstart', function(e) {
-    var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
+    var el = e.target.closest(CLICKABLE + ', ' + FOCUSABLE);
     if (!el) return;
     _el = el;
-    _t = Date.now();
+    _t  = Date.now();
   }, { passive: true, capture: true });
 
   document.addEventListener('touchend', function(e) {
-    var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
-    if (!el || el !== _el || Date.now() - _t > 500) { _el = null; return; }
-    e.preventDefault();
-    el.click();
+    if (!_el || Date.now() - _t > 600) { _el = null; return; }
+
+    var el = e.target.closest(CLICKABLE + ', ' + FOCUSABLE);
+    if (!el || el !== _el) { _el = null; return; }
+
+    var tag = el.tagName.toLowerCase();
+    var isInput = (tag === 'input' || tag === 'textarea' || tag === 'select');
+
+    if (isInput) {
+      // For form fields: DON'T preventDefault — the browser needs to
+      // open the keyboard. Instead just call focus() immediately so
+      // iOS doesn't defer it to a second tap.
+      el.focus();
+    } else {
+      // For buttons/links/labels: prevent Safari's synthetic hover
+      // pass and fire the real click straight away.
+      e.preventDefault();
+      el.click();
+    }
+
     _el = null;
-    _t = 0;
+    _t  = 0;
   }, { capture: true });
 })();
 

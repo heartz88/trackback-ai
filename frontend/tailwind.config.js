@@ -54,28 +54,16 @@ module.exports = {
     },
   },
   plugins: [
-    function({ addBase, addUtilities }) {
-      // This runs at the CSS base layer — beats ALL Tailwind utilities
-      // including transition-all, transition-colors on buttons and links
+    function({ addBase }) {
       addBase({
-        'button, a, [role="button"]': {
-          'touch-action': 'manipulation',
-          '-webkit-tap-highlight-color': 'transparent',
-          'transition': 'none !important',
-        },
-        'input, textarea, select': {
-          'touch-action': 'manipulation',
-          '-webkit-tap-highlight-color': 'transparent',
-          'font-size': '16px', // prevents iOS zoom on focus
-        },
-      });
-      addUtilities({
-        '.touch-manipulation': {
+        'a, button, [role="button"], [role="tab"], [role="menuitem"], label, summary, [type="submit"], [type="button"], [type="reset"]': {
           'touch-action': 'manipulation',
           '-webkit-tap-highlight-color': 'transparent',
         },
-        '.no-transition': {
-          'transition': 'none !important',
+        'input, textarea, select, [type="checkbox"], [type="radio"]': {
+          'touch-action': 'manipulation',
+          '-webkit-tap-highlight-color': 'transparent',
+          'font-size': '16px',
         },
       });
     },
