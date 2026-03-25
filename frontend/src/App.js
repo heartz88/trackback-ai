@@ -23,8 +23,6 @@ import TrackDetailPage from './pages/TrackDetailPage';
 import UploadPage from './pages/UploadPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 
-// Apply theme before React renders to avoid post-mount DOM mutation
-// that causes iOS to reset tap gesture state on first interaction
 (function applyTheme() {
   var saved = localStorage.getItem('theme');
   var html = document.documentElement;
@@ -38,6 +36,12 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 })();
 
 // iOS Safari One-Tap Fix
+// Safari fires a synthetic hover pass on first tap of any element with a
+// :hover CSS rule, consuming the tap without firing onClick.
+// Fix: fire el.click() on touchend before Safari can intercept it.
+// The other half of the fix is in index.html: removing user-scalable=no
+// and maximum-scale=1 from the viewport meta, which were disabling the
+// browser-native fast-tap behaviour.
 (function fixIosTap() {
   var isIos =
     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
@@ -47,37 +51,19 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
   document.documentElement.classList.add('ios-touch');
   document.body.setAttribute('ontouchstart', '');
 
-  // Selector for clickable elements (buttons, links, roles)
-  var CLICKABLE = 'a, button, [role="button"], [role="tab"], [role="menuitem"]';
-  // Selector for focusable form elements — these need focus/keyboard, NOT click()
-  var FOCUSABLE = 'input, textarea, select, [contenteditable]';
-
   var _el = null;
   var _t = 0;
 
   document.addEventListener('touchstart', function(e) {
-    // For form elements: just ensure touch-action is set, don't intercept
-    if (e.target.closest(FOCUSABLE)) return;
-
-    var el = e.target.closest(CLICKABLE);
+    var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
     if (!el) return;
     _el = el;
     _t = Date.now();
   }, { passive: true, capture: true });
 
   document.addEventListener('touchend', function(e) {
-    // Never intercept form element taps — let iOS handle focus + keyboard naturally
-    if (e.target.closest(FOCUSABLE)) {
-      _el = null;
-      return;
-    }
-
-    var el = e.target.closest(CLICKABLE);
-    if (!el || el !== _el || Date.now() - _t > 500) {
-      _el = null;
-      return;
-    }
-
+    var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
+    if (!el || el !== _el || Date.now() - _t > 500) { _el = null; return; }
     e.preventDefault();
     el.click();
     _el = null;
