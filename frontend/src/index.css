@@ -135,16 +135,9 @@ select {
 /* CSS Reset and Base Styles */
 *, *::before, *::after {
 box-sizing: border-box;
+/* NOTE: transition only on non-interactive elements.
+   Interactive elements are hardened below with !important */
 transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-}
-
-/* Override: interactive elements must NEVER have transitions — they cause
-   iOS WebKit to wait 300ms before firing onClick on first tap */
-button,
-a,
-[role="button"],
-[class*="btn-"] {
-  transition: none !important;
 }
 
 body {
@@ -5755,4 +5748,80 @@ h2 { font-size: 18px !important; }
 
 /* Tab labels shorten */
 .community-tabs button { font-size: 11px !important; }
+}
+
+/* ===================================================================
+iOS DOUBLE-TAP DEFINITIVE FIX — MUST BE LAST IN FILE
+===================================================================
+Root cause: the global `* { transition: ... }` rule above this block
+re-applies transitions to every element including buttons and links.
+Because CSS cascades by source order, any transition rule that appears
+AFTER our touch fixes will silently undo them — which is exactly what
+was happening. This block sits at the very end of the file so it
+always wins.
+
+Why transitions cause double-tap on iOS Safari:
+When a CSS :hover rule that changes a VISUAL PROPERTY (color, bg,
+border, transform, opacity…) is combined with a transition, WebKit
+on iOS first fires a synthetic "hover" pass on first tap to evaluate
+the :hover styles BEFORE firing the click. The user must tap again to
+actually trigger the click. Removing transitions from interactive
+elements eliminates this hover-evaluation pass entirely.
+=================================================================== */
+
+/* 1. Core interactive elements — strip all transitions */
+button,
+a,
+input,
+textarea,
+select,
+label,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[type="submit"],
+[type="button"],
+[type="reset"],
+[type="checkbox"],
+[type="radio"],
+[class*="btn"] {
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  transition: none !important;
+  -webkit-transition: none !important;
+}
+
+/* 2. Tailwind group-hover children on interactive ancestors
+   These are the sneaky ones — a <span> inside a <Link> that has
+   group-hover: classes will ALSO get a transition applied via the *
+   rule, making the parent link require a double-tap. */
+a *,
+button *,
+[role="button"] * {
+  transition: none !important;
+  -webkit-transition: none !important;
+}
+
+/* 3. Ensure inputs don't zoom on iOS (font-size < 16px triggers zoom
+   which also disrupts tap behaviour) */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* 4. Allow non-interactive containers to keep their transitions
+   (cards, modals, overlays — these never receive taps directly) */
+.music-card,
+.card,
+.glass,
+.glass-panel,
+.glass-strong,
+.modal,
+.overlay,
+.track-row-card,
+.sp-card,
+.waveform-player,
+nav.fixed {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.3s ease !important;
 }

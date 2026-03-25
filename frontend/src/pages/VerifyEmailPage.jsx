@@ -82,7 +82,7 @@ function VerifyEmailPage() {
                             <div className="pt-4">
                                 <Link
                                     to="/login"
-                                    className="inline-block px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color]"
+                                    className="inline-block px-6 py-3 bg-primary-600 text-white font-semibold rounded-xl"
                                 >
                                     Go to Login Now
                                 </Link>
@@ -104,13 +104,13 @@ function VerifyEmailPage() {
                             <div className="pt-4 space-y-3">
                                 <Link
                                     to="/login"
-                                    className="block w-full py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color]"
+                                    className="block w-full py-3 bg-primary-600 text-white font-semibold rounded-xl"
                                 >
                                     Go to Login
                                 </Link>
                                 <Link
                                     to="/resend-verification"
-                                    className="block text-sm text-primary-400 hover:text-primary-300"
+                                    className="block text-sm text-primary-400"
                                 >
                                     Resend verification email
                                 </Link>

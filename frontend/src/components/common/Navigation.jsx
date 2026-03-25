@@ -77,7 +77,7 @@ setAvatarError(false);
 const HamburgerIcon = () => (
 <button
     onClick={toggleMenu}
-    className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)] group"
+    className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)]"
     aria-label="Toggle menu"
 >
     <div className="relative w-5 h-5">
@@ -91,7 +91,7 @@ const HamburgerIcon = () => (
         isMenuOpen ? '-rotate-45 top-2.5' : 'rotate-0 top-4'
     }`} />
     </div>
-    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+    <div className="absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none">
     <div className="flex items-end space-x-0.5 h-4">
         <span className="w-0.5 h-2 bg-[var(--accent-primary)] rounded-full animate-waveform" />
         <span className="w-0.5 h-3 bg-[var(--accent-primary-light)] rounded-full animate-waveform" />
@@ -112,9 +112,9 @@ return (
         <div className="flex justify-between items-center h-20">
         {/* Logo*/}
         <div className="flex items-center space-x-8">
-            <Link to="/" className="flex items-center space-x-3 group" onClick={closeMenu}>
+            <Link to="/" className="flex items-center space-x-3" onClick={closeMenu}>
             <div className="relative">
-                <div className="w-12 h-12 flex items-center justify-center group">
+                <div className="w-12 h-12 flex items-center justify-center">
                 <img src={logo} className="w-full h-full object-cover rounded-xl" alt="Trackback AI"/>
                 </div>
             </div>
@@ -152,7 +152,7 @@ return (
                 <div className="relative" ref={profileMenuRef}>
                 <button
                     onClick={toggleProfileMenu}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-[var(--bg-tertiary)] border border-transparent group"
+                    className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-[var(--bg-tertiary)] border border-transparent"
                 >
                     <div className="relative">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 overflow-hidden">
@@ -173,7 +173,7 @@ return (
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[var(--bg-primary)]" />
                     </div>
-                    <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] max-w-[100px] truncate">
+                    <span className="text-sm font-medium text-[var(--text-secondary)] max-w-[100px] truncate">
                     {user.username}
                     </span>
                     <svg className={`w-4 h-4 text-[var(--text-tertiary)] transition-transform duration-300 ${
@@ -189,9 +189,9 @@ return (
                         <Link
                         to={`/profile/${user.username}`}
                         onClick={() => setIsProfileMenuOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-tertiary)] group"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg active:bg-[var(--bg-tertiary)]"
                         >
-                        <svg className="w-5 h-5 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         <span className="text-sm font-medium text-[var(--text-primary)]">Your Profile</span>
@@ -200,9 +200,9 @@ return (
                         <Link
                         to="/edit-profile"
                         onClick={() => setIsProfileMenuOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-tertiary)] group"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg active:bg-[var(--bg-tertiary)]"
                         >
-                        <svg className="w-5 h-5 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
@@ -213,9 +213,9 @@ return (
 
                         <button
                         onClick={handleLogout}
-                        className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-red-500/10 group"
+                        className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg active:bg-red-500/10"
                         >
-                        <svg className="w-5 h-5 text-[var(--text-tertiary)] group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         <span className="text-sm font-medium text-red-500">Sign Out</span>
@@ -229,12 +229,12 @@ return (
             <>
                 <Link 
                 to="/community" 
-                className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
+                className="px-4 py-2 text-[var(--text-secondary)] font-medium"
                 >Community
                 </Link>
                 <Link 
                 to="/login" 
-                className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
+                className="px-4 py-2 text-[var(--text-secondary)] font-medium"
                 >
                 Sign In
                 </Link>
@@ -259,19 +259,20 @@ return (
     </nav>
 
     {/* Mobile Menu Overlay*/}
-    <div className={`md:hidden fixed inset-0 z-40 transition-[box-shadow,border-color] duration-500 ${
+    <div className={`md:hidden fixed inset-0 z-40 ${
     isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
-    }`}>
+    }`} style={{ transition: 'opacity 0.3s ease, visibility 0.3s ease' }}>
     <div
-        className={`absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-500 ${
+        className={`absolute inset-0 bg-black/80 backdrop-blur-md ${
         isMenuOpen ? 'opacity-100' : 'opacity-0'
         }`}
+        style={{ transition: 'opacity 0.3s ease' }}
         onClick={closeMenu}
     />
     
-    <div className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transform transition-[box-shadow,border-color] duration-500 ease-out ${
+    <div className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transform ${
         isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-    }`}>
+    }`} style={{ transition: 'transform 0.3s ease' }}>
         
         <div className="p-6 border-b border-[var(--border-color)]">
         <div className="flex items-center justify-between mb-6">
@@ -353,10 +354,10 @@ return (
             <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
                 <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-between px-4 py-3 text-left text-red-500 hover:bg-red-500/10 rounded-xl group"
+                className="w-full flex items-center justify-between px-4 py-3 text-left text-red-500 active:bg-red-500/10 rounded-xl"
                 >
                 <span className="font-medium">Sign Out</span>
-                <svg className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 </button>
@@ -376,11 +377,11 @@ return (
 );
 }
 
-// Desktop nav link
+// Desktop nav link — no group-hover children (causes iOS double-tap)
 const NavLink = ({ to, children, badge }) => (
 <Link
 to={to}
-className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] group"
+className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] [&&]:transition-none"
 >
 {children}
 {badge > 0 && (
@@ -388,18 +389,17 @@ className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] h
     {badge > 9 ? '9+' : badge}
     </span>
 )}
-<span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-full transform scale-x-0 group" />
 </Link>
 );
 
-// Mobile Menu Item
+// Mobile Menu Item — no group-hover (causes iOS double-tap)
 const MenuItem = ({ to, children, badge, onClick }) => (
 <Link
 to={to}
 onClick={onClick}
-className="flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertiary)] rounded-xl group"
+className="flex items-center justify-between px-4 py-3 rounded-xl active:bg-[var(--bg-tertiary)]"
 >
-<span className="font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]">
+<span className="font-medium text-[var(--text-primary)]">
     {children}
 </span>
 <div className="flex items-center space-x-2">
@@ -408,7 +408,7 @@ className="flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-tertia
         {badge > 9 ? '9+' : badge}
     </span>
     )}
-    <svg className="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
 </div>

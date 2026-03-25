@@ -85,7 +85,7 @@ try {
                 <Link 
                     to="/resend-verification" 
                     state={{ email: formData.email }}
-                    className="inline-block mt-1 text-primary-300 hover:text-primary-200 underline text-sm"
+                    className="inline-block mt-1 text-primary-300 underline text-sm"
                 >
                     Click here to resend
                 </Link>
@@ -347,7 +347,7 @@ return (
         <button
         type="submit"
         disabled={isLoading}
-        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 animate-slide-up ${
+        className={`w-full py-3.5 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/25 animate-slide-up ${
             isLoading ? 'opacity-60 cursor-not-allowed' : ''
         }`}
         style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
@@ -367,7 +367,7 @@ return (
 
         <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.45s', animationFillMode: 'both' }}>
         Already have an account?{' '}
-        <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium">
+        <Link to="/login" className="text-primary-400 font-medium">
             Sign in
         </Link>
         </p>

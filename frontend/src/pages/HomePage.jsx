@@ -35,13 +35,13 @@ return (
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link
                 to="/register"
-                className="px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-lg font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
+                className="px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white text-lg font-semibold rounded-xl shadow-lg shadow-primary-500/25"
             >
                 Get Started Free
             </Link>
             <Link
                 to="/discover"
-                className="px-8 py-4 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] text-lg font-semibold rounded-xl transition-[box-shadow,border-color] border border-[var(--border-color)]"
+                className="px-8 py-4 bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-lg font-semibold rounded-xl border border-[var(--border-color)]"
             >
                 Explore Tracks
             </Link>
@@ -130,7 +130,7 @@ return (
         </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-[box-shadow,border-color]">
+        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -141,7 +141,7 @@ return (
             Automated BPM detection and energy level classification using advanced MIR technology
             </p>
         </div>
-        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-[box-shadow,border-color]">
+        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -152,7 +152,7 @@ return (
             Filter tracks by BPM range, genre, and energy level to find perfect matches
             </p>
         </div>
-        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-[box-shadow,border-color]">
+        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -163,7 +163,7 @@ return (
             Chat with collaborators instantly using WebSocket-powered messaging
             </p>
         </div>
-        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-[box-shadow,border-color]">
+        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -174,7 +174,7 @@ return (
             Submit multiple versions and let the community vote on the best one
             </p>
         </div>
-        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-[box-shadow,border-color]">
+        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
@@ -185,7 +185,7 @@ return (
             Visual audio playback with synchronized waveform display
             </p>
         </div>
-        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-[box-shadow,border-color]">
+        <div className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50">
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -250,7 +250,7 @@ return (
             </p>
             <Link
             to="/register"
-            className="inline-block px-10 py-5 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-lg font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
+            className="inline-block px-10 py-5 bg-gradient-to-r from-primary-600 to-primary-500 text-white text-lg font-semibold rounded-xl shadow-lg shadow-primary-500/25"
             >
             Get Started Free →
             </Link>

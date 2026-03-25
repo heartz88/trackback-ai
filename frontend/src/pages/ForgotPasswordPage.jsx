@@ -52,7 +52,7 @@ return (
             </p>
             <Link
             to="/login"
-            className="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300"
+            className="inline-flex items-center gap-2 text-primary-400"
             >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -85,7 +85,7 @@ return (
             <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-primary-600 hover:bg-primary-500 disabled:bg-gray-700 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/20 disabled:shadow-none"
+            className="w-full py-3 bg-primary-600 disabled:bg-gray-700 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/20 disabled:shadow-none"
             >
             {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -102,7 +102,7 @@ return (
                 <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
                     Remember your password?
             <Link
-                to="/login" className="text-primary-400 hover:text-primary-300 font-medium">
+                to="/login" className="text-primary-400 font-medium">
                 Sign in
             </Link>
             </p>
