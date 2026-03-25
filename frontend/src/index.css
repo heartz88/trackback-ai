@@ -5751,23 +5751,23 @@ h2 { font-size: 18px !important; }
 }
 
 /* ===================================================================
-iOS DOUBLE-TAP DEFINITIVE FIX — MUST BE LAST IN FILE
-===================================================================
-Root cause: the global `* { transition: ... }` rule above this block
-re-applies transitions to every element including buttons and links.
-Because CSS cascades by source order, any transition rule that appears
-AFTER our touch fixes will silently undo them — which is exactly what
-was happening. This block sits at the very end of the file so it
-always wins.
+   iOS DOUBLE-TAP DEFINITIVE FIX — MUST BE LAST IN FILE
+   ===================================================================
+   Root cause: the global `* { transition: ... }` rule above this block
+   re-applies transitions to every element including buttons and links.
+   Because CSS cascades by source order, any transition rule that appears
+   AFTER our touch fixes will silently undo them — which is exactly what
+   was happening. This block sits at the very end of the file so it
+   always wins.
 
-Why transitions cause double-tap on iOS Safari:
-When a CSS :hover rule that changes a VISUAL PROPERTY (color, bg,
-border, transform, opacity…) is combined with a transition, WebKit
-on iOS first fires a synthetic "hover" pass on first tap to evaluate
-the :hover styles BEFORE firing the click. The user must tap again to
-actually trigger the click. Removing transitions from interactive
-elements eliminates this hover-evaluation pass entirely.
-=================================================================== */
+   Why transitions cause double-tap on iOS Safari:
+   When a CSS :hover rule that changes a VISUAL PROPERTY (color, bg,
+   border, transform, opacity…) is combined with a transition, WebKit
+   on iOS first fires a synthetic "hover" pass on first tap to evaluate
+   the :hover styles BEFORE firing the click. The user must tap again to
+   actually trigger the click. Removing transitions from interactive
+   elements eliminates this hover-evaluation pass entirely.
+   =================================================================== */
 
 /* 1. Core interactive elements — strip all transitions */
 button,
@@ -5824,4 +5824,55 @@ select {
 .waveform-player,
 nav.fixed {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.3s ease !important;
+}
+/* ===================================================================
+iOS TOUCH — SUPPRESS ALL HOVER RULES (belt-and-braces CSS layer)
+===================================================================
+When the fixIosDoubleTap() JS function in App.js detects iOS, it
+adds the class .ios-touch to <html>. This block then overrides
+every :hover rule site-wide — including ones deep in Tailwind's
+generated utilities and third-party components — by raising
+specificity above any single-class :hover rule.
+
+This pairs with the JS touchend fix: the CSS stops Safari from
+SEEING a visual hover change (so it skips the hover-simulation
+pass), and the JS ensures click() fires immediately on touchend.
+Together they cover every case.
+=================================================================== */
+
+/* Suppress ALL hover colour/bg/border/shadow/transform changes on iOS.
+   We use the .ios-touch html selector prefix to raise specificity. */
+.ios-touch *:hover,
+.ios-touch *:hover::before,
+.ios-touch *:hover::after {
+  /* Reset the four property groups iOS Safari watches for hover-state changes */
+  color: inherit !important;
+  background-color: inherit !important;
+  border-color: inherit !important;
+  box-shadow: inherit !important;
+  transform: inherit !important;
+  opacity: inherit !important;
+}
+
+/* Specific overrides for classes that set their OWN base values above "inherit"
+   (Tailwind utilities set explicit values, so inherit alone isn't enough for them) */
+.ios-touch a,
+.ios-touch button,
+.ios-touch [role="button"],
+.ios-touch input,
+.ios-touch select,
+.ios-touch textarea,
+.ios-touch label {
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+}
+
+/* Ensure no transition fires on first tap — transitions are what cause the double-tap issue */
+.ios-touch a,
+.ios-touch button,
+.ios-touch [role="button"],
+.ios-touch a *,
+.ios-touch button * {
+  transition: none !important;
+  -webkit-transition: none !important;
 }
