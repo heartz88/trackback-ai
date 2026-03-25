@@ -42,34 +42,34 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 // The other half of the fix is in index.html: removing user-scalable=no
 // and maximum-scale=1 from the viewport meta, which were disabling the
 // browser-native fast-tap behaviour.
-// (function fixIosTap() {
-//   var isIos =
-//     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-//     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-//   if (!isIos) return;
+(function fixIosTap() {
+  var isIos =
+    /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!isIos) return;
 
-//   document.documentElement.classList.add('ios-touch');
-//   document.body.setAttribute('ontouchstart', '');
+  document.documentElement.classList.add('ios-touch');
+  document.body.setAttribute('ontouchstart', '');
 
-//   var _el = null;
-//   var _t = 0;
+  var _el = null;
+  var _t = 0;
 
-//   document.addEventListener('touchstart', function(e) {
-//     var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
-//     if (!el) return;
-//     _el = el;
-//     _t = Date.now();
-//   }, { passive: true, capture: true });
+  document.addEventListener('touchstart', function(e) {
+    var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
+    if (!el) return;
+    _el = el;
+    _t = Date.now();
+  }, { passive: true, capture: true });
 
-//   document.addEventListener('touchend', function(e) {
-//     var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
-//     if (!el || el !== _el || Date.now() - _t > 500) { _el = null; return; }
-//     e.preventDefault();
-//     el.click();
-//     _el = null;
-//     _t = 0;
-//   }, { capture: true });
-// })();
+  document.addEventListener('touchend', function(e) {
+    var el = e.target.closest('a, button, [role="button"], [role="tab"], [role="menuitem"]');
+    if (!el || el !== _el || Date.now() - _t > 500) { _el = null; return; }
+    e.preventDefault();
+    el.click();
+    _el = null;
+    _t = 0;
+  }, { capture: true });
+})();
 
 function App() {
   return (
