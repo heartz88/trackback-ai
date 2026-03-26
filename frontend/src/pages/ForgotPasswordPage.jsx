@@ -103,7 +103,7 @@ return (
                     Remember your password?
             <Link
                 to="/login" className="text-primary-400 font-medium">
-                Sign in
+                 Sign in
             </Link>
             </p>
             </div>
