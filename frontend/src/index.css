@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   iOS / TOUCH ONE-TAP FIX — injected after Tailwind utilities
+   touch-action: manipulation  = kills 300ms tap delay
+   -webkit-tap-highlight-color = kills grey flash on tap
+   font-size >= 16px on inputs = prevents iOS zoom-on-focus
+   .ios-touch hover suppression = stops Safari hover simulation
+============================================================ */
+a,
+button,
+input,
+textarea,
+select,
+label,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[type="submit"],
+[type="button"],
+[type="reset"],
+[type="checkbox"],
+[type="radio"],
+summary {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* When JS adds .ios-touch to <html>, kill ALL hover colour/bg/shadow
+   changes so Safari has nothing to simulate on first tap */
+.ios-touch a,
+.ios-touch button,
+.ios-touch [role="button"],
+.ios-touch a *,
+.ios-touch button * {
+  transition: none !important;
+  -webkit-transition: none !important;
+}
+
+
 /* CSS Variables for Light/Dark Mode - Clean Teal Theme */
 :root {
 /* Dark Mode Colors (Default) */
