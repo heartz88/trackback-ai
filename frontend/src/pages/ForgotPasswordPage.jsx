@@ -100,10 +100,10 @@ return (
 
             <div className="text-center">
                 <p className="text-center text-[var(--text-tertiary)] text-sm animate-slide-up" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
-                    Remember your password?
+                    Remember your password?{' '}
             <Link
                 to="/login" className="text-primary-400 font-medium">
-                 Sign in
+                Sign in
             </Link>
             </p>
             </div>
