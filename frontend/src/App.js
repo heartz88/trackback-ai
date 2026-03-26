@@ -35,13 +35,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
   }
 })();
 
-// iOS Safari One-Tap Fix
-// Safari fires a synthetic hover pass on first tap of any element with a
-// :hover CSS rule, consuming the tap without firing onClick.
-// Fix: fire el.click() on touchend before Safari can intercept it.
-// The other half of the fix is in index.html: removing user-scalable=no
-// and maximum-scale=1 from the viewport meta, which were disabling the
-// browser-native fast-tap behaviour.
+// iOS Safari One-Tap Fix - ensures taps on interactive elements are registered immediately without delay
 (function fixIosTap() {
   var isIos =
     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
