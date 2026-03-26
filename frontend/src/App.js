@@ -48,59 +48,71 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (!isIos) return;
 
-  // Tag <html> so CSS .ios-touch rules suppress :hover styles
   document.documentElement.classList.add('ios-touch');
-  // Classic WebKit trick — makes :active work on all elements
   document.body.setAttribute('ontouchstart', '');
 
-  var CLICKABLE = 'a, button, [role="button"], [role="tab"], [role="menuitem"], label, summary';
-  var FOCUSABLE = 'input, textarea, select';
+  var INTERACTIVE = 'a, button, [role="button"], [role="tab"], [role="menuitem"], label, summary';
 
-  var _el = null;
-  var _t  = 0;
+  // Track touches
+  var _startEl = null;
+  var _startT  = 0;
+  var _firing  = false; // prevent recursion when we dispatch MouseEvent
 
   document.addEventListener('touchstart', function(e) {
-    var el = e.target.closest(CLICKABLE + ', ' + FOCUSABLE);
+    if (_firing) return;
+    var el = e.target.closest(INTERACTIVE);
     if (!el) return;
-    _el = el;
-    _t  = Date.now();
+    _startEl = el;
+    _startT  = Date.now();
   }, { passive: true, capture: true });
 
   document.addEventListener('touchend', function(e) {
-    if (!_el || Date.now() - _t > 600) { _el = null; return; }
+    if (_firing) return;
+    if (!_startEl || Date.now() - _startT > 600) { _startEl = null; return; }
 
-    // Used closest() on BOTH the touchend target and the stored touchstart target.
-    // This handles cases where e.target is a child element (e.g. a <span> inside
-    // a button) — the hamburger menu was double-tapping because its inner <span>
-    // bars were the actual e.target, and iOS was simulating hover on the span.
-    var el = e.target.closest(CLICKABLE + ', ' + FOCUSABLE);
-
-    // Fallback: if e.target didn't resolve via closest, check if _el itself is
-    // still a valid target (touchstart and touchend on same element hierarchy)
-    if (!el && _el) el = _el;
-    if (!el) { _el = null; return; }
-
-    // Make sure we're still in the same tap (touchend target must be inside
-    // the same interactive element we recorded on touchstart)
-    if (!_el.contains(e.target) && e.target !== _el) { _el = null; return; }
+    // Resolve the interactive element — walk up from whatever child was tapped
+    // (handles hamburger spans, icon SVGs, etc.)
+    var el = e.target.closest(INTERACTIVE) || _startEl;
+    if (!el) { _startEl = null; return; }
 
     var tag = el.tagName.toLowerCase();
-    var isInput = (tag === 'input' || tag === 'textarea' || tag === 'select');
+    var type = (el.getAttribute('type') || '').toLowerCase();
 
-    if (isInput) {
-      // For form fields: DON'T preventDefault — the browser needs to
-      // open the keyboard. Instead just call focus() immediately so
-      // iOS doesn't defer it to a second tap.
+    // Inputs, textareas, selects — let native touch through, just focus them
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
       el.focus();
-    } else {
-      // For buttons/links/labels: prevent Safari's synthetic hover
-      // pass and fire the real click straight away.
-      e.preventDefault();
-      el.click();
+      _startEl = null;
+      return;
     }
 
-    _el = null;
-    _t  = 0;
+    // Checkboxes and radio buttons — toggle checked via click() without preventDefault
+    if (tag === 'input' && (type === 'checkbox' || type === 'radio')) {
+      _startEl = null;
+      return;
+    }
+
+    // For all other interactive elements (buttons, links, labels):
+    // 1. Prevent the native touch → mouseover → hover → click chain
+    e.preventDefault();
+
+    // 2. Dispatch a real MouseEvent that React's event delegation will catch.
+    //    We use MouseEvent instead of el.click() because el.click() on iOS
+    //    can be swallowed when called inside a touchend handler that has
+    //    already called preventDefault — React 17+ root delegation misses it.
+    _firing = true;
+    var evt = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      // Pass touch coordinates so any click-position-aware handlers work
+      clientX: e.changedTouches[0] ? e.changedTouches[0].clientX : 0,
+      clientY: e.changedTouches[0] ? e.changedTouches[0].clientY : 0,
+    });
+    el.dispatchEvent(evt);
+    _firing = false;
+
+    _startEl = null;
+    _startT  = 0;
   }, { capture: true });
 })();
 
