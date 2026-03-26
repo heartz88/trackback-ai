@@ -551,7 +551,12 @@ res.status(500).json({
 // ─────────────────────────────────────────────────────────────────
 // PUT /:id/analysis — ML service callback
 // ─────────────────────────────────────────────────────────────────
+// Analysis endpoint - protected by internal secret shared with ML service
 router.put('/:id/analysis', async (req, res) => {
+    const internalSecret = req.headers['x-internal-secret'];
+    if (!internalSecret || internalSecret !== process.env.INTERNAL_API_SECRET) {
+        return res.status(403).json({ error: { message: 'Unauthorized' } });
+    }
 try {
 const { id } = req.params;
 const { bpm, energy_level, duration, key, musical_key } = req.body;

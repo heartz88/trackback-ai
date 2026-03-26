@@ -139,6 +139,14 @@ if (!username || !email) {
     return res.status(400).json({ error: { message: 'Username and email are required' } });
 }
 
+// Input validation
+if (username.length > 30 || !/^[a-zA-Z0-9_-]+$/.test(username)) {
+    return res.status(400).json({ error: { message: 'Username must be 30 chars max, letters/numbers/underscores/hyphens only' } });
+}
+if (bio && bio.length > 500) {
+    return res.status(400).json({ error: { message: 'Bio must be 500 characters or less' } });
+}
+
 // Uniqueness checks
 const [emailChk, userChk] = await Promise.all([
     db.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email, userId]),
@@ -190,13 +198,17 @@ if (req.user.id !== parseInt(userId)) {
     return res.status(403).json({ error: { message: 'Unauthorized' } });
 }
 
+if (!new_password || new_password.length < 8) {
+    return res.status(400).json({ error: { message: 'New password must be at least 8 characters' } });
+}
+
 const { rows } = await db.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
 if (!rows.length) return res.status(404).json({ error: { message: 'User not found' } });
 
 const valid = await bcrypt.compare(current_password, rows[0].password_hash);
 if (!valid) return res.status(400).json({ error: { message: 'Current password is incorrect' } });
 
-const hash = await bcrypt.hash(new_password, 10);
+const hash = await bcrypt.hash(new_password, 12);
 await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, userId]);
 
 res.json({ message: 'Password updated successfully' });

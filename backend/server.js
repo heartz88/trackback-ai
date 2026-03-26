@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketIo = require('socket.io');
 const jwt = require('jsonwebtoken');
@@ -36,6 +37,46 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// ── Rate Limiters ─────────────────────────────────────────────────────────────
+// Global: 200 req/15min per IP (catches general abuse)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Too many requests, please try again later.' } }
+});
+
+// Auth endpoints: 10 attempts per 15min per IP (brute force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Too many login attempts. Please try again in 15 minutes.' } },
+  skipSuccessfulRequests: true  // Only count failed attempts
+});
+
+// Account creation: 5 per hour per IP
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Too many accounts created from this IP. Please try again later.' } }
+});
+
+// Upload endpoints: 20 per hour per IP
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Upload limit reached. Please try again later.' } }
+});
+
+app.use(globalLimiter);
+
 // Configure Helmet
 app.use(
 helmet({
@@ -55,8 +96,8 @@ contentSecurityPolicy: {
 app.use(morgan('dev'));
 
 // Body parsers
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Socket.IO setup
 const io = socketIo(server, {
@@ -167,7 +208,7 @@ socket.on('message:send', async (data) => {
 try {
     const { conversationId, content } = data;
     
-    if (!conversationId || !content || content.trim() === '') {
+    if (!conversationId || !content || content.trim() === '' || content.length > 5000) {
     return socket.emit('error', { message: 'Invalid message data' });
     }
 
@@ -512,17 +553,29 @@ socket.broadcast.emit('user:offline', {
 });
 });
 
+// ── Security Logger ──────────────────────────────────────────────────────────
+function logSecurityEvent(type, req, details = {}) {
+  console.log(JSON.stringify({
+    type,
+    ip: req.ip || req.connection?.remoteAddress,
+    userAgent: req.headers['user-agent'],
+    timestamp: new Date().toISOString(),
+    ...details
+  }));
+}
+
+// Attach logger to req so routes can use it
+app.use((req, res, next) => {
+  req.logSecurity = (type, details) => logSecurityEvent(type, req, details);
+  next();
+});
+
 // Health check endpoints
 app.get('/health', (req, res) => {
 res.json({
 status: 'ok',
 timestamp: new Date().toISOString(),
-env: process.env.NODE_ENV,
-onlineUsers: onlineUsers.size,
-services: {
-    database: 'connected',
-    socketio: 'running'
-}
+services: { database: 'connected', socketio: 'running' }
 });
 });
 
@@ -530,25 +583,11 @@ app.get('/api/health', (req, res) => {
 res.json({
 status: 'ok',
 timestamp: new Date().toISOString(),
-env: process.env.NODE_ENV,
-onlineUsers: onlineUsers.size,
-services: {
-    database: 'connected',
-    socketio: 'running'
-}
+services: { database: 'connected', socketio: 'running' }
 });
 });
 
-app.get('/socket-status', (req, res) => {
-res.json({
-connectedUsers: onlineUsers.size,
-users: Array.from(onlineUsers.values()).map(user => ({
-    id: user.userId,
-    username: user.username,
-    connectedAt: user.connectedAt
-}))
-});
-});
+// /socket-status removed — was leaking all connected user data publicly
 
 // Database connection verification
 const verifyDbConnection = async () => {
@@ -573,7 +612,12 @@ const commentsRoutes = require('./routes/comments.js');
 
 
 // API Routes
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', registerLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/resend-verification', authLimiter);
 app.use('/api/auth', authRoutes);
+app.use('/api/tracks/upload', uploadLimiter);
 app.use('/api/tracks', trackRoutes);
 app.use('/api/collaborations', collaborationRoutes);
 app.use('/api/submissions', submissionRoutes);

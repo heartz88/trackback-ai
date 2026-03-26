@@ -12,7 +12,7 @@ try {
 const { submission_id, content, parent_id } = req.body;
 const userId = req.user.id;
 
-if (!submission_id || !content?.trim()) {
+if (!submission_id || !content?.trim() || content.trim().length > 2000) {
     return res.status(400).json({ error: { message: 'Submission ID and content are required' } });
 }
 
@@ -99,10 +99,21 @@ res.status(500).json({ error: { message: 'Failed to add comment' } });
 });
 
 // GET /submission/:submissionId — Fetch nested comments tree
+// userId is taken from the JWT (if present) — never from query params
 router.get('/submission/:submissionId', async (req, res) => {
 try {
 const { submissionId } = req.params;
-const userId = req.query.userId ? parseInt(req.query.userId) : null;
+
+// Optionally authenticate — guests see comments but not their own like state
+let userId = null;
+const authHeader = req.headers.authorization;
+if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+    userId = decoded.id || decoded.userId;
+    } catch (_) { /* invalid/expired token — treat as guest */ }
+}
 
 const result = await db.query(
     `SELECT c.*,

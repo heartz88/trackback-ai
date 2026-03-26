@@ -128,9 +128,9 @@ const sendVerificationEmail = async (email, username, token) => {
 // Register with email verification
 router.post('/register',
     [
-    body('username').trim().notEmpty().withMessage('Username is required'),
+    body('username').trim().notEmpty().isLength({ min: 3, max: 30 }).matches(/^[a-zA-Z0-9_-]+$/).withMessage('Username must be 3-30 characters, letters/numbers/underscores/hyphens only'),
     body('email').isEmail().withMessage('Valid email is required'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
     ],
     async (req, res) => {
     try {
@@ -153,7 +153,7 @@ router.post('/register',
             });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 12);
         
         // Generate verification token
         const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -231,6 +231,8 @@ router.post('/login',
         const validPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!validPassword) {
+            // Log failed login attempt for monitoring
+            if (req.logSecurity) req.logSecurity('LOGIN_FAILED', { email, reason: 'invalid_password' });
             return res.status(401).json({
                 error: { message: 'Invalid email or password' }
             });
@@ -270,6 +272,7 @@ router.post('/login',
             { expiresIn: tokenExpiry }
         );
 
+        if (req.logSecurity) req.logSecurity('LOGIN_SUCCESS', { userId: user.id });
         res.json({
             message: 'Login successful',
             token,
@@ -590,7 +593,12 @@ router.post('/reset-password', async (req, res) => {
         }
 
         const user = userResult.rows[0];
-        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        if (!new_password || new_password.length < 8) {
+            return res.status(400).json({ error: { message: 'Password must be at least 8 characters' } });
+        }
+
+        const hashedPassword = await bcrypt.hash(new_password, 12);
 
         await db.query(
             'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expiry = NULL WHERE id = $2',

@@ -110,11 +110,7 @@ try {
 const { trackId } = req.params;
 const userId = req.user?.id ?? null;
 
-// Inline user_vote subquery — avoids passing null as a pg param
-const userVoteSQL = userId
-    ? `(SELECT vote_type FROM votes WHERE submission_id = s.id AND user_id = ${parseInt(userId)} LIMIT 1)`
-    : `NULL`;
-
+// Use parameterised query throughout — never interpolate user values into SQL
 const result = await db.query(
     `SELECT s.id, s.track_id, s.collaborator_id, s.title, s.description,
             s.s3_key, s.file_format, s.status, s.created_at, s.updated_at,
@@ -122,13 +118,13 @@ const result = await db.query(
             u.username AS collaborator_name,
             t.user_id  AS track_owner_id,
             (SELECT COUNT(*)::int FROM votes WHERE submission_id = s.id AND vote_type = 'upvote') AS upvotes,
-            ${userVoteSQL} AS user_vote
+            (SELECT vote_type FROM votes WHERE submission_id = s.id AND user_id = $2 LIMIT 1) AS user_vote
     FROM submissions s
     JOIN users  u ON s.collaborator_id = u.id
     JOIN tracks t ON s.track_id = t.id
     WHERE s.track_id = $1
     ORDER BY upvotes DESC, s.created_at DESC`,
-    [trackId]
+    [trackId, userId]  // userId is null for guests — postgres handles NULL safely in subquery
 );
 
 const submissions = result.rows.map(sub => ({
