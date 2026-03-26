@@ -79,24 +79,17 @@ const HamburgerIcon = () => (
     onClick={toggleMenu}
     className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)]"
     aria-label="Toggle menu"
->
-    <div className="relative w-5 h-5">
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-[box-shadow,border-color] duration-300 ${
+    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+    <div className="relative w-5 h-5 pointer-events-none">
+    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${
         isMenuOpen ? 'rotate-45 top-2.5' : 'rotate-0 top-1'
-    }`} />
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-[box-shadow,border-color] duration-300 ${
+    }`} style={{ transition: 'none' }} />
+    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${
         isMenuOpen ? 'opacity-0' : 'opacity-100 top-2.5'
-    }`} />
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform transition-[box-shadow,border-color] duration-300 ${
+    }`} style={{ transition: 'none' }} />
+    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${
         isMenuOpen ? '-rotate-45 top-2.5' : 'rotate-0 top-4'
-    }`} />
-    </div>
-    <div className="absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none">
-    <div className="flex items-end space-x-0.5 h-4">
-        <span className="w-0.5 h-2 bg-[var(--accent-primary)] rounded-full animate-waveform" />
-        <span className="w-0.5 h-3 bg-[var(--accent-primary-light)] rounded-full animate-waveform" />
-        <span className="w-0.5 h-4 bg-[var(--accent-primary)] rounded-full animate-waveform" />
-    </div>
+    }`} style={{ transition: 'none' }} />
     </div>
 </button>
 );

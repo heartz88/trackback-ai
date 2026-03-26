@@ -48,6 +48,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (!isIos) return;
 
+  // Tag <html> so CSS .ios-touch rules suppress :hover styles
   document.documentElement.classList.add('ios-touch');
   // Classic WebKit trick — makes :active work on all elements
   document.body.setAttribute('ontouchstart', '');
@@ -68,8 +69,20 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
   document.addEventListener('touchend', function(e) {
     if (!_el || Date.now() - _t > 600) { _el = null; return; }
 
+    // Used closest() on BOTH the touchend target and the stored touchstart target.
+    // This handles cases where e.target is a child element (e.g. a <span> inside
+    // a button) — the hamburger menu was double-tapping because its inner <span>
+    // bars were the actual e.target, and iOS was simulating hover on the span.
     var el = e.target.closest(CLICKABLE + ', ' + FOCUSABLE);
-    if (!el || el !== _el) { _el = null; return; }
+
+    // Fallback: if e.target didn't resolve via closest, check if _el itself is
+    // still a valid target (touchstart and touchend on same element hierarchy)
+    if (!el && _el) el = _el;
+    if (!el) { _el = null; return; }
+
+    // Make sure we're still in the same tap (touchend target must be inside
+    // the same interactive element we recorded on touchstart)
+    if (!_el.contains(e.target) && e.target !== _el) { _el = null; return; }
 
     var tag = el.tagName.toLowerCase();
     var isInput = (tag === 'input' || tag === 'textarea' || tag === 'select');
