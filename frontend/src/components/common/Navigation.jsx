@@ -74,29 +74,6 @@ useEffect(() => {
 setAvatarError(false);
 }, [user?.avatar_url]);
 
-const HamburgerIcon = () => (
-<button
-    onClick={toggleMenu}
-    onTouchEnd={(e) => { e.preventDefault(); toggleMenu(); }}
-    className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)]"
-    aria-label="Toggle menu"
-    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
->
-    {/* pointer-events-none on ALL children so e.target is always the button,
-        never a child span — this is what was causing the double-tap */}
-    <div className="relative w-5 h-5 pointer-events-none">
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${
-        isMenuOpen ? 'rotate-45 top-2.5' : 'rotate-0 top-1'
-    }`} style={{ transition: 'none' }} />
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${
-        isMenuOpen ? 'opacity-0' : 'opacity-100 top-2.5'
-    }`} style={{ transition: 'none' }} />
-    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${
-        isMenuOpen ? '-rotate-45 top-2.5' : 'rotate-0 top-4'
-    }`} style={{ transition: 'none' }} />
-    </div>
-</button>
-);
 
 return (
 <>
@@ -249,7 +226,18 @@ return (
         <div className="flex md:hidden items-center space-x-2">
             <div className="flex-shrink-0"><ThemeToggle /></div>
             {user && <NotificationBell />}
-            <HamburgerIcon />
+            <button
+                onClick={toggleMenu}
+                className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)]"
+                aria-label="Toggle menu"
+                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            >
+                <div className="relative w-5 h-5 pointer-events-none">
+                    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${isMenuOpen ? 'rotate-45 top-2.5' : 'top-1'}`} style={{transition:'none'}} />
+                    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${isMenuOpen ? 'opacity-0' : 'opacity-100 top-2.5'}`} style={{transition:'none'}} />
+                    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${isMenuOpen ? '-rotate-45 top-2.5' : 'top-4'}`} style={{transition:'none'}} />
+                </div>
+            </button>
         </div>
         </div>
     </div>
@@ -290,7 +278,6 @@ return (
             </div>
             <button
             onClick={closeMenu}
-            onTouchEnd={(e) => { e.preventDefault(); closeMenu(); }}
             className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)]"
             aria-label="Close menu"
             style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
@@ -353,7 +340,6 @@ return (
             <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
                 <button
                 onClick={handleLogout}
-                onTouchEnd={(e) => { e.preventDefault(); handleLogout(); }}
                 className="w-full flex items-center justify-between px-4 py-3 text-left text-red-500 active:bg-red-500/10 rounded-xl"
                 style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                 >
@@ -398,7 +384,6 @@ const MenuItem = ({ to, children, badge, onClick }) => (
 <Link
 to={to}
 onClick={onClick}
-onTouchEnd={(e) => { e.preventDefault(); onClick && onClick(); }}
 className="flex items-center justify-between px-4 py-3 rounded-xl active:bg-[var(--bg-tertiary)]"
 style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
 >
