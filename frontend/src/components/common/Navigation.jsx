@@ -13,8 +13,10 @@ const navigate = useNavigate();
 const [isMenuOpen, setIsMenuOpen] = useState(false);
 const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 const [scrolled, setScrolled] = useState(false);
-const [avatarError, setAvatarError] = useState(false); // Add state for avatar error
+const [avatarError, setAvatarError] = useState(false);
 const profileMenuRef = useRef(null);
+const mobileMenuRef = useRef(null);
+const burgerButtonRef = useRef(null);
 
 useEffect(() => {
 const handleScroll = () => {
@@ -56,7 +58,12 @@ setIsMenuOpen(false);
 setIsProfileMenuOpen(false);
 };
 
-const toggleMenu = () => {
+const toggleMenu = (e) => {
+// Stop propagation to prevent iOS touch fix from interfering
+if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
 setIsMenuOpen(!isMenuOpen);
 setIsProfileMenuOpen(false);
 };
@@ -73,7 +80,6 @@ setIsProfileMenuOpen(!isProfileMenuOpen);
 useEffect(() => {
 setAvatarError(false);
 }, [user?.avatar_url]);
-
 
 return (
 <>
@@ -130,7 +136,6 @@ return (
                 >
                     <div className="relative">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20 overflow-hidden">
-                        {/* Better avatar handling */}
                         {user.avatar_url && !avatarError ? (
                         <img 
                             src={user.avatar_url} 
@@ -163,7 +168,7 @@ return (
                         <Link
                         to={`/profile/${user.username}`}
                         onClick={() => setIsProfileMenuOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg active:bg-[var(--bg-tertiary)]"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
                         >
                         <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -174,7 +179,7 @@ return (
                         <Link
                         to="/edit-profile"
                         onClick={() => setIsProfileMenuOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg active:bg-[var(--bg-tertiary)]"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
                         >
                         <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -187,7 +192,7 @@ return (
 
                         <button
                         onClick={handleLogout}
-                        className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg active:bg-red-500/10"
+                        className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-red-500/10 transition-colors"
                         >
                         <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -203,18 +208,18 @@ return (
             <>
                 <Link 
                 to="/community" 
-                className="px-4 py-2 text-[var(--text-secondary)] font-medium"
+                className="px-4 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--accent-primary)] transition-colors"
                 >Community
                 </Link>
                 <Link 
                 to="/login" 
-                className="px-4 py-2 text-[var(--text-secondary)] font-medium"
+                className="px-4 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--accent-primary)] transition-colors"
                 >
                 Sign In
                 </Link>
                 <Link 
                 to="/register" 
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] text-white font-medium shadow-lg shadow-[var(--accent-primary)]/20"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-primary-dark)] to-[var(--accent-primary)] text-white font-medium shadow-lg shadow-[var(--accent-primary)]/20 hover:shadow-xl transition-all"
                 >
                 Get Started
                 </Link>
@@ -227,15 +232,32 @@ return (
             <div className="flex-shrink-0"><ThemeToggle /></div>
             {user && <NotificationBell />}
             <button
+                ref={burgerButtonRef}
                 onClick={toggleMenu}
-                className="md:hidden relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)]"
-                aria-label="Toggle menu"
-                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                className="relative w-11 h-11 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)]/80 active:scale-95 transition-all"
+                aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+                style={{ 
+                    touchAction: 'manipulation', 
+                    WebkitTapHighlightColor: 'transparent',
+                    cursor: 'pointer'
+                }}
             >
                 <div className="relative w-5 h-5 pointer-events-none">
-                    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${isMenuOpen ? 'rotate-45 top-2.5' : 'top-1'}`} style={{transition:'none'}} />
-                    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${isMenuOpen ? 'opacity-0' : 'opacity-100 top-2.5'}`} style={{transition:'none'}} />
-                    <span className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transform ${isMenuOpen ? '-rotate-45 top-2.5' : 'top-4'}`} style={{transition:'none'}} />
+                    <span 
+                        className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${
+                            isMenuOpen ? 'rotate-45 top-2.5' : 'top-1'
+                        }`} 
+                    />
+                    <span 
+                        className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${
+                            isMenuOpen ? 'opacity-0' : 'opacity-100 top-2.5'
+                        }`} 
+                    />
+                    <span 
+                        className={`absolute left-0 w-5 h-0.5 bg-[var(--text-primary)] rounded-full transition-all duration-300 ${
+                            isMenuOpen ? '-rotate-45 top-2.5' : 'top-4'
+                        }`} 
+                    />
                 </div>
             </button>
         </div>
@@ -244,162 +266,163 @@ return (
     </nav>
 
     {/* Mobile Menu Overlay*/}
-    <div className={`md:hidden fixed inset-0 z-40 ${
-    isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
-    }`} style={{ transition: 'opacity 0.3s ease, visibility 0.3s ease' }}>
-    <div
-        className={`absolute inset-0 bg-black/80 backdrop-blur-md ${
-        isMenuOpen ? 'opacity-100' : 'opacity-0'
+    <div 
+        className={`md:hidden fixed inset-0 z-40 transition-all duration-300 ${
+            isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
         }`}
-        style={{ transition: 'opacity 0.3s ease' }}
-        onClick={closeMenu}
-    />
-    
-    <div className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transform ${
-        isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-    }`} style={{ transition: 'transform 0.3s ease' }}>
+    >
+        <div
+            className={`absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300 ${
+                isMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={closeMenu}
+        />
         
-        <div className="p-6 border-b border-[var(--border-color)]">
-        <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                </svg>
-            </div>
-            <div>
-                <span className="text-lg font-bold">
-                <span className="text-[var(--text-primary)]">Track</span>
-                <span className="text-[var(--accent-primary)]">Back</span>
-                <span className="text-[var(--text-secondary)]">AI</span>
-                </span>
-                <p className="text-xs text-[var(--text-tertiary)]">Music Collaboration</p>
-            </div>
-            </div>
-            <button
-            onClick={closeMenu}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)]"
-            aria-label="Close menu"
-            style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-            >
-            <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            </button>
-        </div>
+        <div 
+            className={`absolute top-0 right-0 h-full w-4/5 max-w-sm bg-[var(--bg-primary)] border-l border-[var(--border-color)] shadow-2xl transition-transform duration-300 ease-out ${
+                isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+        >
+            <div className="p-6 border-b border-[var(--border-color)]">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--accent-primary)]/20">
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <span className="text-lg font-bold">
+                                <span className="text-[var(--text-primary)]">Track</span>
+                                <span className="text-[var(--accent-primary)]">Back</span>
+                                <span className="text-[var(--text-secondary)]">AI</span>
+                            </span>
+                            <p className="text-xs text-[var(--text-tertiary)]">Music Collaboration</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={closeMenu}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--bg-tertiary)] hover:bg-[var(--bg-tertiary)]/80 active:scale-95 transition-all"
+                        aria-label="Close menu"
+                        style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                    >
+                        <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
 
-        {user && (
-            <Link 
-            to={`/profile/${user.username}`} 
-            onClick={closeMenu}
-            className="block p-4 rounded-xl bg-gradient-to-r from-[var(--accent-primary)]/5 to-transparent border border-[var(--border-color)]"
-            >
-            <div className="flex items-center space-x-3">
-                <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg overflow-hidden">
-                    {/* Better avatar handling for mobile */}
-                    {user.avatar_url && !avatarError ? (
-                    <img 
-                        src={user.avatar_url} 
-                        alt={user.username} 
-                        className="w-full h-full object-cover"
-                        onError={() => setAvatarError(true)}
-                        onLoad={() => setAvatarError(false)}
-                    />
-                    ) : (
-                    <span className="text-white text-lg font-bold">
-                        {user.username?.[0]?.toUpperCase() || '?'}
-                    </span>
-                    )}
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[var(--bg-primary)]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-[var(--text-primary)] truncate">{user.username}</h3>
-                <p className="text-xs text-[var(--text-tertiary)] truncate">{user.email}</p>
-                </div>
-                <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                {user && (
+                    <Link 
+                        to={`/profile/${user.username}`} 
+                        onClick={closeMenu}
+                        className="block p-4 rounded-xl bg-gradient-to-r from-[var(--accent-primary)]/5 to-transparent border border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 transition-all"
+                    >
+                        <div className="flex items-center space-x-3">
+                            <div className="relative">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--accent-primary-dark)] to-[var(--accent-primary)] flex items-center justify-center shadow-lg overflow-hidden">
+                                    {user.avatar_url && !avatarError ? (
+                                        <img 
+                                            src={user.avatar_url} 
+                                            alt={user.username} 
+                                            className="w-full h-full object-cover"
+                                            onError={() => setAvatarError(true)}
+                                            onLoad={() => setAvatarError(false)}
+                                        />
+                                    ) : (
+                                        <span className="text-white text-lg font-bold">
+                                            {user.username?.[0]?.toUpperCase() || '?'}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[var(--bg-primary)]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-[var(--text-primary)] truncate">{user.username}</h3>
+                                <p className="text-xs text-[var(--text-tertiary)] truncate">{user.email}</p>
+                            </div>
+                            <svg className="w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </div>
+                    </Link>
+                )}
             </div>
-            </Link>
-        )}
-        </div>
 
-        <div className="p-4 space-y-1 max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
-        {user ? (
-            <>
-            <MenuItem to="/discover" onClick={closeMenu}>Discover</MenuItem>
-            <MenuItem to="/upload" onClick={closeMenu}>Upload Track</MenuItem>
-            <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
-            <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
-            <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
-            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
-            <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
-            
-            <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
-                <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-between px-4 py-3 text-left text-red-500 active:bg-red-500/10 rounded-xl"
-                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-                >
-                <span className="font-medium">Sign Out</span>
-                <svg className="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                </button>
+            <div className="p-4 space-y-1 max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
+                {user ? (
+                    <>
+                        <MenuItem to="/discover" onClick={closeMenu}>Discover</MenuItem>
+                        <MenuItem to="/upload" onClick={closeMenu}>Upload Track</MenuItem>
+                        <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
+                        <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
+                        <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
+                        <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
+                        <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
+                        
+                        <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-between px-4 py-3 text-left text-red-500 hover:bg-red-500/10 active:bg-red-500/20 rounded-xl transition-all"
+                                style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+                            >
+                                <span className="font-medium">Sign Out</span>
+                                <svg className="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
+                        <MenuItem to="/login" onClick={closeMenu}>Sign In</MenuItem>
+                        <MenuItem to="/register" onClick={closeMenu}>Join Now</MenuItem>
+                    </>
+                )}
             </div>
-            </>
-        ) : (
-            <>
-            <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
-            <MenuItem to="/login" onClick={closeMenu}>Sign In</MenuItem>
-            <MenuItem to="/register" onClick={closeMenu}>Join Now</MenuItem>
-            </>
-        )}
         </div>
-    </div>
     </div>
 </>
 );
 }
 
-// Desktop nav link — no group-hover children (causes iOS double-tap)
+// Desktop nav link
 const NavLink = ({ to, children, badge }) => (
 <Link
-to={to}
-className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] [&&]:transition-none"
+    to={to}
+    className="relative px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors"
 >
-{children}
-{badge > 0 && (
-    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
-    {badge > 9 ? '9+' : badge}
-    </span>
-)}
+    {children}
+    {badge > 0 && (
+        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
+            {badge > 9 ? '9+' : badge}
+        </span>
+    )}
 </Link>
 );
 
-// Mobile Menu Item — onTouchEnd fires before Safari hover simulation
+// Mobile Menu Item
 const MenuItem = ({ to, children, badge, onClick }) => (
 <Link
-to={to}
-onClick={onClick}
-className="flex items-center justify-between px-4 py-3 rounded-xl active:bg-[var(--bg-tertiary)]"
-style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+    to={to}
+    onClick={onClick}
+    className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-[var(--bg-tertiary)] active:bg-[var(--bg-tertiary)] transition-colors"
+    style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
 >
-<span className="font-medium text-[var(--text-primary)]">
-    {children}
-</span>
-<div className="flex items-center space-x-2">
-    {badge > 0 && (
-    <span className="min-w-[22px] h-[22px] px-1 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-        {badge > 9 ? '9+' : badge}
+    <span className="font-medium text-[var(--text-primary)]">
+        {children}
     </span>
-    )}
-    <svg className="w-4 h-4 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-</div>
+    <div className="flex items-center space-x-2">
+        {badge > 0 && (
+            <span className="min-w-[22px] h-[22px] px-1 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                {badge > 9 ? '9+' : badge}
+            </span>
+        )}
+        <svg className="w-4 h-4 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+    </div>
 </Link>
 );
 
