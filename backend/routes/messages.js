@@ -177,7 +177,7 @@ if (parsedParticipantId === userId) {
 
 // Check both users exist
 const usersCheck = await db.query(
-    'SELECT id, username FROM users WHERE id IN ($1, $2)',
+    'SELECT id, username, avatar_url, avatar_s3_key FROM users WHERE id IN ($1, $2)',
     [userId, parsedParticipantId]
 );
 
@@ -229,7 +229,7 @@ const conversationDetails = await db.query(
     (SELECT created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_timestamp,
     (SELECT sender_id FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_sender_id,
     (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != $2 AND NOT ($2 = ANY(m.read_by))) as unread_count,
-    ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
+    ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email, 'avatar_url', u.avatar_url, 'avatar_s3_key', u.avatar_s3_key)) as participants
     FROM conversations c
     JOIN conversation_participants cp ON c.id = cp.conversation_id
     JOIN users u ON cp.user_id = u.id
@@ -295,7 +295,7 @@ const conversations = await db.query(
     (SELECT m.created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_timestamp,
     (SELECT m.sender_id FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_sender_id,
     (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != $1 AND NOT ($1 = ANY(m.read_by))) as unread_count,
-    ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
+    ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email, 'avatar_url', u.avatar_url, 'avatar_s3_key', u.avatar_s3_key)) as participants
     FROM conversations c
     JOIN conversation_participants cp ON c.id = cp.conversation_id
     JOIN users u ON cp.user_id = u.id

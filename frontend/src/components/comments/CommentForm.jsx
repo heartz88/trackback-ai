@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import Avatar from '../common/Avatar';
 
 const CommentForm = ({ submissionId, onCommentAdded }) => {
     const { user } = useAuth();
@@ -58,9 +59,7 @@ const CommentForm = ({ submissionId, onCommentAdded }) => {
     return (
         <form onSubmit={handleSubmit} className="comment-form">
             <div className="form-header">
-                <div className="avatar">
-                    {user.username?.charAt(0).toUpperCase()}
-                </div>
+                <Avatar user={user} size={48} />
                 <div className="form-content">
                     <textarea
                         value={content}

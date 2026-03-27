@@ -11,7 +11,7 @@ const userId = req.user.id;
 
 // Get users who are currently online (EXCLUDING CURRENT USER)
 const result = await db.query(
-    `SELECT u.id, u.username, u.email, u.bio, u.skills, ou.last_activity
+    `SELECT u.id, u.username, u.email, u.bio, u.skills, u.avatar_url, u.avatar_s3_key, ou.last_activity
     FROM users u
     JOIN online_users ou ON u.id = ou.user_id
     WHERE u.id != $1
@@ -21,7 +21,7 @@ const result = await db.query(
 
 // Also get recent active users (last 5 minutes) who might not be in online_users table
 const recentUsers = await db.query(
-    `SELECT DISTINCT u.id, u.username, u.email, u.bio, u.skills
+    `SELECT DISTINCT u.id, u.username, u.email, u.bio, u.skills, u.avatar_url, u.avatar_s3_key
     FROM users u
     WHERE u.id != $1
     AND EXISTS (

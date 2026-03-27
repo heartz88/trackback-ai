@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import Avatar from '../common/Avatar';
 import { useConfirm, useToast } from '../common/Toast';
 
 /**
@@ -123,9 +124,7 @@ return (
 <div className={`comment-item ${isReply ? 'reply' : ''}`}>
     {/* Avatar */}
     <div className="comment-avatar">
-    <div className="avatar">
-        {comment.user?.username?.charAt(0).toUpperCase()}
-    </div>
+    <Avatar user={comment.user} size={40} />
     </div>
 
     <div className="comment-content">

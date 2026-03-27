@@ -1,14 +1,14 @@
+import Avatar from '../common/Avatar';
+
 const UserSearchItem = ({ user, isOnline, onSelect, disabled }) => (
   <div
-    className={`flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--bg-tertiary)] cursor-pointer ${
+    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
       disabled ? 'opacity-50 cursor-not-allowed' : ''
     }`}
     onClick={() => !disabled && onSelect()}
   >
     <div className="relative">
-      <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold">
-        {user.username?.[0]?.toUpperCase() || '?'}
-      </div>
+      <Avatar user={user} size={40} />
       {isOnline && (
         <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary-500 rounded-full border border-[var(--bg-primary)]"></div>
       )}
