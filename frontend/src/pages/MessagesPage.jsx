@@ -182,7 +182,7 @@ function MessagesPage() {
     } finally {
       setLoadingConversations(false);
     }
-  }, [conversationId]);
+  }, [username]);
 
   // Join/leave conversation room
   useEffect(() => {

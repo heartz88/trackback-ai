@@ -314,7 +314,7 @@ return (
         </div>
         {submissionsCount > 0 && <Link to={`/tracks/${trackSlug}/submissions`} className="btn-view-all">View All ({submissionsCount}) →</Link>}
     </div>
-    <SubmissionList trackId={trackId} limit={3} />
+    <SubmissionList trackId={track.id} limit={3} />
     {submissionsCount === 0 && (
         <div style={{textAlign:'center',padding:'32px 0',color:'var(--text-tertiary)',fontSize:14}}>
         No submissions yet.{' '}{hasApprovedCollab && <Link to={`/tracks/${trackSlug}/submissions`} style={{color:'var(--accent-primary)'}}>Be the first!</Link>}
