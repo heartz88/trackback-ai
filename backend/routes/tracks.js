@@ -498,10 +498,53 @@ console.error('Get user tracks by ID error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch tracks' } });
 }
 });
+// ─────────────────────────────────────────────────────────────────
+// GET /by-slug/:slug — Fetch track by URL slug (title-based)
+// Slug format: title lowercased, spaces→hyphens, non-alphanumeric stripped
+// ─────────────────────────────────────────────────────────────────
+router.get('/by-slug/:slug', async (req, res) => {
+try {
+const { slug } = req.params;
 
-// ─────────────────────────────────────────────────────────────────
-// GET /:id — Single track  <- all literal-path routes must be above this
-// ─────────────────────────────────────────────────────────────────
+// Convert slug back to a search pattern:
+// "my-cool-track" → search for title that slugifies to this
+const result = await db.query(
+    `SELECT t.*,
+            u.username,
+            u.id as owner_id,
+            u.email as owner_email,
+            u.avatar_url,
+            u.avatar_s3_key
+    FROM tracks t
+    JOIN users u ON t.user_id = u.id
+    WHERE LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g')) = $1
+       OR LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g')) = LOWER($1)
+    ORDER BY t.created_at DESC
+    LIMIT 1`,
+    [slug]
+);
+
+if (result.rows.length === 0) {
+    return res.status(404).json({ error: { message: 'Track not found' } });
+}
+
+const track = result.rows[0];
+if (track.avatar_s3_key) track.avatar_url = getSignedUrl(track.avatar_s3_key);
+track.audio_url = getSignedUrl(track.s3_key);
+track.duration = track.duration ? Math.round(track.duration) : null;
+track.bpm = track.bpm ? Math.round(track.bpm) : null;
+track.desired_skills = track.desired_skills || [];
+track.musical_key = track.musical_key || null;
+// Include the slug so the frontend can use it
+track.slug = slug;
+
+res.json({ track });
+} catch (error) {
+console.error('Get track by slug error:', error);
+res.status(500).json({ error: { message: 'Failed to fetch track' } });
+}
+});
+
 router.get('/:id', async (req, res) => {
 try {
 const { id } = req.params;
@@ -535,6 +578,8 @@ track.duration = track.duration ? Math.round(track.duration) : null;
 track.bpm = track.bpm ? Math.round(track.bpm) : null;
 track.desired_skills = track.desired_skills || [];
 track.musical_key = track.musical_key || null;
+// Generate a URL-friendly slug from the title
+track.slug = track.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 res.json({ track });
 } catch (error) {

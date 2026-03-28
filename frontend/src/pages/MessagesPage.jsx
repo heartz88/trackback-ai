@@ -19,7 +19,7 @@ import UserSearch from '../components/messages/UserSearch';
 function MessagesPage() {
   const toast = useToast();
   const confirm = useConfirm();
-  const { conversationId } = useParams();
+  const { username } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
@@ -155,9 +155,27 @@ function MessagesPage() {
       const conversationsData = response.data.conversations || [];
       setConversations(conversationsData);
 
-      if (conversationId) {
-        const conv = conversationsData.find(c => c.id.toString() === conversationId);
-        if (conv) setSelectedConversation(conv);
+      if (username) {
+        // Try to find by other participant's username first (fast path)
+        const conv = conversationsData.find(c =>
+          c.participants?.some(p => p.username?.toLowerCase() === username.toLowerCase())
+        );
+        if (conv) {
+          setSelectedConversation(conv);
+        } else {
+          // Not in list yet — fetch/create via username
+          try {
+            const r = await api.get(`/messages/conversations/by-username/${username}`);
+            const newConv = r.data.conversation;
+            setConversations(prev => {
+              const exists = prev.some(c => c.id === newConv.id);
+              return exists ? prev : [newConv, ...prev];
+            });
+            setSelectedConversation(newConv);
+          } catch (err) {
+            console.error('Failed to load conversation by username:', err);
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch conversations:', err);
@@ -401,7 +419,8 @@ function MessagesPage() {
       setSelectedConversation(newConversation);
       setShowUserSearch(false);
       hasJoinedConversation.current = false;
-      navigate(`/messages/${newConversation.id}`);
+      const otherUser = newConversation.participants?.find(p => p.id !== user.id);
+      navigate(`/messages/${otherUser?.username || newConversation.id}`);
 
     } catch (err) {
       let errorMessage = 'Failed to start conversation';
@@ -414,7 +433,8 @@ function MessagesPage() {
         if (existingConv) {
           setSelectedConversation(existingConv);
           hasJoinedConversation.current = false;
-          navigate(`/messages/${existingConv.id}`);
+          const otherUser = existingConv.participants?.find(p => p.id !== user.id);
+          navigate(`/messages/${otherUser?.username || existingConv.id}`);
           return;
         }
       }
@@ -502,7 +522,8 @@ function MessagesPage() {
                 selectedConversation={selectedConversation}
                 onSelectConversation={(conv) => {
                   setSelectedConversation(conv);
-                  navigate(`/messages/${conv.id}`);
+                  const otherUser = conv.participants?.find(p => p.id !== user.id);
+                  navigate(`/messages/${otherUser?.username || conv.id}`);
                 }}
                 currentUser={user}
                 onlineUsers={currentOnlineUsers}

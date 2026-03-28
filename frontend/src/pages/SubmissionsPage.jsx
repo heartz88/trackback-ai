@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionCard from '../components/submissions/SubmissionCard';
@@ -9,7 +9,8 @@ import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 const SubmissionsPage = () => {
-const { trackId } = useParams();
+const { trackSlug } = useParams();
+const [trackId, setTrackId] = React.useState(null);
 const { user } = useAuth();
 const { on } = useSocket();
 const navigate = useNavigate();
@@ -36,8 +37,8 @@ const topScore = topSubmission ? parseInt(topSubmission.upvotes) || 0 : 0;
 // My submissions so we show "submit another version" instead of blocking
 const mySubmissions = user ? submissions.filter(s => s.collaborator_id === user.id) : [];
 
-useEffect(() => { fetchTrackDetails(); fetchCollaboration(); }, [trackId]);
-useEffect(() => { fetchSubmissions(); }, [trackId, refreshKey, user]);
+useEffect(() => { fetchTrackDetails(); }, [trackSlug]);
+useEffect(() => { if (trackId) { fetchCollaboration(); fetchSubmissions(); } }, [trackId, refreshKey, user]);
 
 // Real-time: new submission on this track
 useEffect(() => {
@@ -65,7 +66,8 @@ const fetchTrackDetails = async () => {
 setIsLoading(true);
 setError('');
 try {
-    const res = await api.get(`/tracks/${trackId}`);
+    const res = await api.get(`/tracks/by-slug/${trackSlug}`);
+    setTrackId(res.data.track.id);
     setTrack(res.data.track);
     try {
     const ownerRes = await api.get(`/users/${res.data.track.user_id}`);
@@ -123,7 +125,7 @@ if (!ok) return;
 try {
     await api.post(`/collaborations/${trackId}/complete`);
     toast.success('Track marked as completed!');
-    navigate(`/tracks/${trackId}`);
+    navigate(`/tracks/${trackSlug}`);
 } catch (err) {
     toast.error(err.response?.data?.error?.message || 'Failed to complete track');
 }
@@ -166,7 +168,7 @@ return (
     <nav className="breadcrumb animate-slide-up">
     <Link to="/discover">Discover</Link>
     <span className="breadcrumb-sep">›</span>
-    <Link to={`/tracks/${trackId}`}>{track.title}</Link>
+    <Link to={`/tracks/${trackSlug}`}>{track.title}</Link>
     <span className="breadcrumb-sep">›</span>
     <span className="breadcrumb-current">Submissions</span>
     </nav>
@@ -297,7 +299,7 @@ return (
             <p style={{ fontSize:13, color:'var(--text-secondary)', margin:0, lineHeight:1.6 }}>
                 You need an <strong style={{ color:'var(--text-primary)' }}>approved collaboration</strong> to submit a version.
             </p>
-            <Link to={`/tracks/${trackId}`} className="btn-secondary" style={{ textAlign:'center' }}>
+            <Link to={`/tracks/${trackSlug}`} className="btn-secondary" style={{ textAlign:'center' }}>
                 Request Collaboration →
             </Link>
             </>
@@ -328,7 +330,7 @@ return (
 
         {isOwner && (
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            <Link to={`/tracks/${trackId}`} className="btn-secondary" style={{ textAlign:'center' }}>
+            <Link to={`/tracks/${trackSlug}`} className="btn-secondary" style={{ textAlign:'center' }}>
                 ← Back to Track
             </Link>
             {submissions.length > 0 && (

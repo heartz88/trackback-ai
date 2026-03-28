@@ -38,7 +38,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 // iOS Safari One-Tap Fix
 // Safari fires a synthetic hover pass on first tap of any element with a
 // :hover CSS rule, consuming the tap without firing onClick.
-// Fix: fire el.click() on touchend before Safari can intercept it.
+// what i did is use fire el.click() on touchend before Safari can intercept it.
 // The other half of the fix is in index.html: removing user-scalable=no
 // and maximum-scale=1 from the viewport meta, which were disabling the
 // browser-native fast-tap behaviour.
@@ -121,12 +121,12 @@ function App() {
                 <Route path="/my-tracks" element={<ProtectedRoute><MyTracksPage /></ProtectedRoute>} />
                 <Route path="/collaborations" element={<ProtectedRoute><CollaborationsPage /></ProtectedRoute>} />
                 <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-                <Route path="/messages/:conversationId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+                <Route path="/messages/:username" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
                 <Route path="/community" element={<CommunityPage />} />
                 <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
                 <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
-                <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+                <Route path="/tracks/:trackSlug" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
+                <Route path="/tracks/:trackSlug/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />

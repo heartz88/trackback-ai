@@ -465,6 +465,7 @@ const { search = '' } = req.query;
 
 let query = `
     SELECT u.id, u.username, u.email, u.bio, u.skills, u.created_at,
+            u.avatar_url, u.avatar_s3_key,
             CASE WHEN ou.user_id IS NOT NULL THEN true ELSE false END as is_online
     FROM users u
     LEFT JOIN online_users ou ON u.id = ou.user_id
@@ -489,7 +490,9 @@ res.json({
     bio: user.bio,
     skills: user.skills || [],
     is_online: user.is_online || false,
-    createdAt: user.created_at
+    createdAt: user.created_at,
+    avatar_url: user.avatar_url || null,
+    avatar_s3_key: user.avatar_s3_key || null
     }))
 });
 } catch (error) {
@@ -564,7 +567,7 @@ const userId = req.user.id;
 
 const conversation = await db.query(
     `SELECT c.id, c.created_at, c.updated_at,
-            ARRAY_AGG(jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email)) as participants
+            ARRAY_AGG(jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email, 'avatar_url', u.avatar_url, 'avatar_s3_key', u.avatar_s3_key)) as participants
     FROM conversations c
     JOIN conversation_participants cp ON c.id = cp.conversation_id
     JOIN users u ON cp.user_id = u.id
@@ -603,6 +606,99 @@ res.status(500).json({
     details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
+}
+});
+
+
+// Get or create conversation by username (for pretty URLs /messages/:username)
+router.get('/conversations/by-username/:username', authMiddleware, async (req, res) => {
+try {
+const { username } = req.params;
+const userId = req.user.id;
+
+// Look up the target user
+const userResult = await db.query(
+    'SELECT id, username, email, avatar_url, avatar_s3_key FROM users WHERE LOWER(username) = LOWER($1)',
+    [username]
+);
+
+if (userResult.rows.length === 0) {
+    return res.status(404).json({ error: { message: 'User not found' } });
+}
+
+const targetUser = userResult.rows[0];
+
+if (targetUser.id === userId) {
+    return res.status(400).json({ error: { message: 'Cannot start conversation with yourself' } });
+}
+
+// Check if conversation already exists
+const existingConversation = await db.query(
+    `SELECT c.id as conversation_id
+    FROM conversations c
+    JOIN conversation_participants cp1 ON c.id = cp1.conversation_id
+    JOIN conversation_participants cp2 ON c.id = cp2.conversation_id
+    WHERE cp1.user_id = $1 AND cp2.user_id = $2`,
+    [userId, targetUser.id]
+);
+
+let conversationId;
+if (existingConversation.rows.length > 0) {
+    conversationId = existingConversation.rows[0].conversation_id;
+} else {
+    const newConv = await db.query(
+    'INSERT INTO conversations (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id'
+    );
+    conversationId = newConv.rows[0].id;
+    await db.query(
+    `INSERT INTO conversation_participants (conversation_id, user_id, joined_at, last_read_at)
+        VALUES ($1, $2, NOW(), NOW()), ($1, $3, NOW(), NOW())`,
+    [conversationId, userId, targetUser.id]
+    );
+}
+
+// Fetch full conversation details
+const convDetails = await db.query(
+    `SELECT c.id, c.created_at, c.updated_at,
+    (SELECT content FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_content,
+    (SELECT created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_timestamp,
+    (SELECT sender_id FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message_sender_id,
+    (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != $2 AND NOT ($2 = ANY(m.read_by))) as unread_count,
+    ARRAY_AGG(DISTINCT jsonb_build_object('id', u.id, 'username', u.username, 'email', u.email, 'avatar_url', u.avatar_url, 'avatar_s3_key', u.avatar_s3_key)) as participants
+    FROM conversations c
+    JOIN conversation_participants cp ON c.id = cp.conversation_id
+    JOIN users u ON cp.user_id = u.id
+    WHERE c.id = $1
+    GROUP BY c.id`,
+    [conversationId, userId]
+);
+
+const conv = convDetails.rows[0];
+const participantsArray = conv.participants || [];
+const otherParticipants = participantsArray.filter(p => p.id !== userId);
+let lastMessage = null;
+if (conv.last_message_content) {
+    lastMessage = {
+    content: conv.last_message_content,
+    timestamp: conv.last_message_timestamp,
+    senderId: conv.last_message_sender_id,
+    senderName: participantsArray.find(p => p.id === conv.last_message_sender_id)?.username || 'Unknown'
+    };
+}
+
+res.json({
+    conversation: {
+    id: conv.id,
+    created_at: conv.created_at,
+    updated_at: conv.updated_at,
+    lastMessage,
+    unreadCount: parseInt(conv.unread_count) || 0,
+    participants: otherParticipants
+    }
+});
+} catch (error) {
+console.error('Error in /conversations/by-username:', error);
+res.status(500).json({ error: { message: 'Failed to get conversation' } });
 }
 });
 

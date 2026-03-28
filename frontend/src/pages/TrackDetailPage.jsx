@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const TrackDetailPage = () => {
-const { trackId } = useParams();
+const { trackSlug } = useParams();
 const { user } = useAuth();
 const navigate = useNavigate();
 const toast = useToast();
@@ -25,13 +25,13 @@ const [collabMessage, setCollabMessage] = useState('');
 const [showMessageInput, setShowMessageInput] = useState(false);
 const [isPlaying, setIsPlaying] = useState(false);
 
-useEffect(() => { fetchTrackDetails(); }, [trackId]);
+useEffect(() => { fetchTrackDetails(); }, [trackSlug]);
 
 const fetchTrackDetails = async () => {
 setIsLoading(true);
 setError('');
 try {
-    const trackRes = await api.get(`/tracks/${trackId}`);
+    const trackRes = await api.get(`/tracks/by-slug/${trackSlug}`);
     setTrack(trackRes.data.track);
     
     const ownerRes = await api.get(`/users/${trackRes.data.track.user_id}`);
@@ -39,14 +39,14 @@ try {
     
     // These are public endpoints, safe to call without auth
     try { 
-    const r = await api.get(`/submissions/track/${trackId}`); 
+    const r = await api.get(`/submissions/track/${trackRes.data.track.id}`); 
     setSubmissionsCount(r.data.submissions?.length || 0); 
     } catch { 
     setSubmissionsCount(0); 
     }
     
     try { 
-    const r = await api.get(`/collaborations/track/${trackId}/active`); 
+    const r = await api.get(`/collaborations/track/${trackRes.data.track.id}/active`); 
     setCollaborators(r.data.collaborators || []); 
     } catch { 
     setCollaborators([]); 
@@ -55,7 +55,7 @@ try {
     // Only fetch collaboration status if user is logged in
     if (user) { 
     try { 
-        const r = await api.get(`/collaborations/track/${trackId}`); 
+        const r = await api.get(`/collaborations/track/${trackRes.data.track.id}`); 
         setCollaboration(r.data.collaboration); 
     } catch { 
         setCollaboration(null); 
@@ -81,7 +81,7 @@ if (!showMessageInput) {
 setRequestingCollab(true);
 try {
     const r = await api.post('/collaborations/request', { 
-    track_id: trackId, 
+    track_id: track.id, 
     message: collabMessage || `I'd like to collaborate on "${track.title}"` 
     });
     setCollaboration(r.data.request);
@@ -102,7 +102,7 @@ const ok = await confirm({
 });
 if (!ok) return;
 try { 
-    await api.post(`/collaborations/${trackId}/complete`); 
+    await api.post(`/collaborations/${track.id}/complete`); 
     fetchTrackDetails(); 
     toast.success('Track marked as completed!'); 
 } catch (err) { 
@@ -203,7 +203,7 @@ return (
         {!user && (
             <>
             <div className="section-label">Join the community</div>
-            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <Link to={`/tracks/${trackSlug}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
             <Link to="/login" className="btn-primary" style={{textAlign:'center'}}>🤝 Login to Collaborate</Link>
             </>
         )}
@@ -211,7 +211,7 @@ return (
         {canRequestCollab && (
             <>
             <div className="section-label">What do you want to do?</div>
-            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <Link to={`/tracks/${trackSlug}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
             <hr className="tdp-divider"/>
             <div className="section-label" style={{fontSize:11,color:'var(--text-tertiary)'}}>Want to contribute?</div>
             {showMessageInput && (
@@ -230,7 +230,7 @@ return (
         {collaboration?.status === 'pending' && (
             <>
             <div className="section-label">Your status</div>
-            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <Link to={`/tracks/${trackSlug}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
             <div className="tdp-status-pending">⏳ Collaboration Request Pending</div>
             </>
         )}
@@ -238,7 +238,7 @@ return (
         {collaboration?.status === 'rejected' && (
             <>
             <div className="section-label">Your status</div>
-            <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
+            <Link to={`/tracks/${trackSlug}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>👀 View Submissions & Vote</Link>
             <div className="tdp-status-rejected">❌ Collaboration Declined</div>
             </>
         )}
@@ -247,7 +247,7 @@ return (
             <>
             <div className="section-label">Your status</div>
             <div className="tdp-status-approved">✅ Collaboration Approved</div>
-            <Link to={`/tracks/${trackId}/submissions`} className="btn-primary" style={{textAlign:'center'}}>➕ Submit Your Version</Link>
+            <Link to={`/tracks/${trackSlug}/submissions`} className="btn-primary" style={{textAlign:'center'}}>➕ Submit Your Version</Link>
             {track.audio_url && (
                 <a href={track.audio_url} download target="_blank" rel="noreferrer" className="btn-secondary" style={{textAlign:'center'}}>⬇ Download Track</a>
             )}
@@ -260,7 +260,7 @@ return (
             <Link to="/my-tracks" className="btn-secondary" style={{textAlign:'center'}}>✏️ Manage My Tracks</Link>
             {submissionsCount > 0 && (
                 <>
-                <Link to={`/tracks/${trackId}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>📋 Review Submissions ({submissionsCount})</Link>
+                <Link to={`/tracks/${trackSlug}/submissions`} className="btn-secondary" style={{textAlign:'center'}}>📋 Review Submissions ({submissionsCount})</Link>
                 <button onClick={handleCompleteTrack} className="btn-secondary">✅ Mark as Completed</button>
                 </>
             )}
@@ -312,12 +312,12 @@ return (
             </p>
         )}
         </div>
-        {submissionsCount > 0 && <Link to={`/tracks/${trackId}/submissions`} className="btn-view-all">View All ({submissionsCount}) →</Link>}
+        {submissionsCount > 0 && <Link to={`/tracks/${trackSlug}/submissions`} className="btn-view-all">View All ({submissionsCount}) →</Link>}
     </div>
     <SubmissionList trackId={trackId} limit={3} />
     {submissionsCount === 0 && (
         <div style={{textAlign:'center',padding:'32px 0',color:'var(--text-tertiary)',fontSize:14}}>
-        No submissions yet.{' '}{hasApprovedCollab && <Link to={`/tracks/${trackId}/submissions`} style={{color:'var(--accent-primary)'}}>Be the first!</Link>}
+        No submissions yet.{' '}{hasApprovedCollab && <Link to={`/tracks/${trackSlug}/submissions`} style={{color:'var(--accent-primary)'}}>Be the first!</Link>}
         </div>
     )}
     </div>
