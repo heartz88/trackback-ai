@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useConfirm, useToast } from '../components/common/Toast';
 import api from '../services/api';
 
+const toSlug = (title) => title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '';
+
 function MyTracksPage() {
 const toast = useToast();
 const confirm = useConfirm();
@@ -115,7 +117,7 @@ return (
             <div className="p-6 pb-4">
                 <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex-1 min-w-0">
-                    <Link to={`/tracks/${track.id}`}>
+                    <Link to={`/tracks/${toSlug(track.title)}`}>
                     <h3 className="text-xl font-bold text-[var(--text-primary)] hover:text-primary-400 truncate mb-2">
                         {track.title}
                     </h3>
@@ -149,7 +151,7 @@ return (
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                     <Link
-                    to={`/tracks/${track.id}`}
+                    to={`/tracks/${toSlug(track.title)}`}
                     title="View Track Details"
                     className="p-2 text-[var(--text-secondary)] hover:text-primary-400 hover:bg-primary-500/10 rounded-lg transition-[box-shadow,border-color]"
                     >
@@ -201,7 +203,7 @@ return (
                 <div className="flex flex-wrap gap-3">
                 {/* View Details */}
                 <Link
-                    to={`/tracks/${track.id}`}
+                    to={`/tracks/${toSlug(track.title)}`}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm font-medium transition-[box-shadow,border-color] border border-[var(--border-color)]"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,7 +214,7 @@ return (
 
                 {/* View Submissions */}
                 <Link
-                    to={`/tracks/${track.id}/submissions`}
+                    to={`/tracks/${toSlug(track.title)}/submissions`}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-blue-500/10 text-[var(--text-secondary)] hover:text-blue-400 rounded-lg text-sm font-medium transition-[box-shadow,border-color] border border-[var(--border-color)]"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,7 +244,7 @@ return (
                 {/* Share link */}
                 <button
                 onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/tracks/${track.id}`);
+                    navigator.clipboard.writeText(`${window.location.origin}/tracks/${toSlug(track.title)}`);
                     toast.info('Track link copied!');
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] rounded-lg text-sm transition-[box-shadow,border-color]"

@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { useToast } from '../common/Toast';
 
+const toSlug = (title) => title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '';
+
 function TrackCard({ track }) {
 const toast = useToast();
 const [requesting, setRequesting] = useState(false);
@@ -155,7 +157,7 @@ return (
         {/* Action Buttons */}
         {isOwner ? (
             <Link
-                to={`/tracks/${track.id}`}
+                to={`/tracks/${toSlug(track.title)}`}
                 className="w-full py-3 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl text-center border border-[var(--border-color)] hover:border-primary-500/50 hover:text-primary-400 transition-[box-shadow,border-color] flex items-center justify-center gap-2"
             >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -168,7 +170,7 @@ return (
             <div className="flex flex-col gap-2">
                 {/* Primary: view & vote — for everyone */}
                 <Link
-                    to={`/tracks/${track.id}`}
+                    to={`/tracks/${toSlug(track.title)}`}
                     className="w-full py-2.5 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] font-semibold rounded-xl text-center border border-[var(--border-color)] hover:border-primary-500/50 hover:text-primary-400 transition-[box-shadow,border-color] flex items-center justify-center gap-2"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

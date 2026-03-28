@@ -7,6 +7,8 @@ import { useToast } from '../common/Toast';
 import WaveformPlayer from '../tracks/WaveformPlayer';
 import RankBadge from './RankBadge';
 
+const toSlug = (title) => title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '';
+
 export default function CompletedTrackCard({ track, rank, featured }) {
 const { user } = useAuth();
 const toast = useToast();
@@ -77,7 +79,7 @@ return (
         <RankBadge rank={rank} />
         <div className="flex-1 min-w-0">
         <Link 
-            to={`/tracks/${track.id}`}
+            to={`/tracks/${toSlug(track.title)}`}
             className="text-lg font-bold text-[var(--text-primary)] hover:text-primary-400 transition-colors line-clamp-1"
         >
             {track.title}
@@ -204,7 +206,7 @@ return (
         )}
 
         <Link
-            to={`/tracks/${track.id}`}
+            to={`/tracks/${toSlug(track.title)}`}
             className="text-primary-400 hover:text-primary-300 text-sm font-medium flex items-center gap-1"
         >
             View track
