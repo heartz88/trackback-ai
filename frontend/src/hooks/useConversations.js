@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import api from '../../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export function useConversations() {
 const { username } = useParams();
