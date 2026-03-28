@@ -128,7 +128,7 @@ const sendVerificationEmail = async (email, username, token) => {
 // Register with email verification
 router.post('/register',
     [
-    body('username').trim().notEmpty().isLength({ min: 3, max: 30 }).matches(/^[a-zA-Z0-9_-]+$/).withMessage('Username must be 3-30 characters, letters/numbers/underscores/hyphens only'),
+    body('username').trim().notEmpty().isLength({ min: 3, max: 30 }).matches(/^[^\s]+$/).withMessage('Username must be 3-30 characters with no spaces'),
     body('email').isEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
     ],
