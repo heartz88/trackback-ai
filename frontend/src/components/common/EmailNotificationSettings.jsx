@@ -3,43 +3,49 @@ import api from '../../services/api';
 import { useToast } from './Toast';
 
 const PREFS_CONFIG = [
-{
-key: 'collaboration_request',
-label: 'Collaboration Requests',
-desc: 'When someone wants to collaborate on your track',
-icon: '🤝',
-},
-{
-key: 'collaboration_response',
-label: 'Collaboration Responses',
-desc: 'When your request is accepted or declined',
-icon: '✅',
-},
-{
-key: 'submission',
-label: 'New Submissions',
-desc: 'When a collaborator submits a new version of your track',
-icon: '🎵',
-},
-{
-key: 'comment',
-label: 'Comments',
-desc: 'When someone comments on your submissions',
-icon: '💬',
-},
-{
-key: 'vote',
-label: 'Votes',
-desc: 'When someone votes on your submission',
-icon: '❤️',
-},
-{
-key: 'message',
-label: 'Direct Messages',
-desc: 'When you receive a new message',
-icon: '✉️',
-},
+{ key: 'collaboration_request', label: 'Collaboration Requests', desc: 'When someone wants to collaborate on your track', icon: '🤝' },
+{ key: 'collaboration_response', label: 'Collaboration Responses', desc: 'When your request is accepted or declined', icon: '✅' },
+{ key: 'submission', label: 'New Submissions', desc: 'When a collaborator submits a new version of your track', icon: '🎵' },
+{ key: 'comment', label: 'Comments', desc: 'When someone comments on your submissions', icon: '💬' },
+{ key: 'vote', label: 'Votes', desc: 'When someone votes on your submission', icon: '❤️' },
+{ key: 'message', label: 'Direct Messages', desc: 'When you receive a new message', icon: '✉️' },
 ];
+
+// Toggle component — self-contained so min-height rule never affects it
+function Toggle({ on, onToggle }) {
+return (
+<div
+    onClick={onToggle}
+    role="switch"
+    aria-checked={on}
+    style={{
+    minHeight: 'auto',
+    width: 48,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: on ? '#14B8A6' : 'var(--bg-tertiary)',
+    position: 'relative',
+    flexShrink: 0,
+    cursor: 'pointer',
+    border: '2px solid',
+    borderColor: on ? '#14B8A6' : 'var(--border-color)',
+    transition: 'background-color 0.2s ease, border-color 0.2s ease',
+    }}>
+    
+    <span style={{
+    position: 'absolute',
+    top: 2,
+    left: on ? 22 : 2,
+    width: 18,
+    height: 18,
+    borderRadius: '50%',
+    backgroundColor: '#fff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+    transition: 'left 0.2s ease',
+    }} />
+</div>
+);
+}
 
 export default function EmailNotificationSettings() {
 const toast = useToast();
@@ -52,11 +58,9 @@ api.get('/notifications/email-preferences')
     .then(r => setPrefs(r.data.preferences))
     .catch(() => toast.error('Failed to load email preferences'))
     .finally(() => setLoading(false));
-}, [ toast ]);
+}, [toast]);
 
-const toggle = (key) => {
-setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
-};
+const toggle = (key) => setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
 
 const save = async () => {
 setSaving(true);
@@ -70,74 +74,54 @@ try {
 }
 };
 
-if (loading) {
-return (
-    <div className="flex items-center justify-center py-12">
+if (loading) return (
+<div className="flex items-center justify-center py-12">
     <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-    </div>
+</div>
 );
-}
 
 if (!prefs) return null;
 
 return (
-<div className="space-y-6">
+<div className="space-y-4">
     {/* Master toggle */}
-    <div className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl">
-    <div>
+    <div className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl gap-4">
+    <div className="flex-1 min-w-0">
         <p className="font-semibold text-[var(--text-primary)]">Email Notifications</p>
         <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
         Receive email updates about activity on TrackBackAI
         </p>
     </div>
-    <button
-        onClick={() => setPrefs(prev => ({ ...prev, enabled: !prev.enabled }))}
-        className={`relative w-12 h-6 rounded-full focus:outline-none ${
-        prefs.enabled ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'
-        }`}
-    >
-        <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-        prefs.enabled ? 'translate-x-6' : 'translate-x-0'
-        }`} />
-    </button>
+    <Toggle on={!!prefs.enabled} onToggle={() => setPrefs(prev => ({ ...prev, enabled: !prev.enabled }))} />
     </div>
 
     {/* Per-type toggles */}
-    <div className={`space-y-3 transition-opacity duration-200 ${prefs.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+    <div className={`space-y-2 ${prefs.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
     <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)] px-1">
         Notify me by email when...
     </p>
     {PREFS_CONFIG.map(({ key, label, desc, icon }) => (
         <div
         key={key}
-        className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl hover:border-primary-500/30 transition-colors"
+        className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl gap-4"
         >
-        <div className="flex items-center gap-3">
-            <span className="text-xl">{icon}</span>
-            <div>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+            <span className="text-xl flex-shrink-0">{icon}</span>
+            <div className="min-w-0">
             <p className="font-medium text-[var(--text-primary)] text-sm">{label}</p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{desc}</p>
+            <p className="text-xs text-[var(--text-tertiary)] mt-0.5 leading-snug">{desc}</p>
             </div>
         </div>
-        <button
-            onClick={() => toggle(key)}
-            className={`relative w-10 h-5 rounded-full  focus:outline-none flex-shrink-0 ${
-            prefs[key] ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'
-            }`}
-        >
-            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-            prefs[key] ? 'translate-x-5' : 'translate-x-0'
-            }`} />
-        </button>
+        <Toggle on={!!prefs[key]} onToggle={() => toggle(key)} />
         </div>
     ))}
     </div>
 
-    {/* Save button */}
+    {/* Save */}
     <button
     onClick={save}
     disabled={saving}
-    className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-xl transition-[box-shadow,border-color] disabled:opacity-60 disabled:cursor-not-allowed"
+    className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
     >
     {saving ? 'Saving...' : 'Save Email Preferences'}
     </button>
