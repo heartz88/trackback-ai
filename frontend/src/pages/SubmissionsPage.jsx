@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionCard from '../components/submissions/SubmissionCard';
@@ -10,7 +10,8 @@ import api from '../services/api';
 
 const SubmissionsPage = () => {
 const { trackSlug } = useParams();
-const [trackId, setTrackId] = React.useState(null);
+const [trackId, setTrackId] = useState(null);
+const trackIdRef = useRef(null);
 const { user } = useAuth();
 const { on } = useSocket();
 const navigate = useNavigate();
@@ -67,7 +68,9 @@ setIsLoading(true);
 setError('');
 try {
     const res = await api.get(`/tracks/by-slug/${trackSlug}`);
-    setTrackId(res.data.track.id);
+    const id = res.data.track.id;
+    setTrackId(id);
+    trackIdRef.current = id;
     setTrack(res.data.track);
     try {
     const ownerRes = await api.get(`/users/${res.data.track.user_id}`);
@@ -90,16 +93,18 @@ try {
 
 const fetchSubmissions = async () => {
 if (!user) { setSubmissionsLoading(false); return; }
+const id = trackIdRef.current;
+if (!id) { setSubmissionsLoading(false); return; }
 setSubmissionsLoading(true);
 try {
     // /collaborations/:trackId/submissions returns track_owner_id on each row,
     // which VoteButton needs to correctly block owner voting client-side
-    const res = await api.get(`/collaborations/${trackId}/submissions`);
+    const res = await api.get(`/collaborations/${id}/submissions`);
     setSubmissions(res.data.submissions || []);
 } catch {
     // Fallback for non-collaborators who can still see a public list
     try {
-    const res = await api.get(`/submissions/track/${trackId}`);
+    const res = await api.get(`/submissions/track/${id}`);
     setSubmissions(res.data.submissions || []);
     } catch {
     setSubmissions([]);
@@ -123,7 +128,7 @@ const ok = await confirm({
 });
 if (!ok) return;
 try {
-    await api.post(`/collaborations/${trackId}/complete`);
+    await api.post(`/collaborations/${trackIdRef.current}/complete`);
     toast.success('Track marked as completed!');
     navigate(`/tracks/${trackSlug}`);
 } catch (err) {
@@ -209,7 +214,7 @@ return (
             </div>
         </Link>
         {user && !isOwner && (
-            <Link to={`/messages/new?userId=${owner?.id}`} className="tdp-message-btn">
+            <Link to={`/messages/${owner?.username}`} className="tdp-message-btn">
             <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
@@ -365,7 +370,7 @@ return (
         <h2 className="tdp-section-title">➕ New Submission</h2>
         </div>
         <SubmissionForm
-        trackId={trackId}
+        trackId={trackIdRef.current || trackId}
         collaborationId={collaboration?.id}
         onSuccess={handleSubmissionSuccess}
         onCancel={() => setShowSubmitForm(false)}

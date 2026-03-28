@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useConfirm, useToast } from '../components/common/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -20,6 +20,7 @@ function MessagesPage() {
   const toast = useToast();
   const confirm = useConfirm();
   const { username } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
@@ -155,7 +156,23 @@ function MessagesPage() {
       const conversationsData = response.data.conversations || [];
       setConversations(conversationsData);
 
-      if (username) {
+      // Handle /messages/new?userId= from TrackDetailPage message buttons
+      const directUserId = searchParams.get('userId');
+      if (directUserId) {
+        try {
+          const r = await api.post('/messages/conversations', { participantId: parseInt(directUserId) });
+          const newConv = r.data.conversation;
+          setConversations(prev => {
+            const exists = prev.some(c => c.id === newConv.id);
+            return exists ? prev : [newConv, ...prev];
+          });
+          setSelectedConversation(newConv);
+          const otherUser = newConv.participants?.find(p => p.id !== user?.id);
+          if (otherUser?.username) navigate(`/messages/${otherUser.username}`, { replace: true });
+        } catch (err) {
+          console.error('Failed to start conversation from userId:', err);
+        }
+      } else if (username) {
         // Try to find by other participant's username first (fast path)
         const conv = conversationsData.find(c =>
           c.participants?.some(p => p.username?.toLowerCase() === username.toLowerCase())

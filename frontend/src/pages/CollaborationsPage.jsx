@@ -6,6 +6,8 @@ import api from '../services/api';
 
 const TABS_ORDER = ['pending', 'history'];
 
+const toSlug = (title) => title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '';
+
 function CollaborationsPage() {
 const [received, setReceived] = useState([]);
 const [sent, setSent] = useState([]);
@@ -204,7 +206,7 @@ return (
                     </Link>
                     <p className="text-sm text-[var(--text-secondary)] mt-0.5">
                         wants to collaborate on{' '}
-                        <Link to={`/tracks/${req.track_id}`} className="text-primary-400 hover:text-primary-300 font-medium">
+                        <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-primary-400 hover:text-primary-300 font-medium">
                         "{req.track_title}"
                         </Link>
                     </p>
@@ -225,7 +227,7 @@ return (
                     <svg className="w-4 h-4 text-primary-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                     </svg>
-                    <Link to={`/tracks/${req.track_id}`} className="text-sm text-primary-400 hover:text-primary-300 truncate flex-1">
+                    <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-sm text-primary-400 hover:text-primary-300 truncate flex-1">
                     View track: "{req.track_title}"
                     </Link>
                 </div>
@@ -238,7 +240,7 @@ return (
                     ✓ Approve
                     </button>
                     <Link
-                    to={`/messages/new?userId=${req.collaborator_id}`}
+                    to={`/messages/${req.collaborator_name}`}
                     className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-xl transition-[box-shadow,border-color] text-sm border border-[var(--border-color)] flex items-center gap-1"
                     >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,7 +278,7 @@ return (
                 <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500">
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                    <Link to={`/tracks/${req.track_id}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">
+                    <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">
                         "{req.track_title}"
                     </Link>
                     <p className="text-sm text-[var(--text-secondary)] mt-0.5">
@@ -298,13 +300,13 @@ return (
                 {/* Quick links */}
                 <div className="flex gap-2 mt-3">
                     <Link
-                    to={`/tracks/${req.track_id}`}
+                    to={`/tracks/${toSlug(req.track_title)}`}
                     className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]"
                     >
                     View Track
                     </Link>
                     <Link
-                    to={`/messages/new?userId=${req.owner_id}`}
+                    to={`/messages/${req.owner_name}`}
                     className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]"
                     >
                     Message Owner
@@ -345,7 +347,7 @@ return (
                         </Link>
                         <p className="text-xs text-[var(--text-secondary)]">
                             on{' '}
-                            <Link to={`/tracks/${req.track_id}`} className="text-primary-400 hover:text-primary-300">
+                            <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-primary-400 hover:text-primary-300">
                             "{req.track_title}"
                             </Link>
                         </p>
@@ -354,7 +356,7 @@ return (
                     <div className="flex items-center gap-3">
                         {req.status === 'approved' && (
                         <Link
-                            to={`/tracks/${req.track_id}/submissions`}
+                            to={`/tracks/${toSlug(req.track_title)}/submissions`}
                             className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
                         >
                             View Submissions
@@ -386,7 +388,7 @@ return (
                 <div key={req.id} className="glass-panel p-4 rounded-xl opacity-80 hover:opacity-100 transition-opacity">
                     <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
-                        <Link to={`/tracks/${req.track_id}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">
+                        <Link to={`/tracks/${toSlug(req.track_title)}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">
                         "{req.track_title}"
                         </Link>
                         <p className="text-xs text-[var(--text-secondary)]">
@@ -399,7 +401,7 @@ return (
                     <div className="flex items-center gap-3">
                         {req.status === 'approved' && (
                         <Link
-                            to={`/tracks/${req.track_id}/submissions`}
+                            to={`/tracks/${toSlug(req.track_title)}/submissions`}
                             className="px-3 py-1.5 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
                         >
                             Submit Version →
