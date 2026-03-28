@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useSocket } from '../../context/SocketContext';
-import api from '../../services/api';
-import socketService from '../../services/socket';
+import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
+import api from '../services/api';
+import socketService from '../services/socket';
 
 export function useMessages(selectedConversation, hasJoinedConversation) {
 const navigate = useNavigate();
