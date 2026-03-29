@@ -65,8 +65,8 @@ return t.toLocaleDateString();
 const getIcon = (type) => {
 const base = 'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0';
 const icons = {
-collaboration_request: { bg: 'bg-gradient-to-br from-primary-500 to-primary-600', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /> },
-collaboration_response: { bg: 'bg-gradient-to-br from-emerald-500 to-teal-500', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /> },
+collaboration_request: { bg: 'bg-gradient-to-br from-primary-500 to-primary-600', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13 1a6 6 0 01-9 5.197" /> },
+collaboration_response: { bg: 'bg-gradient-to-br from-emerald-500 to-teal-500', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /> },
 submission: { bg: 'bg-gradient-to-br from-violet-500 to-purple-600', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /> },
 vote: { bg: 'bg-gradient-to-br from-rose-500 to-pink-500', svg: null, heart: true },
 comment: { bg: 'bg-gradient-to-br from-amber-500 to-orange-500', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /> },
@@ -157,7 +157,7 @@ return (
 </button>
 
 {isOpen && (
-    <div className="absolute right-0 mt-2 w-96 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl shadow-2xl z-50 overflow-hidden">
+    <div className="fixed inset-x-2 top-[72px] z-50 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-2xl overflow-hidden md:absolute md:inset-x-auto md:right-0 md:top-auto md:mt-2 md:w-96">
     {/* Header */}
     <div className="p-4 border-b border-[var(--border-color)]">
         <div className="flex justify-between items-center">
@@ -179,7 +179,7 @@ return (
         </div>
     </div>
 
-    <div className="max-h-96 overflow-y-auto">
+    <div className="max-h-[60vh] md:max-h-96 overflow-y-auto">
         {dbLoading ? (
         <div className="flex justify-center py-8">
             <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
@@ -200,7 +200,7 @@ return (
                 key={`socket-${n.id}`}
                 to={getLink(n.type, n.data)}
                 onClick={() => { markAsRead(n.id); setIsOpen(false); }}
-                className={`flex items-start gap-3 p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] transition-colors ${n.read ? 'opacity-60' : ''}`}
+                className={`flex items-start gap-3 p-3 sm:p-4 border-b border-[var(--border-color)] active:bg-[var(--bg-tertiary)] ${n.read ? 'opacity-60' : ''}`}
             >
                 {getIcon(n.type)}
                 <div className="flex-1 min-w-0">
