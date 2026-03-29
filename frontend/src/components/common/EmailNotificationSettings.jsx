@@ -11,49 +11,26 @@ const PREFS_CONFIG = [
 { key: 'message', label: 'Direct Messages', desc: 'When you receive a new message', icon: '✉️' },
 ];
 
-
+// Standalone toggle — no CSS transitions on the knob so iOS registers first tap
 function Toggle({ checked, onChange, large = false }) {
-const width  = large ? 56 : 48;
-const height = large ? 28 : 24;
-const knobSize = large ? 20 : 16;
-const knobOff = 4;
-const knobOn  = width - knobSize - knobOff;
+const track = large
+    ? `relative w-14 h-7 rounded-full focus:outline-none ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`
+    : `relative w-12 h-6 rounded-full focus:outline-none ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`;
+
+const knob = large
+    ? `absolute top-1 w-5 h-5 bg-white rounded-full shadow-md ${checked ? 'left-8' : 'left-1'}`
+    : `absolute top-1 w-4 h-4 bg-white rounded-full shadow-md ${checked ? 'left-7' : 'left-1'}`;
 
 return (
-<button
+    <button
     type="button"
     role="switch"
     aria-checked={checked}
     onClick={onChange}
-    style={{
-    position: 'relative',
-    width,
-    height,
-    borderRadius: height,
-    flexShrink: 0,
-    minHeight: 'auto',
-    background: checked ? 'var(--accent-primary, #14b8a6)' : 'var(--bg-tertiary)',
-    border: checked ? 'none' : '1px solid var(--border-color)',
-    // Track colour animates via inline style — safe on iOS
-    transition: 'background 0.2s ease',
-    cursor: 'pointer',
-    outline: 'none',
-    }}
+    className={track}
+    style={{ minHeight: 'auto', flexShrink: 0 }}
 >
-    <span
-    style={{
-        position: 'absolute',
-        top: knobOff,
-        width: knobSize,
-        height: knobSize,
-        background: '#fff',
-        borderRadius: '50%',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-        // Knob slides via inline transform — not a CSS class transition
-        transform: `translateX(${checked ? knobOn : knobOff}px)`,
-        transition: 'transform 0.2s ease',
-    }}
-    />
+    <span className={knob} />
 </button>
 );
 }
@@ -132,7 +109,7 @@ return (
     ))}
     </div>
 
-    {/* Save */}
+    {/* Save button */}
     <button
     onClick={save}
     disabled={saving}
