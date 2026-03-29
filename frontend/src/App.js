@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Footer from './components/common/Footer';
 import Navigation from './components/common/Navigation';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import ScrollToTop from './components/common/ScrollToTop';
+import ScrolltoTop from './components/common/ScrollToTop';
 import { ConfirmModal, ToastContainer } from './components/common/Toast';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
@@ -15,6 +15,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import MessagesPage from './pages/MessagesPage';
 import MyTracksPage from './pages/MyTracksPage';
+import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import ResendVerificationPage from './pages/ResendVerificationPage';
@@ -110,7 +111,7 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <BrowserRouter>
-          <ScrollToTop />
+          <ScrolltoTop />
           <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
             <Navigation />
             <main className="flex-grow pt-20">
@@ -133,6 +134,7 @@ function App() {
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
                 <Route path="/resend-verification" element={<ResendVerificationPage />} />
+                <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
               </Routes>
             </main>
             <Footer />

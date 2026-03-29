@@ -133,4 +133,30 @@ console.error('Update email prefs error:', error);
 res.status(500).json({ error: { message: 'Failed to update email preferences' } });
 }
 });
+
+// Delete a single notification
+router.delete('/:id', authMiddleware, async (req, res) => {
+try {
+const { id } = req.params;
+const userId = req.user.id;
+await db.query('DELETE FROM notifications WHERE id = $1 AND user_id = $2', [id, userId]);
+res.json({ message: 'Notification deleted' });
+} catch (error) {
+console.error('Delete notification error:', error);
+res.status(500).json({ error: { message: 'Failed to delete notification' } });
+}
+});
+
+// Clear all notifications for user
+router.delete('/', authMiddleware, async (req, res) => {
+try {
+const userId = req.user.id;
+await db.query('DELETE FROM notifications WHERE user_id = $1', [userId]);
+res.json({ message: 'All notifications cleared' });
+} catch (error) {
+console.error('Clear notifications error:', error);
+res.status(500).json({ error: { message: 'Failed to clear notifications' } });
+}
+});
+
 module.exports = router;

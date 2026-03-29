@@ -65,8 +65,8 @@ return t.toLocaleDateString();
 const getIcon = (type) => {
 const base = 'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0';
 const icons = {
-collaboration_request: { bg: 'bg-gradient-to-br from-primary-500 to-primary-600', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13 1a6 6 0 01-9 5.197" /> },
-collaboration_response: { bg: 'bg-gradient-to-br from-emerald-500 to-teal-500', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /> },
+collaboration_request: { bg: 'bg-gradient-to-br from-primary-500 to-primary-600', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /> },
+collaboration_response: { bg: 'bg-gradient-to-br from-emerald-500 to-teal-500', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /> },
 submission: { bg: 'bg-gradient-to-br from-violet-500 to-purple-600', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /> },
 vote: { bg: 'bg-gradient-to-br from-rose-500 to-pink-500', svg: null, heart: true },
 comment: { bg: 'bg-gradient-to-br from-amber-500 to-orange-500', svg: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /> },
@@ -102,7 +102,7 @@ case 'collaboration_response': return '/collaborations';
 case 'submission':
 case 'vote':
 case 'comment': return data?.track_id ? `/tracks/${data.track_id}/submissions` : '/my-tracks';
-case 'message': return data?.conversationId ? `/messages/${data.conversationId}` : '/messages';
+case 'message': return '/messages';
 default: return '/collaborations';
 }
 };
@@ -120,14 +120,24 @@ default: return '/collaborations';
 }
 };
 
+const deleteDbNotification = async (id, e) => {
+e.preventDefault();
+e.stopPropagation();
+try {
+await api.delete(`/notifications/${id}`);
+setDbNotifications(prev => prev.filter(n => n.id !== id));
+} catch {}
+};
+
 const handleMarkAllRead = () => {
 markAllAsRead();     // clears socket notifications
 markAllDbRead();     // marks DB notifications read
 };
 
-const handleClearAll = () => {
+const handleClearAll = async () => {
 clearNotifications();
 setDbNotifications([]);
+try { await api.delete('/notifications'); } catch {}
 };
 
 return (
@@ -212,7 +222,7 @@ return (
                 key={`db-${n.id}`}
                 to={getDbLink(n.type)}
                 onClick={() => { markDbRead(n.id); setIsOpen(false); }}
-                className={`flex items-start gap-3 p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] transition-colors ${n.is_read ? 'opacity-60' : ''}`}
+                className={`flex items-start gap-3 p-4 border-b border-[var(--border-color)] active:bg-[var(--bg-tertiary)] ${n.is_read ? 'opacity-60' : ''}`}
             >
                 {getIcon(n.type)}
                 <div className="flex-1 min-w-0">
@@ -220,7 +230,18 @@ return (
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">{n.content}</p>
                 <div className="flex items-center justify-between mt-1.5">
                     <span className="text-xs text-[var(--text-tertiary)]">{formatTime(n.created_at)}</span>
+                    <div className="flex items-center gap-2">
                     {!n.is_read && <span className="w-2 h-2 bg-primary-500 rounded-full" />}
+                    <button
+                        onClick={(e) => deleteDbNotification(n.id, e)}
+                        className="text-[var(--text-tertiary)] p-0.5 rounded"
+                        title="Delete"
+                    >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    </div>
                 </div>
                 </div>
             </Link>
@@ -231,11 +252,11 @@ return (
 
     <div className="p-3 border-t border-[var(--border-color)]">
         <Link
-        to="/collaborations"
+        to="/notifications"
         onClick={() => setIsOpen(false)}
-        className="block text-center text-sm text-primary-400 hover:text-primary-300 font-medium py-1"
+        className="block text-center text-sm text-primary-400 font-medium py-1"
         >
-        View all activity →
+        View all notifications →
         </Link>
     </div>
     </div>
