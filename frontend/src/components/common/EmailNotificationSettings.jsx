@@ -11,15 +11,16 @@ const PREFS_CONFIG = [
 { key: 'message', label: 'Direct Messages', desc: 'When you receive a new message', icon: '✉️' },
 ];
 
-// Standalone toggle — no CSS transitions on the knob so iOS registers first tap
+// Standalone toggle — <button> so iOS JS fix intercepts tap before Safari's
+// hover-simulation pass. Transitions are safe on <button> elements.
 function Toggle({ checked, onChange, large = false }) {
 const track = large
-    ? `relative w-14 h-7 rounded-full focus:outline-none ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`
-    : `relative w-12 h-6 rounded-full focus:outline-none ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`;
+    ? `relative w-14 h-7 rounded-full focus:outline-none transition-colors duration-200 ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`
+    : `relative w-12 h-6 rounded-full focus:outline-none transition-colors duration-200 ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`;
 
 const knob = large
-    ? `absolute top-1 w-5 h-5 bg-white rounded-full shadow-md ${checked ? 'left-8' : 'left-1'}`
-    : `absolute top-1 w-4 h-4 bg-white rounded-full shadow-md ${checked ? 'left-7' : 'left-1'}`;
+    ? `absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-200 ${checked ? 'left-8' : 'left-1'}`
+    : `absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-200 ${checked ? 'left-7' : 'left-1'}`;
 
 return (
     <button
