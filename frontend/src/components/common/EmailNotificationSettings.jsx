@@ -11,28 +11,26 @@ const PREFS_CONFIG = [
 { key: 'message', label: 'Direct Messages', desc: 'When you receive a new message', icon: '✉️' },
 ];
 
-// Standalone toggle — <button> so iOS JS fix intercepts tap before Safari's
-// hover-simulation pass. Transitions are safe on <button> elements.
+// Uses hidden checkbox + styled div — same pattern as the collab toggle in EditProfileTab.
+// The <label> makes the checkbox the real interactive element so iOS registers first tap correctly.
 function Toggle({ checked, onChange, large = false }) {
-const track = large
-    ? `relative w-14 h-7 rounded-full focus:outline-none transition-colors duration-200 ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`
-    : `relative w-12 h-6 rounded-full focus:outline-none transition-colors duration-200 ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)] border border-[var(--border-color)]'}`;
-
-const knob = large
-    ? `absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-200 ${checked ? 'left-8' : 'left-1'}`
-    : `absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-200 ${checked ? 'left-7' : 'left-1'}`;
+const trackW = large ? 'w-12 h-7' : 'w-10 h-6';
+const knobW  = large ? 'w-5 h-5'  : 'w-4 h-4';
+const onPos  = large ? 'translate-x-6' : 'translate-x-5';
+const offPos = 'translate-x-1';
 
 return (
-    <button
-    type="button"
-    role="switch"
-    aria-checked={checked}
-    onClick={onChange}
-    className={track}
-    style={{ minHeight: 'auto', flexShrink: 0 }}
->
-    <span className={knob} />
-</button>
+<label className="relative flex-shrink-0 cursor-pointer" style={{ minHeight: 'auto' }}>
+    <input
+    type="checkbox"
+    checked={checked}
+    onChange={onChange}
+    className="sr-only"
+    />
+    <div className={`${trackW} rounded-full ${checked ? 'bg-primary-500' : 'bg-[var(--bg-tertiary)]'}`}>
+    <div className={`absolute top-1 ${knobW} rounded-full bg-white shadow transition-transform duration-200 ${checked ? onPos : offPos}`} />
+    </div>
+</label>
 );
 }
 
@@ -43,15 +41,13 @@ const [loading, setLoading] = useState(true);
 const [saving, setSaving] = useState(false);
 
 useEffect(() => {
-api.get('/notifications/email-preferences')
+    api.get('/notifications/email-preferences')
     .then(r => setPrefs(r.data.preferences))
     .catch(() => toast.error('Failed to load email preferences'))
     .finally(() => setLoading(false));
 }, []);
 
-const toggle = (key) => {
-setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
-};
+const toggle = (key) => setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
 
 const save = async () => {
 setSaving(true);
@@ -65,40 +61,39 @@ try {
 }
 };
 
-if (loading) {
-return (
-    <div className="flex items-center justify-center py-12">
+if (loading) return (
+<div className="flex items-center justify-center py-12">
     <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-    </div>
+</div>
 );
-}
 
 if (!prefs) return null;
 
 return (
-<div className="space-y-6">
-    {/* Master toggle */}
-    <div className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl gap-4">
-    <div className="flex-1 min-w-0">
+    <div className="space-y-6">
+
+      {/* Master toggle */}
+    <label className="flex items-center justify-between p-4 bg-[var(--bg-tertiary)]/40 rounded-xl border border-[var(--border-color)] cursor-pointer">
+    <div className="flex-1 min-w-0 pr-4">
         <p className="font-semibold text-[var(--text-primary)]">Email Notifications</p>
         <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
         Receive email updates about activity on TrackBackAI
         </p>
     </div>
     <Toggle checked={!!prefs.enabled} onChange={() => toggle('enabled')} large />
-    </div>
+    </label>
 
-    {/* Per-type toggles */}
+      {/* Per-type toggles */}
     <div className={`space-y-3 ${prefs.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
     <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-tertiary)] px-1">
         Notify me by email when...
     </p>
     {PREFS_CONFIG.map(({ key, label, desc, icon }) => (
-        <div
+        <label
         key={key}
-        className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl gap-4"
+        className="flex items-center justify-between p-4 bg-[var(--bg-tertiary)]/40 rounded-xl border border-[var(--border-color)] cursor-pointer"
         >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0 pr-4">
             <span className="text-xl flex-shrink-0">{icon}</span>
             <div className="min-w-0">
             <p className="font-medium text-[var(--text-primary)] text-sm">{label}</p>
@@ -106,15 +101,15 @@ return (
             </div>
         </div>
         <Toggle checked={!!prefs[key]} onChange={() => toggle(key)} />
-        </div>
+        </label>
     ))}
     </div>
 
-    {/* Save button */}
+      {/* Save */}
     <button
     onClick={save}
     disabled={saving}
-    className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
+    className="w-full py-3 bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
     >
     {saving ? 'Saving...' : 'Save Email Preferences'}
     </button>
