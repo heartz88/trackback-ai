@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Footer from './components/common/Footer';
 import Navigation from './components/common/Navigation';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import ScrolltoTop from './components/common/ScrollToTop';
+import ScrollToTop from './components/common/ScrollToTop';
 import { ConfirmModal, ToastContainer } from './components/common/Toast';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
@@ -111,7 +111,7 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <BrowserRouter>
-          <ScrolltoTop />
+          <ScrollToTop />
           <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
             <Navigation />
             <main className="flex-grow pt-20">
@@ -128,8 +128,8 @@ function App() {
                 <Route path="/community" element={<CommunityPage />} />
                 <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
                 <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-                <Route path="/tracks/:trackId" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
-                <Route path="/tracks/:trackId/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+                <Route path="/tracks/:trackSlug" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
+                <Route path="/tracks/:trackSlug/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
