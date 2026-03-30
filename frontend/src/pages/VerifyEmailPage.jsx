@@ -39,6 +39,10 @@ function VerifyEmailPage() {
     return (
         <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center py-12 px-4 animate-fade-in">
             <div className="max-w-md w-full space-y-8">
+                <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  Back to Login
+                </Link>
                 <div className="text-center animate-slide-up">
                     <div className="inline-block p-4 bg-gradient-to-br rounded-2xl mb-4">
                         <img src={logo} className="w-20 h-20 object-cover rounded-xl" alt="TrackBack AI" />
