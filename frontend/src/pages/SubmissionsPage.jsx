@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import BackButton from '../components/common/BackButton';
 import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionCard from '../components/submissions/SubmissionCard';
 import SubmissionForm from '../components/submissions/SubmissionForm';
@@ -170,13 +171,11 @@ return (
 <div className="sp-page animate-fade-in">
 
     {/* Breadcrumb — matches TrackDetailPage */}
-    <nav className="breadcrumb animate-slide-up">
-    <Link to="/discover">Discover</Link>
-    <span className="breadcrumb-sep">›</span>
-    <Link to={`/tracks/${trackSlug}`}>{track.title}</Link>
-    <span className="breadcrumb-sep">›</span>
-    <span className="breadcrumb-current">Submissions</span>
-    </nav>
+    <div className="flex items-center gap-3 mb-4 animate-slide-up">
+    <BackButton to={`/tracks/${trackSlug}`} label={track.title} />
+    <span className="breadcrumb-sep text-[var(--text-tertiary)]">›</span>
+    <span className="text-sm text-[var(--text-secondary)]">Submissions</span>
+    </div>
 
     {/* Full-width player block — identical to TDP */}
     <div className="tdp-player-block animate-slide-up stagger-1">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import BackButton from '../components/common/BackButton';
 import api from '../services/api';
 
 function ForgotPasswordPage() {
@@ -26,10 +27,9 @@ try {
 return (
 <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center py-12 px-4">
     <div className="max-w-md w-full">
-    <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] mb-6">
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-      Back to Login
-    </Link>
+    <div className="mb-4">
+      <BackButton to="/login" label="Back to Login" />
+    </div>
     <div className="text-center mb-8">
         <Link to="/" className="inline-block mb-8">
         <span className="text-3xl font-bold">

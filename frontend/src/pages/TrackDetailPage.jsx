@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Avatar from '../components/common/Avatar';
+import BackButton from '../components/common/BackButton';
 import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionList from '../components/submissions/SubmissionList';
 import WaveformPlayer from '../components/tracks/WaveformPlayer';
@@ -134,11 +135,11 @@ if (error || !track) return (
 
 return (
 <div className="track-detail-page animate-fade-in">
-    <nav className="breadcrumb animate-slide-up">
-    <Link to="/discover">Discover</Link>
-    <span className="breadcrumb-sep">›</span>
-    <span className="breadcrumb-current">{track.title}</span>
-    </nav>
+    <div className="flex items-center gap-3 mb-4 animate-slide-up">
+    <BackButton to="/discover" label="Discover" />
+    <span className="breadcrumb-sep text-[var(--text-tertiary)]">›</span>
+    <span className="text-sm text-[var(--text-secondary)] truncate">{track.title}</span>
+    </div>
 
     <div className="tdp-player-block animate-slide-up stagger-1">
     <WaveformPlayer audioUrl={track.audio_url} height={80} onPlay={handlePlay} onPause={handlePause} />
