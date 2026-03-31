@@ -32,7 +32,7 @@ function ResendVerificationPage() {
         <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center py-12 px-4 animate-fade-in">
             <div className="max-w-md w-full space-y-8">
                 <div className="mb-2">
-                  <BackButton to="/login" label="Back to Login" />
+                <BackButton to="/login" label="Back to Login" />
                 </div>
                 <div className="text-center animate-slide-up">
                     <div className="inline-block p-4 bg-gradient-to-br rounded-2xl mb-4">
