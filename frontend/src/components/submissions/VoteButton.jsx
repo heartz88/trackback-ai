@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { useToast } from '../common/Toast';
-
 
 const VoteButton = ({
 submissionId,
@@ -14,11 +13,20 @@ submitterId,
 trackOwnerId,
 }) => {
 const { user } = useAuth();
-const toast    = useToast();
+const toast = useToast();
 
-const [liked,    setLiked]   = useState(initialVote === 'upvote');
-const [upvotes,  setUpvotes] = useState(Number(initialCounts?.upvotes) || 0);
-const [loading,  setLoading] = useState(false);
+const [liked,   setLiked]   = useState(initialVote === 'upvote');
+const [upvotes, setUpvotes] = useState(Number(initialCounts?.upvotes) || 0);
+const [loading, setLoading] = useState(false);
+
+// Sync when parent re-fetches and passes a new initialVote
+useEffect(() => {
+setLiked(initialVote === 'upvote');
+}, [initialVote]);
+
+useEffect(() => {
+setUpvotes(Number(initialCounts?.upvotes) || 0);
+}, [initialCounts?.upvotes]);
 
 const isOwnSubmission = user && submitterId  && user.id === Number(submitterId);
 const isTrackOwner    = user && trackOwnerId && user.id === Number(trackOwnerId);
@@ -39,7 +47,6 @@ if (blocked) {
     return;
 }
 
-// Optimistic update
 const prevLiked   = liked;
 const prevUpvotes = upvotes;
 const newLiked    = !liked;
@@ -52,13 +59,11 @@ if (onVoteChange)   onVoteChange(newLiked ? 'upvote' : null);
 
 setLoading(true);
 try {
-    const res = await api.post(`/submissions/${submissionId}/vote`, {
-    vote_type: 'upvote',
-    });
+    const res = await api.post(`/submissions/${submissionId}/vote`, { vote_type: 'upvote' });
 
-    // Sync with server's authoritative count
+    // Sync with server's authoritative values
     const serverUpvotes = res.data.upvotes ?? newUpvotes;
-    const serverVote    = res.data.vote;     // 'upvote' | null
+    const serverVote    = res.data.vote; // 'upvote' | null
 
     setLiked(serverVote === 'upvote');
     setUpvotes(serverUpvotes);
@@ -86,7 +91,6 @@ return (
     aria-label={liked ? 'Unlike' : 'Like'}
     title={blocked ? blockedReason : liked ? 'Remove like' : 'Like this submission'}
 >
-    {/* Heart icon — filled when liked */}
     <svg
     width="18"
     height="18"
@@ -103,7 +107,6 @@ return (
 
     <span className="sp-like-count">{upvotes > 0 ? upvotes : ''}</span>
 
-    {/* Tiny loading ring */}
     {loading && <span className="sp-like-spinner"/>}
 </button>
 );
