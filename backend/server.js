@@ -113,6 +113,9 @@ pingInterval: 25000,
 cookie: false
 });
 
+// Make io accessible in route handlers via req.app.get('io')
+app.set('io', io);
+
 // Store online users in memory — shared module so routes can import without circular deps
 const onlineUsers = require('./config/onlineUsers');
 

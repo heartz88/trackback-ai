@@ -702,7 +702,7 @@ res.status(500).json({ error: { message: 'Failed to get conversation' } });
 }
 });
 
-// Delete a message (REST fallback)
+// Delete a message (REST fallback — also emits socket event for real-time sync)
 router.delete('/:messageId', authMiddleware, async (req, res) => {
 try {
 const { messageId } = req.params;
@@ -726,10 +726,19 @@ if (message.sender_id !== userId) {
 
 await db.query('DELETE FROM messages WHERE id = $1', [messageId]);
 
-res.json({ 
+// Emit socket event so all clients in the room update in real time
+if (req.app.get('io')) {
+    req.app.get('io').to(`conversation:${message.conversation_id}`).emit('message:deleted', {
+    messageId: message.id,
+    conversationId: message.conversation_id,
+    deletedBy: userId
+    });
+}
+
+res.json({
     message: 'Message deleted',
     messageId: message.id,
-    conversationId: message.conversation_id 
+    conversationId: message.conversation_id
 });
 } catch (error) {
 console.error('Delete message error:', error);

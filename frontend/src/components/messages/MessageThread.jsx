@@ -1,10 +1,10 @@
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
-export default function MessageThread({ 
-messages, 
-currentUser, 
-typingUsers, 
+export default function MessageThread({
+messages,
+currentUser,
+typingUsers,
 otherUser,
 hoveredMessageId,
 setHoveredMessageId,
@@ -15,8 +15,7 @@ messagesEndRef
 }) {
 const formatTimeFn = (timestamp) => {
 if (!timestamp) return '';
-const date = new Date(timestamp);
-return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
 if (messages.length === 0) {
@@ -39,7 +38,8 @@ return (
 <div className="p-4 space-y-3">
     {messages.map((message, index) => {
     const isOwn = message.senderId === currentUser?.id;
-    const showTime = index === messages.length - 1 ||
+    const showTime =
+        index === messages.length - 1 ||
         messages[index + 1]?.senderId !== message.senderId ||
         new Date(messages[index + 1]?.timestamp) - new Date(message.timestamp) > 5 * 60 * 1000;
 
@@ -54,12 +54,13 @@ return (
         isHovered={hoveredMessageId === message.id}
         onHover={setHoveredMessageId}
         formatTime={formatTime || formatTimeFn}
+        otherUser={otherUser}
         />
     );
     })}
 
-    <TypingIndicator 
-    typingUsers={typingUsers} 
+    <TypingIndicator
+    typingUsers={typingUsers}
     currentUserId={currentUser?.id}
     otherUser={otherUser}
     />
