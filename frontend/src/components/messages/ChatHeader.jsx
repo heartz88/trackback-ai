@@ -1,13 +1,13 @@
 import Avatar from '../common/Avatar';
-
-export default function ChatHeader({ 
-conversation, 
+export default function ChatHeader({
+conversation,
 currentUser,
 onlineUsers,
 onBack,
-onNewChat 
+onNewChat
 }) {
-const otherUser = conversation?.participants?.find(p => p.id !== currentUser?.id);
+const participants = conversation?.participants || [];
+const otherUser = participants.find(p => p.id !== currentUser?.id) ?? participants[0];
 const isOnline = onlineUsers.has(otherUser?.id);
 
 return (
@@ -22,14 +22,14 @@ return (
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         </button>
-        
+
         <div className="relative">
         <Avatar user={otherUser} size={40} />
         {isOnline && (
             <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary-500 rounded-full border-2 border-[var(--bg-primary)]"></div>
         )}
         </div>
-        
+
         <div>
         <h3 className="font-semibold text-[var(--text-primary)]">
             {otherUser?.username || 'Unknown User'}

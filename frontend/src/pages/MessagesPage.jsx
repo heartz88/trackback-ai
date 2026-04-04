@@ -21,6 +21,17 @@ const formatTime = (timestamp) => {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+// The backend already strips the current user out of participants[], so
+// participants[0] IS the other user. But we also handle the case where
+// the full list is returned (includes current user) just to be safe.
+function getOtherUser(conversation, currentUserId) {
+  if (!conversation?.participants?.length) return null;
+  const other = conversation.participants.find(p => p.id !== currentUserId);
+  // If find returns undefined it means all participants have a different id
+  // (i.e. current user was already filtered out server-side), so just use [0]
+  return other ?? conversation.participants[0];
+}
+
 function MessagesPage() {
   const toast = useToast();
   const confirm = useConfirm();
@@ -54,6 +65,9 @@ function MessagesPage() {
     return new Set();
   })();
 
+  // The other participant in the selected conversation
+  const otherUser = getOtherUser(selectedConversation, user?.id);
+
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
   useEffect(() => {
@@ -65,7 +79,7 @@ function MessagesPage() {
   const filteredUsers = users.filter(u =>
     u.id !== user?.id &&
     (u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+    u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleReconnect = useCallback(async () => {
@@ -156,7 +170,7 @@ function MessagesPage() {
                     messages={messages}
                     currentUser={user}
                     typingUsers={typingUsers}
-                    otherUser={selectedConversation.participants?.find(p => p.id !== user?.id)}
+                    otherUser={otherUser}
                     hoveredMessageId={hoveredMessageId}
                     setHoveredMessageId={setHoveredMessageId}
                     onDeleteMessage={(id) => handleDeleteMessage(id, toast, confirm)}

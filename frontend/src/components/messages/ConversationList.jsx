@@ -1,15 +1,18 @@
 import ConversationItem from './ConversationItem';
 
-export default function ConversationList({ 
-conversations, 
-selectedConversation, 
+export default function ConversationList({
+conversations,
+selectedConversation,
 onSelectConversation,
 currentUser,
 onlineUsers,
-formatTime 
+formatTime
 }) {
+// Backend already strips current user from participants[], so participants[0]
+// is the other person. Fall back to find() in case the full list is returned.
 const getOtherParticipant = (conversation) => {
-return conversation.participants?.find(p => p.id !== currentUser?.id);
+const participants = conversation.participants || [];
+return participants.find(p => p.id !== currentUser?.id) ?? participants[0];
 };
 
 const isUserOnline = (userId) => {
