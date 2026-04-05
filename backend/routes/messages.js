@@ -4,6 +4,8 @@ const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
 const onlineUsers = require('../config/onlineUsers');
+const { getSignedUrl } = require('../config/s3');
+const resolveAvatar = (avatar_url, avatar_s3_key) => avatar_s3_key ? getSignedUrl(avatar_s3_key) : (avatar_url || null);
 
 async function persistMessage(conversationId, senderId, content) {
 // Insert the message
@@ -244,7 +246,7 @@ if (conversationDetails.rows.length === 0) {
 
 const conv = conversationDetails.rows[0];
 const participantsArray = conv.participants || [];
-const otherParticipants = participantsArray.filter(p => p.id !== userId);
+const otherParticipants = participantsArray.filter(p => p.id !== userId).map(p => ({ ...p, avatar_url: resolveAvatar(p.avatar_url, p.avatar_s3_key) }));
 
 let lastMessage = null;
 if (conv.last_message_content) {
@@ -307,7 +309,7 @@ const conversations = await db.query(
 
 const formattedConversations = conversations.rows.map(conv => {
     const participantsArray = conv.participants || [];
-    const otherParticipants = participantsArray.filter(p => p.id !== userId);
+    const otherParticipants = participantsArray.filter(p => p.id !== userId).map(p => ({ ...p, avatar_url: resolveAvatar(p.avatar_url, p.avatar_s3_key) }));
 
     let lastMessage = null;
     if (conv.last_message_content) {
@@ -491,7 +493,7 @@ res.json({
     skills: user.skills || [],
     is_online: user.is_online || false,
     createdAt: user.created_at,
-    avatar_url: user.avatar_url || null,
+    avatar_url: resolveAvatar(user.avatar_url, user.avatar_s3_key),
     avatar_s3_key: user.avatar_s3_key || null
     }))
 });
@@ -590,7 +592,7 @@ if (participantCheck.rows.length === 0) {
 }
 
 const participantsArray = conversation.rows[0].participants || [];
-const filteredParticipants = participantsArray.filter(p => p.id !== userId);
+const filteredParticipants = participantsArray.filter(p => p.id !== userId).map(p => ({ ...p, avatar_url: resolveAvatar(p.avatar_url, p.avatar_s3_key) }));
 
 res.json({
     conversation: {
@@ -675,7 +677,7 @@ const convDetails = await db.query(
 
 const conv = convDetails.rows[0];
 const participantsArray = conv.participants || [];
-const otherParticipants = participantsArray.filter(p => p.id !== userId);
+const otherParticipants = participantsArray.filter(p => p.id !== userId).map(p => ({ ...p, avatar_url: resolveAvatar(p.avatar_url, p.avatar_s3_key) }));
 let lastMessage = null;
 if (conv.last_message_content) {
     lastMessage = {
