@@ -13,22 +13,12 @@ message: false,
 async function triggerNotificationEmail(db, recipientUserId, type, templateData) {
 try {
     // Don't email if the user is currently online — they'll see the in-app notification
-    let onlineUsers = null;
     try {
-        const server = require('../server');
-        onlineUsers = server.onlineUsers;
-        
-        // For a Map, we need to check if the key exists and ensure we're comparing numbers
-        if (onlineUsers && onlineUsers instanceof Map) {
-            const userIdNum = parseInt(recipientUserId);
-            if (onlineUsers.has(userIdNum)) {
-                console.log(`[email] ✅ User ${recipientUserId} is online - SKIPPING ${type} email`);
-                return;
-            } else {
-                console.log(`[email] 📧 User ${recipientUserId} is offline - SENDING ${type} email`);
-            }
-        } else {
-            console.log(`[email] ⚠️ onlineUsers not available, sending email anyway`);
+        const onlineUsers = require('./onlineUsers');
+        const userIdNum = parseInt(recipientUserId);
+        if (onlineUsers instanceof Map && onlineUsers.has(userIdNum)) {
+            console.log(`[email] ✅ User ${recipientUserId} is online - SKIPPING ${type} email`);
+            return;
         }
     } catch (err) {
         console.error(`[email] ⚠️ Failed to check online status:`, err.message);

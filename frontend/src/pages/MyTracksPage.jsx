@@ -69,6 +69,17 @@ try {
 }
 };
 
+const handleReanalyze = async (trackId) => {
+try {
+    await api.post(`/tracks/${trackId}/reanalyze`);
+    toast.success('Re-analysis started — this may take a minute');
+    // Refresh after a short delay to show updated status
+    setTimeout(fetchMyTracks, 2000);
+} catch (err) {
+    toast.error(err.response?.data?.error?.message || 'Failed to start re-analysis');
+}
+};
+
 if (loading) return (
 <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
     <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
@@ -141,6 +152,15 @@ return (
                     }`}>
                         {track.analysis_status === 'completed' ? '🎵 Analyzed' : '⏳ Analyzing...'}
                     </span>
+                    {track.analysis_status !== 'completed' && (
+                    <button
+                        onClick={() => handleReanalyze(track.id)}
+                        title="Re-trigger audio analysis"
+                        className="px-3 py-1 rounded-full text-xs font-medium bg-primary-500/10 text-primary-400 border border-primary-500/30 hover:bg-primary-500/20 transition-[box-shadow,border-color]"
+                    >
+                        🔄 Re-analyze
+                    </button>
+                    )}
                     {/* Uploaded date */}
                     <span className="px-3 py-1 rounded-full text-xs text-[var(--text-tertiary)] border border-[var(--border-color)]">
                         {new Date(track.created_at).toLocaleDateString()}

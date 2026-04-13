@@ -21,17 +21,6 @@ const formatTime = (timestamp) => {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-// The backend already strips the current user out of participants[], so
-// participants[0] IS the other user. But we also handle the case where
-// the full list is returned (includes current user) just to be safe.
-function getOtherUser(conversation, currentUserId) {
-  if (!conversation?.participants?.length) return null;
-  const other = conversation.participants.find(p => p.id !== currentUserId);
-  // If find returns undefined it means all participants have a different id
-  // (i.e. current user was already filtered out server-side), so just use [0]
-  return other ?? conversation.participants[0];
-}
-
 function MessagesPage() {
   const toast = useToast();
   const confirm = useConfirm();
@@ -42,6 +31,7 @@ function MessagesPage() {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
+  const [convSearch, setConvSearch] = useState('');
 
   const {
     conversations, selectedConversation, setSelectedConversation,
@@ -64,9 +54,6 @@ function MessagesPage() {
     if (onlineUsers && typeof onlineUsers === 'object') return new Set(Object.keys(onlineUsers).map(Number));
     return new Set();
   })();
-
-  // The other participant in the selected conversation
-  const otherUser = getOtherUser(selectedConversation, user?.id);
 
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
@@ -140,11 +127,13 @@ function MessagesPage() {
                 <input
                   type="text"
                   placeholder="Search conversations..."
+                  value={convSearch}
+                  onChange={e => setConvSearch(e.target.value)}
                   className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <ConversationList
-                conversations={conversations}
+                conversations={conversations.filter(c => !convSearch.trim() || c.participants?.[0]?.username?.toLowerCase().includes(convSearch.toLowerCase()))}
                 selectedConversation={selectedConversation}
                 onSelectConversation={selectConversation}
                 currentUser={user}
@@ -170,7 +159,7 @@ function MessagesPage() {
                     messages={messages}
                     currentUser={user}
                     typingUsers={typingUsers}
-                    otherUser={otherUser}
+                    otherUser={selectedConversation.participants?.find(p => p.id !== user?.id)}
                     hoveredMessageId={hoveredMessageId}
                     setHoveredMessageId={setHoveredMessageId}
                     onDeleteMessage={(id) => handleDeleteMessage(id, toast, confirm)}

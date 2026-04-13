@@ -10,7 +10,7 @@ const { user } = useAuth();
 const { on } = useSocket();
 const [tracks, setTracks] = useState([]);
 const [newTrackBanner, setNewTrackBanner] = useState(false);
-const [filters, setFilters] = useState({ bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
+const [filters, setFilters] = useState({ search: '', bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
 const [loading, setLoading] = useState(true);
 const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -18,10 +18,11 @@ const fetchTracks = useCallback(async () => {
 setLoading(true);
 try {
     const params = {};
-    if (filters.bpm_min) params.bpm_min = filters.bpm_min;
-    if (filters.bpm_max) params.bpm_max = filters.bpm_max;
+    if (filters.search)       params.search       = filters.search;
+    if (filters.bpm_min)      params.bpm_min      = filters.bpm_min;
+    if (filters.bpm_max)      params.bpm_max      = filters.bpm_max;
     if (filters.energy_level) params.energy_level = filters.energy_level;
-    if (filters.genre) params.genre = filters.genre;
+    if (filters.genre)        params.genre        = filters.genre;
 
     const response = await api.get('/tracks', { params });
     setTracks(response.data.tracks);
@@ -32,25 +33,21 @@ try {
 }
 }, [filters]);
 
-useEffect(() => {
-fetchTracks();
-}, [fetchTracks]);
+useEffect(() => { fetchTracks(); }, [fetchTracks]);
 
-// Real-time: new track uploaded by someone else
 useEffect(() => {
-const unsub = on('track:new', (data) => {
-    // Only show banner if filters are clear (otherwise the new track might not match)
-    setNewTrackBanner(true);
-});
+const unsub = on('track:new', () => { setNewTrackBanner(true); });
 return unsub;
 }, [on]);
 
-const clearFilters = () => setFilters({ bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
-const activeFilterCount = Object.values(filters).filter((v) => v !== '').length;
+const clearFilters = () => setFilters({ search: '', bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
+// search doesn't count as an "advanced" filter for the badge — only the panel filters do
+const activeFilterCount = [filters.bpm_min, filters.bpm_max, filters.energy_level, filters.genre].filter(v => v !== '').length;
 
 return (
 <div className="min-h-screen bg-[var(--bg-primary)] px-4">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
     {/* Header */}
     <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
         <div>
@@ -70,6 +67,32 @@ return (
         )}
     </div>
 
+    {/* Search bar — always visible */}
+    <div className="mb-4">
+        <div className="relative">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+            type="text"
+            placeholder="Search tracks by title..."
+            value={filters.search}
+            onChange={e => setFilters(prev => ({ ...prev, search: e.target.value }))}
+            className="w-full pl-12 pr-4 py-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-[box-shadow,border-color]"
+        />
+        {filters.search && (
+            <button
+            onClick={() => setFilters(prev => ({ ...prev, search: '' }))}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            </button>
+        )}
+        </div>
+    </div>
+
     {/* New track banner */}
     {newTrackBanner && (
         <div className="mb-4 flex items-center justify-between px-4 py-3 bg-primary-500/10 border border-primary-500/30 rounded-xl text-primary-400 text-sm font-medium animate-slide-down">
@@ -83,7 +106,7 @@ return (
         </div>
     )}
 
-    {/* Filter Bar */}
+    {/* Advanced Filter Bar */}
     <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
         <button
@@ -93,7 +116,7 @@ return (
             <svg className="w-5 h-5 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            <span className="text-[var(--text-primary)] font-medium">Filters</span>
+            <span className="text-[var(--text-primary)] font-medium">Advanced Filters</span>
             {activeFilterCount > 0 && (
             <span className="px-2 py-0.5 bg-primary-500 text-white text-xs font-semibold rounded-full">{activeFilterCount}</span>
             )}
@@ -108,33 +131,23 @@ return (
         {isFilterOpen && (
         <div className="glass-panel p-6 rounded-2xl animate-slide-down">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* BPM Range */}
             <div className="space-y-2">
                 <label className="block text-sm font-medium text-[var(--text-secondary)]">BPM Range</label>
                 <div className="flex gap-2">
-                <input
-                    type="number"
-                    placeholder="Min"
-                    value={filters.bpm_min}
-                    onChange={(e) => setFilters({ ...filters, bpm_min: e.target.value })}
+                <input type="number" placeholder="Min" value={filters.bpm_min}
+                    onChange={e => setFilters({ ...filters, bpm_min: e.target.value })}
                     className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <input
-                    type="number"
-                    placeholder="Max"
-                    value={filters.bpm_max}
-                    onChange={(e) => setFilters({ ...filters, bpm_max: e.target.value })}
+                <input type="number" placeholder="Max" value={filters.bpm_max}
+                    onChange={e => setFilters({ ...filters, bpm_max: e.target.value })}
                     className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 </div>
             </div>
 
-            {/* Energy Level */}
             <div className="space-y-2">
                 <label className="block text-sm font-medium text-[var(--text-secondary)]">Energy Level</label>
-                <select
-                value={filters.energy_level}
-                onChange={(e) => setFilters({ ...filters, energy_level: e.target.value })}
+                <select value={filters.energy_level} onChange={e => setFilters({ ...filters, energy_level: e.target.value })}
                 className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                 <option value="">All Energy Levels</option>
@@ -144,22 +157,16 @@ return (
                 </select>
             </div>
 
-            {/* Genre */}
             <div className="space-y-2">
                 <label className="block text-sm font-medium text-[var(--text-secondary)]">Genre</label>
-                <input
-                type="text"
-                placeholder="e.g., Electronic, Hip-Hop"
-                value={filters.genre}
-                onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
+                <input type="text" placeholder="e.g., Electronic, Hip-Hop" value={filters.genre}
+                onChange={e => setFilters({ ...filters, genre: e.target.value })}
                 className="w-full px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
             </div>
 
-            {/* Apply */}
             <div className="space-y-2 flex items-end">
-                <button
-                onClick={fetchTracks}
+                <button onClick={fetchTracks}
                 className="w-full px-4 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-semibold rounded-lg transition-[box-shadow,border-color] shadow-lg shadow-primary-500/20"
                 >
                 Apply Filters
@@ -173,25 +180,17 @@ return (
     {/* Active Filter Tags */}
     {activeFilterCount > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
-        {filters.bpm_min && (
-            <FilterTag label={`Min BPM: ${filters.bpm_min}`} onRemove={() => setFilters({ ...filters, bpm_min: '' })} />
-        )}
-        {filters.bpm_max && (
-            <FilterTag label={`Max BPM: ${filters.bpm_max}`} onRemove={() => setFilters({ ...filters, bpm_max: '' })} />
-        )}
-        {filters.energy_level && (
-            <FilterTag label={`${filters.energy_level} Energy`} onRemove={() => setFilters({ ...filters, energy_level: '' })} />
-        )}
-        {filters.genre && (
-            <FilterTag label={`Genre: ${filters.genre}`} onRemove={() => setFilters({ ...filters, genre: '' })} />
-        )}
+        {filters.bpm_min    && <FilterTag label={`Min BPM: ${filters.bpm_min}`}    onRemove={() => setFilters({ ...filters, bpm_min: '' })} />}
+        {filters.bpm_max    && <FilterTag label={`Max BPM: ${filters.bpm_max}`}    onRemove={() => setFilters({ ...filters, bpm_max: '' })} />}
+        {filters.energy_level && <FilterTag label={`${filters.energy_level} Energy`} onRemove={() => setFilters({ ...filters, energy_level: '' })} />}
+        {filters.genre      && <FilterTag label={`Genre: ${filters.genre}`}        onRemove={() => setFilters({ ...filters, genre: '' })} />}
         </div>
     )}
 
-    {/* Results */}
     {!loading && (
         <p className="text-[var(--text-secondary)] text-sm mb-6">
         {tracks.length} {tracks.length === 1 ? 'track' : 'tracks'} found
+        {filters.search && <span className="text-[var(--text-tertiary)]"> for "{filters.search}"</span>}
         </p>
     )}
 
@@ -206,33 +205,28 @@ return (
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
         </svg>
         <p className="text-[var(--text-primary)] text-lg font-semibold mb-2">No tracks found</p>
-        <p className="text-[var(--text-tertiary)] text-sm mb-4">Try adjusting your filters or check back later</p>
-        {activeFilterCount > 0 && (
+        <p className="text-[var(--text-tertiary)] text-sm mb-4">
+            {filters.search ? `No tracks match "${filters.search}"` : 'Try adjusting your filters or check back later'}
+        </p>
+        {(activeFilterCount > 0 || filters.search) && (
             <button onClick={clearFilters} className="text-primary-400 hover:text-primary-300 text-sm font-medium">
-            Clear filters
+            Clear all filters
             </button>
         )}
         </div>
     ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tracks.map((track) => (
-            <TrackCard key={track.id} track={track} />
-        ))}
+        {tracks.map(track => <TrackCard key={track.id} track={track} />)}
         </div>
     )}
 
-    {/* CTA for logged out */}
     {!user && tracks.length > 0 && (
         <div className="mt-12 text-center py-10 bg-gradient-to-br from-primary-500/10 to-primary-600/5 rounded-3xl border border-primary-500/20">
         <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Want to collaborate?</h3>
         <p className="text-[var(--text-secondary)] mb-4">Sign up to request collaborations and submit your versions</p>
         <div className="flex gap-3 justify-center">
-            <Link to="/register" className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color]">
-            Get Started Free
-            </Link>
-            <Link to="/login" className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] font-semibold rounded-xl transition-[box-shadow,border-color] border border-[var(--border-color)]">
-            Sign In
-            </Link>
+            <Link to="/register" className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color]">Get Started Free</Link>
+            <Link to="/login" className="px-6 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] font-semibold rounded-xl transition-[box-shadow,border-color] border border-[var(--border-color)]">Sign In</Link>
         </div>
         </div>
     )}

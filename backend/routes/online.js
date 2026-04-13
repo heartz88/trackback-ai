@@ -1,6 +1,7 @@
 const express = require('express');
 const authMiddleware = require('../middleware/auth');
 const db = require('../config/database');
+const { getSignedUrl } = require('../config/s3');
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ const recentUsers = await db.query(
 // Merge results
 const onlineUsers = result.rows.map(user => ({
     ...user,
+    avatar_url: user.avatar_s3_key ? getSignedUrl(user.avatar_s3_key) : user.avatar_url,
     is_online: true,
     last_activity: user.last_activity
 }));
@@ -46,6 +48,7 @@ const activeUsers = recentUsers.rows
     .filter(user => !recentUserIds.has(user.id))
     .map(user => ({
         ...user,
+        avatar_url: user.avatar_s3_key ? getSignedUrl(user.avatar_s3_key) : user.avatar_url,
         is_online: false,
         last_activity: null
     }));

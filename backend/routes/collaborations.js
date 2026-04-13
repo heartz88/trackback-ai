@@ -760,4 +760,38 @@ res.status(500).json({
 }
 });
 
+// DELETE /requests/:id — cancel a pending collaboration request (requester only)
+router.delete('/requests/:id', authMiddleware, async (req, res) => {
+try {
+const { id } = req.params;
+const userId = req.user.id;
+
+const result = await db.query(
+    'SELECT id, collaborator_id, status, track_id FROM collaboration_requests WHERE id = $1',
+    [id]
+);
+
+if (result.rows.length === 0) {
+    return res.status(404).json({ error: { message: 'Request not found' } });
+}
+
+const request = result.rows[0];
+
+if (request.collaborator_id !== userId) {
+    return res.status(403).json({ error: { message: 'You can only cancel your own requests' } });
+}
+
+if (request.status !== 'pending') {
+    return res.status(400).json({ error: { message: 'Only pending requests can be cancelled' } });
+}
+
+await db.query('DELETE FROM collaboration_requests WHERE id = $1', [id]);
+
+res.json({ message: 'Request cancelled' });
+} catch (error) {
+console.error('Cancel request error:', error);
+res.status(500).json({ error: { message: 'Failed to cancel request' } });
+}
+});
+
 module.exports = router;

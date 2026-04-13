@@ -12,6 +12,14 @@ const jwt = require('jsonwebtoken');
 const db = require('./config/database');
 const { triggerNotificationEmail } = require('./config/emailTrigger');
 
+// Validate required env vars at startup — fail loud rather than silently broken
+['JWT_SECRET', 'DATABASE_URL', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'S3_BUCKET'].forEach(k => {
+  if (!process.env[k]) {
+    console.error(`FATAL: Missing required environment variable: ${k}`);
+    process.exit(1);
+  }
+});
+
 const app = express();
 const server = http.createServer(app);
 
@@ -75,6 +83,15 @@ const uploadLimiter = rateLimit({
   message: { error: { message: 'Upload limit reached. Please try again later.' } }
 });
 
+// Write endpoints: 30 per minute per IP (prevents vote/comment spam)
+const writeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { message: 'Too many requests, please slow down.' } }
+});
+
 app.use(globalLimiter);
 
 // Configure Helmet
@@ -93,7 +110,7 @@ contentSecurityPolicy: {
 })
 );
 
-app.use(morgan('dev'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Body parsers
 app.use(express.json({ limit: '2mb' }));
@@ -628,8 +645,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/online', onlineRoutes);
-app.use('/api/votes',votesRoutes);
-app.use('/api/comments',commentsRoutes);
+app.use('/api/votes', writeLimiter, votesRoutes);
+app.use('/api/comments', writeLimiter, commentsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

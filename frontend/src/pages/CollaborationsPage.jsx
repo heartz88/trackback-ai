@@ -20,78 +20,61 @@ const toast = useToast();
 const { on } = useSocket();
 
 const handleTabChange = (tab) => {
-  if (tab === activeTab) return;
-  setAnimating(true);
-  setTimeout(() => {
-    prevTab.current = activeTab;
-    setActiveTab(tab);
-    setAnimating(false);
-  }, 180);
+if (tab === activeTab) return;
+setAnimating(true);
+setTimeout(() => {
+prevTab.current = activeTab;
+setActiveTab(tab);
+setAnimating(false);
+}, 180);
 };
 
 const slideDir = TABS_ORDER.indexOf(activeTab) > TABS_ORDER.indexOf(prevTab.current) ? 1 : -1;
 
 useEffect(() => {
 const fetchRequests = async () => {
-    try {
-    setLoading(true);
-    const [receivedRes, sentRes] = await Promise.all([
-        api.get('/collaborations/requests/received'),
-        api.get('/collaborations/requests/sent'),
-    ]);
-
-    const allReceived = receivedRes.data.requests || [];
-    const allSent = sentRes.data.requests || [];
-
-    setReceived(allReceived.filter((r) => r.status === 'pending'));
-    setSent(allSent.filter((r) => r.status === 'pending'));
-    setHistory({
-        received: allReceived.filter((r) => r.status !== 'pending'),
-        sent: allSent.filter((r) => r.status !== 'pending'),
-    });
-    } catch (err) {
-    console.error('Failed to fetch requests:', err);
-    } finally {
-    setLoading(false);
-    }
+try {
+setLoading(true);
+const [receivedRes, sentRes] = await Promise.all([
+    api.get('/collaborations/requests/received'),
+    api.get('/collaborations/requests/sent'),
+]);
+const allReceived = receivedRes.data.requests || [];
+const allSent = sentRes.data.requests || [];
+setReceived(allReceived.filter((r) => r.status === 'pending'));
+setSent(allSent.filter((r) => r.status === 'pending'));
+setHistory({
+    received: allReceived.filter((r) => r.status !== 'pending'),
+    sent: allSent.filter((r) => r.status !== 'pending'),
+});
+} catch (err) {
+console.error('Failed to fetch requests:', err);
+} finally {
+setLoading(false);
+}
 };
 fetchRequests();
 }, []);
 
-// Real-time: incoming collaboration request
 useEffect(() => {
 const unsubRequest = on('collaboration:request', (data) => {
-    setReceived(prev => {
-    // Avoid duplicates
-    if (prev.some(r => r.id === data.requestId)) return prev;
-    const newRequest = {
-        id: data.requestId,
-        track_id: data.trackId,
-        track_title: data.trackTitle,
-        collaborator_name: data.requesterName,
-        message: data.message,
-        status: 'pending',
-        created_at: data.timestamp,
-    };
-    return [newRequest, ...prev];
-    });
-    toast.success(`New collaboration request from ${data.requesterName}!`);
+setReceived(prev => {
+if (prev.some(r => r.id === data.requestId)) return prev;
+return [{ id: data.requestId, track_id: data.trackId, track_title: data.trackTitle,
+    collaborator_name: data.requesterName, message: data.message,
+    status: 'pending', created_at: data.timestamp }, ...prev];
+});
+toast.success(`New collaboration request from ${data.requesterName}!`);
 });
 
 const unsubResponse = on('collaboration:response', (data) => {
-    setSent(prev => prev.filter(r => r.id !== data.requestId));
-    setHistory(prev => ({
-    ...prev,
-    sent: [
-        ...prev.sent,
-        { id: data.requestId, track_title: data.trackTitle, status: data.status, updated_at: data.timestamp }
-    ]
-    }));
-    if (data.status === 'approved') {
-    toast.success(`Your request for "${data.trackTitle}" was approved!`);
-    } else {
-    toast.error(`Your request for "${data.trackTitle}" was declined`);
-    }
+setSent(prev => prev.filter(r => r.id !== data.requestId));
+setHistory(prev => ({
+...prev,
+sent: [...prev.sent, { id: data.requestId, track_title: data.trackTitle, status: data.status, updated_at: data.timestamp }]
+}));
+if (data.status === 'approved') toast.success(`Your request for "${data.trackTitle}" was approved!`);
+else toast.error(`Your request for "${data.trackTitle}" was declined`);
 });
 
 return () => { unsubRequest(); unsubResponse(); };
@@ -99,350 +82,263 @@ return () => { unsubRequest(); unsubResponse(); };
 
 const handleResponse = async (requestId, status) => {
 try {
-    await api.put(`/collaborations/requests/${requestId}`, { status });
-    const respondedRequest = received.find((r) => r.id === requestId);
-    setReceived(received.filter((r) => r.id !== requestId));
-    if (respondedRequest) {
-    setHistory({ ...history, received: [...history.received, { ...respondedRequest, status }] });
-    }
-    toast.success(`Request ${status === 'approved' ? 'approved! ✅' : 'declined'}`);
-} catch (err) {
-    toast.error('Action failed — please try again');
+await api.put(`/collaborations/requests/${requestId}`, { status });
+const req = received.find((r) => r.id === requestId);
+setReceived(prev => prev.filter((r) => r.id !== requestId));
+if (req) setHistory(prev => ({ ...prev, received: [...prev.received, { ...req, status }] }));
+toast.success(`Request ${status === 'approved' ? 'approved! ✅' : 'declined'}`);
+} catch {
+toast.error('Action failed — please try again');
 }
 };
 
-if (loading) {
-return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
-    <div className="music-loader">
-        <span className="music-loader-bar"></span>
-        <span className="music-loader-bar"></span>
-        <span className="music-loader-bar"></span>
-        <span className="music-loader-bar"></span>
-        <span className="music-loader-bar"></span>
-    </div>
-    </div>
-);
+const handleCancel = async (requestId) => {
+try {
+await api.delete(`/collaborations/requests/${requestId}`);
+const req = sent.find(r => r.id === requestId);
+setSent(prev => prev.filter(r => r.id !== requestId));
+if (req) setHistory(prev => ({ ...prev, sent: [...prev.sent, { ...req, status: 'cancelled' }] }));
+toast.success('Request cancelled');
+} catch (err) {
+toast.error(err.response?.data?.error?.message || 'Failed to cancel request');
 }
+};
+
+if (loading) return (
+<div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+<div className="music-loader">
+    {[...Array(5)].map((_, i) => <span key={i} className="music-loader-bar"></span>)}
+</div>
+</div>
+);
 
 return (
 <div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4">
-    <div className="max-w-7xl mx-auto">
-    {/* Header */}
-    <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Collaborations</h1>
-        <p className="text-[var(--text-secondary)]">Manage your collaboration requests</p>
-    </div>
+<div className="max-w-7xl mx-auto">
+<div className="mb-8">
+    <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Collaborations</h1>
+    <p className="text-[var(--text-secondary)]">Manage your collaboration requests</p>
+</div>
 
-    {/* Tabs */}
-    <div className="relative mb-6">
-      <div
-        className="absolute bottom-0 h-0.5 rounded-full transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-        style={{
-          left: activeTab === 'pending' ? 0 : '50%',
-          width: '50%',
-          background: 'linear-gradient(90deg, var(--accent-primary, #14b8a6), #06b6d4)',
-          boxShadow: '0 0 12px rgba(20,184,166,0.6)',
-        }}
-      />
-      <div className="flex border-b border-[var(--border-color)]/40">
-        {[
-          { id: 'pending', label: 'Pending', icon: '⏳', count: received.length + sent.length },
-          { id: 'history', label: 'History', icon: '📋', count: history.received.length + history.sent.length },
-        ].map(({ id, label, icon, count }) => (
-          <button
-            key={id}
-            onClick={() => handleTabChange(id)}
-            className="relative flex-1 px-4 py-3 text-sm font-semibold transition-[box-shadow,border-color] duration-300 flex items-center justify-center gap-2 group"
-            style={{ color: activeTab === id ? 'var(--accent-primary, #14b8a6)' : 'var(--text-tertiary)' }}
-          >
-            <span className="absolute inset-0 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-              style={{ background: 'rgba(20,184,166,0.06)' }} />
-            {activeTab === id && (
-              <span className="absolute inset-0 rounded-t-xl" style={{ background: 'rgba(20,184,166,0.08)' }} />
+{/* Tabs */}
+<div className="relative mb-6">
+    <div className="absolute bottom-0 h-0.5 rounded-full transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+    style={{ left: activeTab === 'pending' ? 0 : '50%', width: '50%',
+        background: 'linear-gradient(90deg, var(--accent-primary, #14b8a6), #06b6d4)',
+        boxShadow: '0 0 12px rgba(20,184,166,0.6)' }} />
+    <div className="flex border-b border-[var(--border-color)]/40">
+    {[
+        { id: 'pending', label: 'Pending', icon: '⏳', count: received.length + sent.length },
+        { id: 'history', label: 'History', icon: '📋', count: history.received.length + history.sent.length },
+    ].map(({ id, label, icon, count }) => (
+        <button key={id} onClick={() => handleTabChange(id)}
+        className="relative flex-1 px-4 py-3 text-sm font-semibold transition-[box-shadow,border-color] duration-300 flex items-center justify-center gap-2 group"
+        style={{ color: activeTab === id ? 'var(--accent-primary, #14b8a6)' : 'var(--text-tertiary)' }}>
+        <span className="absolute inset-0 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: 'rgba(20,184,166,0.06)' }} />
+        {activeTab === id && <span className="absolute inset-0 rounded-t-xl" style={{ background: 'rgba(20,184,166,0.08)' }} />}
+        <span className="relative flex items-center gap-2">
+            <span style={{ transform: activeTab === id ? 'scale(1.2)' : 'scale(1)', transition: 'transform 0.3s' }}>{icon}</span>
+            {label}
+            {count > 0 && <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${id === 'pending' ? 'bg-red-500 text-white' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'}`}>{count}</span>}
+        </span>
+        </button>
+    ))}
+    </div>
+</div>
+
+<div style={{ transition: 'opacity 0.18s ease, transform 0.18s ease', opacity: animating ? 0 : 1, transform: animating ? `translateX(${slideDir * 24}px)` : 'translateX(0)' }}>
+{activeTab === 'pending' ? (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    {/* Received */}
+    <div>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+        Received Requests
+        {received.length > 0 && <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full">{received.length} pending</span>}
+        </h2>
+        <div className="space-y-4">
+        {received.map((req) => (
+            <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-yellow-500">
+            <div className="flex items-start space-x-4 mb-4">
+                <Link to={`/profile/${req.collaborator_name}`} className="flex-shrink-0">
+                <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {req.collaborator_name?.[0]?.toUpperCase() || '?'}
+                </div>
+                </Link>
+                <div className="flex-1 min-w-0">
+                <Link to={`/profile/${req.collaborator_name}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">{req.collaborator_name}</Link>
+                <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                    wants to collaborate on{' '}
+                    <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-primary-400 hover:text-primary-300 font-medium">"{req.track_title}"</Link>
+                </p>
+                </div>
+                <span className="px-3 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded-full text-xs font-medium flex-shrink-0">Pending</span>
+            </div>
+            {req.message && (
+                <p className="text-[var(--text-secondary)] text-sm mb-4 bg-[var(--bg-tertiary)] p-3 rounded-lg border border-[var(--border-color)] italic">"{req.message}"</p>
             )}
-            <span className="relative flex items-center gap-2">
-              <span style={{ transform: activeTab === id ? 'scale(1.2)' : 'scale(1)', transition: 'transform 0.3s' }}>{icon}</span>
-              {label}
-              {count > 0 && (
-                <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
-                  id === 'pending' ? 'bg-red-500 text-white' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
-                }`}>{count}</span>
-              )}
-            </span>
-          </button>
+            <div className="flex items-center gap-2 mb-4 p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)]">
+                <svg className="w-4 h-4 text-primary-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+                <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-sm text-primary-400 hover:text-primary-300 truncate flex-1">
+                View track: "{req.track_title}"
+                </Link>
+            </div>
+            <div className="flex gap-2">
+                <button onClick={() => handleResponse(req.id, 'approved')}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color] text-sm">✓ Approve</button>
+                <Link to={`/messages/${req.collaborator_name}`}
+                className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-xl transition-[box-shadow,border-color] text-sm border border-[var(--border-color)] flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Message
+                </Link>
+                <button onClick={() => handleResponse(req.id, 'rejected')}
+                className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-red-500/10 hover:text-red-400 text-[var(--text-secondary)] font-medium rounded-xl transition-[box-shadow,border-color] text-sm border border-[var(--border-color)]">Decline</button>
+            </div>
+            </div>
         ))}
-      </div>
+        {received.length === 0 && (
+            <div className="text-center py-12 bg-[var(--bg-tertiary)] rounded-2xl border border-[var(--border-color)]">
+            <p className="text-[var(--text-secondary)]">No pending received requests</p>
+            </div>
+        )}
+        </div>
     </div>
 
-    {/* Animated content */}
-    <div style={{
-      transition: 'opacity 0.18s ease, transform 0.18s ease',
-      opacity: animating ? 0 : 1,
-      transform: animating ? `translateX(${slideDir * 24}px)` : 'translateX(0)',
-    }}>
-    {activeTab === 'pending' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Received Requests */}
-        <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-            Received Requests
-            {received.length > 0 && (
-                <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full">{received.length} pending</span>
+    {/* Sent */}
+    <div>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+        Sent Requests
+        {sent.length > 0 && <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full">{sent.length} pending</span>}
+        </h2>
+        <div className="space-y-4">
+        {sent.map((req) => (
+            <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500">
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">"{req.track_title}"</Link>
+                <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                    by{' '}
+                    <Link to={`/profile/${req.owner_name}`} className="text-primary-400 hover:text-primary-300">{req.owner_name}</Link>
+                </p>
+                </div>
+                <span className="px-3 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded-full text-xs font-medium flex-shrink-0">Pending</span>
+            </div>
+            {req.message && (
+                <p className="text-[var(--text-secondary)] text-sm p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)] italic">"{req.message}"</p>
             )}
-            </h2>
-            <div className="space-y-4">
-            {received.map((req) => (
-                <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-yellow-500">
-                <div className="flex items-start space-x-4 mb-4">
-                    <Link to={`/profile/${req.collaborator_name}`} className="flex-shrink-0">
-                    <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+            <div className="flex gap-2 mt-3">
+                <Link to={`/tracks/${toSlug(req.track_title)}`}
+                className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]">
+                View Track
+                </Link>
+                <Link to={`/messages/${req.owner_name}`}
+                className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]">
+                Message Owner
+                </Link>
+                <button onClick={() => handleCancel(req.id)}
+                className="flex-1 text-center py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg text-sm transition-[box-shadow,border-color] border border-red-500/30">
+                Cancel
+                </button>
+            </div>
+            </div>
+        ))}
+        {sent.length === 0 && (
+            <div className="text-center py-12 bg-[var(--bg-tertiary)] rounded-2xl border border-[var(--border-color)]">
+            <p className="text-[var(--text-secondary)] mb-3">No pending sent requests</p>
+            <Link to="/discover" className="text-primary-400 hover:text-primary-300 text-sm font-medium">Discover tracks to collaborate on →</Link>
+            </div>
+        )}
+        </div>
+    </div>
+    </div>
+) : (
+    <div className="space-y-8">
+    {history.received.length > 0 && (
+        <div>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Received History</h2>
+        <div className="space-y-3">
+            {history.received.map((req) => (
+            <div key={req.id} className="glass-panel p-4 rounded-xl opacity-80 hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                    <Link to={`/profile/${req.collaborator_name}`}>
+                    <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                         {req.collaborator_name?.[0]?.toUpperCase() || '?'}
                     </div>
                     </Link>
-                    <div className="flex-1 min-w-0">
-                    <Link to={`/profile/${req.collaborator_name}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">
-                        {req.collaborator_name}
-                    </Link>
-                    <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-                        wants to collaborate on{' '}
-                        <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-primary-400 hover:text-primary-300 font-medium">
-                        "{req.track_title}"
-                        </Link>
-                    </p>
-                    </div>
-                    <span className="px-3 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded-full text-xs font-medium flex-shrink-0">
-                    Pending
-                    </span>
-                </div>
-
-                {req.message && (
-                    <p className="text-[var(--text-secondary)] text-sm mb-4 bg-[var(--bg-tertiary)] p-3 rounded-lg border border-[var(--border-color)] italic">
-                    "{req.message}"
-                    </p>
-                )}
-
-                {/* Track quick link */}
-                <div className="flex items-center gap-2 mb-4 p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)]">
-                    <svg className="w-4 h-4 text-primary-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
-                    <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-sm text-primary-400 hover:text-primary-300 truncate flex-1">
-                    View track: "{req.track_title}"
-                    </Link>
-                </div>
-
-                <div className="flex gap-2">
-                    <button
-                    onClick={() => handleResponse(req.id, 'approved')}
-                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-[box-shadow,border-color] text-sm"
-                    >
-                    ✓ Approve
-                    </button>
-                    <Link
-                    to={`/messages/${req.collaborator_name}`}
-                    className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-xl transition-[box-shadow,border-color] text-sm border border-[var(--border-color)] flex items-center gap-1"
-                    >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    Message
-                    </Link>
-                    <button
-                    onClick={() => handleResponse(req.id, 'rejected')}
-                    className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-red-500/10 hover:text-red-400 text-[var(--text-secondary)] font-medium rounded-xl transition-[box-shadow,border-color] text-sm border border-[var(--border-color)]"
-                    >
-                    Decline
-                    </button>
-                </div>
-                </div>
-            ))}
-            {received.length === 0 && (
-                <div className="text-center py-12 bg-[var(--bg-tertiary)] rounded-2xl border border-[var(--border-color)]">
-                <p className="text-[var(--text-secondary)]">No pending received requests</p>
-                </div>
-            )}
-            </div>
-        </div>
-
-        {/* Sent Requests */}
-        <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-            Sent Requests
-            {sent.length > 0 && (
-                <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full">{sent.length} pending</span>
-            )}
-            </h2>
-            <div className="space-y-4">
-            {sent.map((req) => (
-                <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500">
-                <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                    <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">
-                        "{req.track_title}"
-                    </Link>
-                    <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-                        by{' '}
-                        <Link to={`/profile/${req.owner_name}`} className="text-primary-400 hover:text-primary-300">
-                        {req.owner_name}
-                        </Link>
-                    </p>
-                    </div>
-                    <span className="px-3 py-1 bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 rounded-full text-xs font-medium flex-shrink-0">
-                    Pending
-                    </span>
-                </div>
-                {req.message && (
-                    <p className="text-[var(--text-secondary)] text-sm p-2 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)] italic">
-                    "{req.message}"
-                    </p>
-                )}
-                {/* Quick links */}
-                <div className="flex gap-2 mt-3">
-                    <Link
-                    to={`/tracks/${toSlug(req.track_title)}`}
-                    className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]"
-                    >
-                    View Track
-                    </Link>
-                    <Link
-                    to={`/messages/${req.owner_name}`}
-                    className="flex-1 text-center py-2 bg-[var(--bg-tertiary)] hover:bg-primary-500/10 text-[var(--text-secondary)] hover:text-primary-400 rounded-lg text-sm transition-[box-shadow,border-color] border border-[var(--border-color)]"
-                    >
-                    Message Owner
-                    </Link>
-                </div>
-                </div>
-            ))}
-            {sent.length === 0 && (
-                <div className="text-center py-12 bg-[var(--bg-tertiary)] rounded-2xl border border-[var(--border-color)]">
-                <p className="text-[var(--text-secondary)] mb-3">No pending sent requests</p>
-                <Link to="/discover" className="text-primary-400 hover:text-primary-300 text-sm font-medium">
-                    Discover tracks to collaborate on →
-                </Link>
-                </div>
-            )}
-            </div>
-        </div>
-        </div>
-    ) : (
-        /* History Tab */
-        <div className="space-y-8">
-        {history.received.length > 0 && (
-            <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Received History</h2>
-            <div className="space-y-3">
-                {history.received.map((req) => (
-                <div key={req.id} className="glass-panel p-4 rounded-xl opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-3">
-                        <Link to={`/profile/${req.collaborator_name}`}>
-                        <div className="w-9 h-9 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            {req.collaborator_name?.[0]?.toUpperCase() || '?'}
-                        </div>
-                        </Link>
-                        <div>
-                        <Link to={`/profile/${req.collaborator_name}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">
-                            {req.collaborator_name}
-                        </Link>
-                        <p className="text-xs text-[var(--text-secondary)]">
-                            on{' '}
-                            <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-primary-400 hover:text-primary-300">
-                            "{req.track_title}"
-                            </Link>
-                        </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {req.status === 'approved' && (
-                        <Link
-                            to={`/tracks/${toSlug(req.track_title)}/submissions`}
-                            className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
-                        >
-                            View Submissions
-                        </Link>
-                        )}
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        req.status === 'approved'
-                            ? 'bg-green-500/10 text-green-400 border border-green-500/30'
-                            : 'bg-red-500/10 text-red-400 border border-red-500/30'
-                        }`}>
-                        {req.status}
-                        </span>
-                    </div>
-                    </div>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                    {new Date(req.updated_at || req.created_at).toLocaleDateString()}
-                    </p>
-                </div>
-                ))}
-            </div>
-            </div>
-        )}
-
-        {history.sent.length > 0 && (
-            <div>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Sent History</h2>
-            <div className="space-y-3">
-                {history.sent.map((req) => (
-                <div key={req.id} className="glass-panel p-4 rounded-xl opacity-80 hover:opacity-100 transition-opacity">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
-                        <Link to={`/tracks/${toSlug(req.track_title)}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">
-                        "{req.track_title}"
-                        </Link>
-                        <p className="text-xs text-[var(--text-secondary)]">
-                        by{' '}
-                        <Link to={`/profile/${req.owner_name}`} className="text-primary-400 hover:text-primary-300">
-                            {req.owner_name}
-                        </Link>
-                        </p>
+                    <Link to={`/profile/${req.collaborator_name}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">{req.collaborator_name}</Link>
+                    <p className="text-xs text-[var(--text-secondary)]">on <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-primary-400 hover:text-primary-300">"{req.track_title}"</Link></p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        {req.status === 'approved' && (
-                        <Link
-                            to={`/tracks/${toSlug(req.track_title)}/submissions`}
-                            className="px-3 py-1.5 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
-                        >
-                            Submit Version →
-                        </Link>
-                        )}
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        req.status === 'approved'
-                            ? 'bg-green-500/10 text-green-400 border border-green-500/30'
-                            : 'bg-red-500/10 text-red-400 border border-red-500/30'
-                        }`}>
-                        {req.status}
-                        </span>
-                    </div>
-                    </div>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                    {new Date(req.updated_at || req.created_at).toLocaleDateString()}
-                    </p>
                 </div>
-                ))}
+                <div className="flex items-center gap-3">
+                    {req.status === 'approved' && (
+                    <Link to={`/tracks/${toSlug(req.track_title)}/submissions`}
+                        className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]">
+                        View Submissions
+                    </Link>
+                    )}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    req.status === 'approved' ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                    : req.status === 'cancelled' ? 'bg-gray-500/10 text-gray-400 border border-gray-500/30'
+                    : 'bg-red-500/10 text-red-400 border border-red-500/30'}`}>{req.status}</span>
+                </div>
+                </div>
+                <p className="text-xs text-[var(--text-tertiary)] mt-2">{new Date(req.updated_at || req.created_at).toLocaleDateString()}</p>
             </div>
+            ))}
+        </div>
+        </div>
+    )}
+    {history.sent.length > 0 && (
+        <div>
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Sent History</h2>
+        <div className="space-y-3">
+            {history.sent.map((req) => (
+            <div key={req.id} className="glass-panel p-4 rounded-xl opacity-80 hover:opacity-100 transition-opacity">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <Link to={`/tracks/${toSlug(req.track_title)}`} className="font-semibold text-[var(--text-primary)] hover:text-primary-400 text-sm">"{req.track_title}"</Link>
+                    <p className="text-xs text-[var(--text-secondary)]">by <Link to={`/profile/${req.owner_name}`} className="text-primary-400 hover:text-primary-300">{req.owner_name}</Link></p>
+                </div>
+                <div className="flex items-center gap-3">
+                    {req.status === 'approved' && (
+                    <Link to={`/tracks/${toSlug(req.track_title)}/submissions`}
+                        className="px-3 py-1.5 bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]">
+                        Submit Version →
+                    </Link>
+                    )}
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    req.status === 'approved' ? 'bg-green-500/10 text-green-400 border border-green-500/30'
+                    : req.status === 'cancelled' ? 'bg-gray-500/10 text-gray-400 border border-gray-500/30'
+                    : 'bg-red-500/10 text-red-400 border border-red-500/30'}`}>{req.status}</span>
+                </div>
+                </div>
+                <p className="text-xs text-[var(--text-tertiary)] mt-2">{new Date(req.updated_at || req.created_at).toLocaleDateString()}</p>
             </div>
-        )}
-
-        {history.received.length === 0 && history.sent.length === 0 && (
-            <div className="text-center py-20 bg-[var(--bg-tertiary)] rounded-3xl border border-[var(--border-color)]">
-            <div className="w-20 h-20 bg-primary-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No History Yet</h3>
-            <p className="text-[var(--text-secondary)] mb-4">Your past collaborations will appear here</p>
-            <Link to="/discover" className="text-primary-400 hover:text-primary-300 font-medium text-sm">
-                Explore tracks to collaborate →
-            </Link>
-            </div>
-        )}
+            ))}
+        </div>
+        </div>
+    )}
+    {history.received.length === 0 && history.sent.length === 0 && (
+        <div className="text-center py-20 bg-[var(--bg-tertiary)] rounded-3xl border border-[var(--border-color)]">
+        <div className="w-20 h-20 bg-primary-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">No History Yet</h3>
+        <p className="text-[var(--text-secondary)] mb-4">Your past collaborations will appear here</p>
+        <Link to="/discover" className="text-primary-400 hover:text-primary-300 font-medium text-sm">Explore tracks to collaborate →</Link>
         </div>
     )}
     </div>
-    </div>
+)}
+</div>
+</div>
 </div>
 );
 }

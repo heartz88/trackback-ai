@@ -167,7 +167,7 @@ try {
 router.get('/', async (req, res) => {
 try {
 const {
-    bpm_min, bpm_max, energy_level, genre,
+    bpm_min, bpm_max, energy_level, genre, search,
     status = 'open', limit = 20, offset = 0, user_id
 } = req.query;
 
@@ -223,6 +223,12 @@ if (genre) {
     paramCount++;
     query += ` AND LOWER(t.genre) = LOWER($${paramCount})`;
     params.push(genre.toLowerCase());
+}
+
+if (search && search.trim()) {
+    paramCount++;
+    query += ` AND (LOWER(t.title) LIKE LOWER($${paramCount}) OR LOWER(t.description) LIKE LOWER($${paramCount}))`;
+    params.push(`%${search.trim()}%`);
 }
 
 query += ` ORDER BY t.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
@@ -764,6 +770,11 @@ if (result.rows.length === 0) {
 }
 
 const { s3_key } = result.rows[0];
+
+// Delete submission S3 files so no orphaned audio is left in the bucket
+const subsResult = await db.query('SELECT s3_key FROM submissions WHERE track_id = $1', [id]);
+await Promise.allSettled(subsResult.rows.map(s => deleteFromS3(s.s3_key)));
+
 await deleteFromS3(s3_key);
 await db.query('DELETE FROM tracks WHERE id = $1', [id]);
 
@@ -776,6 +787,47 @@ res.status(500).json({
     details: process.env.NODE_ENV === 'development' ? error.message : undefined
     }
 });
+}
+});
+
+// POST /:id/reanalyze — re-trigger ML analysis for stuck tracks
+router.post('/:id/reanalyze', authMiddleware, async (req, res) => {
+try {
+const { id } = req.params;
+const userId = req.user.id;
+
+const result = await db.query(
+    'SELECT id, s3_key, title, analysis_status FROM tracks WHERE id = $1 AND user_id = $2',
+    [id, userId]
+);
+
+if (result.rows.length === 0) {
+    return res.status(404).json({ error: { message: 'Track not found or unauthorized' } });
+}
+
+const track = result.rows[0];
+
+if (track.analysis_status === 'completed') {
+    return res.status(400).json({ error: { message: 'Track is already analyzed' } });
+}
+
+await db.query("UPDATE tracks SET analysis_status = 'pending' WHERE id = $1", [id]);
+
+const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5000';
+axios.post(`${mlServiceUrl}/analyze`, {
+    track_id: track.id,
+    s3_key: track.s3_key,
+    s3_bucket: process.env.S3_BUCKET
+}, { timeout: 120000 })
+.catch((mlError) => {
+    console.error(`Re-analyze ML error for track ${track.id}:`, mlError.message);
+    db.query("UPDATE tracks SET analysis_status = 'failed' WHERE id = $1", [track.id]).catch(() => {});
+});
+
+res.json({ message: 'Re-analysis started' });
+} catch (error) {
+console.error('Re-analyze error:', error);
+res.status(500).json({ error: { message: 'Failed to start re-analysis' } });
 }
 });
 
