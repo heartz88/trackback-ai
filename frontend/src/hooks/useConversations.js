@@ -21,7 +21,7 @@ const hasJoinedConversation = useRef(false);
 const selectConversation = useCallback((conv) => {
 setSelectedConversation(conv);
 const other = conv?.participants?.find(p => p.id !== user?.id);
-navigate(`/messages/${other?.username || conv.id}`);
+navigate(`/messages/${other?.username ? encodeURIComponent(other.username) : conv.id}`);
 }, [navigate, user?.id]);
 
 const fetchConversations = useCallback(async () => {
@@ -39,7 +39,7 @@ try {
         setConversations(prev => prev.some(c => c.id === newConv.id) ? prev : [newConv, ...prev]);
         setSelectedConversation(newConv);
         const other = newConv.participants?.find(p => p.id !== user?.id);
-        if (other?.username) navigate(`/messages/${other.username}`, { replace: true });
+        if (other?.username) navigate(`/messages/${encodeURIComponent(other.username)}`, { replace: true });
     } catch (err) {
         console.error('Failed to start conversation from userId:', err);
     }
@@ -84,7 +84,7 @@ try {
     setSelectedConversation(newConv);
     hasJoinedConversation.current = false;
     const other = newConv.participants?.find(p => p.id !== user?.id);
-    navigate(`/messages/${other?.username || newConv.id}`);
+    navigate(`/messages/${other?.username ? encodeURIComponent(other.username) : newConv.id}`);
 } catch (err) {
     const msg = err.response?.data?.error?.message || 'Failed to start conversation';
     if (err.response?.status === 400 && msg.includes('already exists')) {
@@ -93,7 +93,7 @@ try {
         setSelectedConversation(existing);
         hasJoinedConversation.current = false;
         const other = existing.participants?.find(p => p.id !== user?.id);
-        navigate(`/messages/${other?.username || existing.id}`);
+        navigate(`/messages/${other?.username ? encodeURIComponent(other.username) : existing.id}`);
         return;
     }
     }
