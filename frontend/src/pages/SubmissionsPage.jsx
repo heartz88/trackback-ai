@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import Avatar from '../components/common/Avatar';
 import BackButton from '../components/common/BackButton';
 import { useConfirm, useToast } from '../components/common/Toast';
 import SubmissionCard from '../components/submissions/SubmissionCard';
@@ -122,14 +123,9 @@ toast.success('Submission uploaded! 🎵');
 };
 
 const handleCompleteTrack = async () => {
-const winnerName = topSubmission?.collaborator_name;
-const winnerScore = topScore;
-const winnerMsg = winnerName
-? `"${winnerName}" is currently leading with ${winnerScore} vote${winnerScore !== 1 ? 's' : ''}. Their version will be selected as the final version.`
-: 'The highest voted submission will be selected as the final version.';
 const ok = await confirm({
     title: 'Mark as completed?',
-    message: winnerMsg,
+    message: 'The highest voted submission will be selected as the final version.',
     confirmText: 'Complete Track',
 });
 if (!ok) return;
@@ -211,7 +207,7 @@ return (
         {/* Owner */}
         <div className="tdp-owner-row">
         <Link to={`/profile/${owner?.username}`} style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
-            <div className="tdp-owner-avatar">{owner?.username?.charAt(0).toUpperCase()}</div>
+            <Avatar user={owner} size={40} />
             <div>
             <div className="tdp-owner-name">@{owner?.username}</div>
             <div className="tdp-owner-date">{new Date(track.created_at).toLocaleDateString()}</div>
