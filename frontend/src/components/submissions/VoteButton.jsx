@@ -16,6 +16,7 @@ const { user } = useAuth();
 const toast = useToast();
 
 const [liked,   setLiked]   = useState(initialVote === 'upvote');
+const [bouncing, setBouncing] = useState(false);
 const [upvotes, setUpvotes] = useState(Number(initialCounts?.upvotes) || 0);
 const [loading, setLoading] = useState(false);
 
