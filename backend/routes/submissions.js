@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const authMiddleware = require('../middleware/auth');
+const optionalAuth   = require('../middleware/optionalAuth');
 const db = require('../config/database');
 const { uploadToS3, getSignedUrl } = require('../config/s3');
 const { triggerNotificationEmail } = require('../config/emailTrigger');
@@ -105,7 +106,7 @@ res.status(500).json({ error: { message: 'Failed to submit' } });
 // Works with or without auth — user_vote is null for guests
 // Handles sort/filter query params from old SubmissionList component
 // ─────────────────────────────────────────────────────────────────
-router.get('/track/:trackId', async (req, res) => {
+router.get('/track/:trackId', optionalAuth, async (req, res) => {
 try {
 const { trackId } = req.params;
 const userId = req.user?.id ?? null;
