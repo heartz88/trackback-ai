@@ -26,6 +26,7 @@ try {
 
     const response = await api.get('/tracks', { params });
     setTracks(response.data.tracks);
+    setGridKey(k => k + 1);
 } catch (err) {
     console.error('Failed to fetch tracks:', err);
 } finally {
@@ -45,11 +46,11 @@ const clearFilters = () => setFilters({ search: '', bpm_min: '', bpm_max: '', en
 const activeFilterCount = [filters.bpm_min, filters.bpm_max, filters.energy_level, filters.genre].filter(v => v !== '').length;
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] px-4">
+<div className="min-h-screen bg-[var(--bg-primary)] px-4 animate-fade-in">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     {/* Header */}
-    <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+    <div className="flex items-center justify-between mb-8 flex-wrap gap-4 animate-slide-up stagger-1">
         <div>
         <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-1">Discover Tracks</h1>
         <p className="text-[var(--text-secondary)]">Find the perfect collaboration match</p>
@@ -68,7 +69,7 @@ return (
     </div>
 
     {/* Search bar — always visible */}
-    <div className="mb-4">
+    <div className="mb-4 animate-slide-up stagger-2">
         <div className="relative">
         <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -107,7 +108,7 @@ return (
     )}
 
     {/* Advanced Filter Bar */}
-    <div className="mb-8">
+    <div className="mb-8 animate-slide-up stagger-3">
         <div className="flex items-center justify-between mb-4">
         <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -215,8 +216,12 @@ return (
         )}
         </div>
     ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tracks.map(track => <TrackCard key={track.id} track={track} />)}
+        <div key={gridKey} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tracks.map((track, i) => (
+          <div key={track.id} className={`animate-slide-up stagger-${Math.min(i + 1, 8)}`}>
+            <TrackCard track={track} />
+          </div>
+        ))}
         </div>
     )}
 

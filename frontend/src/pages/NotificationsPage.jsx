@@ -98,14 +98,14 @@ const displayed = filter === 'unread'
 const unreadCount = notifications.filter(n => !n.is_read).length;
 
 return (
-    <div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4">
+    <div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4 animate-fade-in">
     <div className="max-w-2xl mx-auto">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-2 animate-slide-up stagger-1">
           <BackButton />
         </div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 animate-slide-up stagger-2">
         <div>
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">Notifications</h1>
             {unreadCount > 0 && (
@@ -133,7 +133,7 @@ return (
         </div>
 
         {/* Filter tabs */}
-        <div className="flex gap-1 mb-4 p-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]">
+        <div className="flex gap-1 mb-4 p-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] animate-slide-up stagger-3">
         {[
             { key: 'all',    label: `All (${notifications.length})` },
             { key: 'unread', label: `Unread (${unreadCount})` },
@@ -153,7 +153,7 @@ return (
         </div>
 
         {/* List */}
-        <div className="glass-panel rounded-2xl overflow-hidden">
+        <div className="glass-panel rounded-2xl overflow-hidden animate-slide-up stagger-4">
         {loading ? (
             <div className="flex justify-center py-16">
             <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
@@ -176,6 +176,7 @@ return (
                 <Link
                 key={n.id}
                 to={LINK_MAP[n.type] || '/collaborations'}
+                style={{ animationDelay: `${Math.min(i * 0.05, 0.4)}s` }}
                 onClick={() => !n.is_read && markRead(n.id)}
                 className={`flex items-start gap-3 p-4 active:bg-[var(--bg-tertiary)] ${
                 i < displayed.length - 1 ? 'border-b border-[var(--border-color)]' : ''

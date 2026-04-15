@@ -120,22 +120,22 @@ return (
     <div className="flex flex-wrap gap-2 mb-4">
         {track.bpm && (
         <span className="px-2 py-1 bg-primary-500/10 border border-primary-500/30 rounded-full text-xs text-primary-400">
-            🎵 {Math.round(track.bpm)} BPM
+            {Math.round(track.bpm)} BPM
         </span>
         )}
         {track.musical_key && (
         <span className="px-2 py-1 bg-[var(--surface-2)] border border-[var(--border-color)] rounded-full text-xs text-[var(--text-secondary)]">
-            🎹 {track.musical_key}
+            {track.musical_key}
         </span>
         )}
         {track.energy_level && (
         <span className={`px-2 py-1 rounded-full text-xs border ${energyClass(track.energy_level)}`}>
-            ⚡ {track.energy_level}
+            {track.energy_level}
         </span>
         )}
         {track.genre && (
         <span className="px-2 py-1 bg-[var(--surface-2)] border border-[var(--border-color)] rounded-full text-xs text-[var(--text-secondary)]">
-            🎸 {track.genre}
+            {track.genre}
         </span>
         )}
         <span className="px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/30 rounded-full text-xs">

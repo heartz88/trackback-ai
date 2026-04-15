@@ -113,15 +113,15 @@ if (loading) return (
 );
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4">
+<div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4 animate-fade-in">
 <div className="max-w-7xl mx-auto">
-<div className="mb-8">
+<div className="mb-8 animate-slide-up stagger-1">
     <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Collaborations</h1>
     <p className="text-[var(--text-secondary)]">Manage your collaboration requests</p>
 </div>
 
 {/* Tabs */}
-<div className="relative mb-6">
+<div className="relative mb-6 animate-slide-up stagger-2">
     <div className="absolute bottom-0 h-0.5 rounded-full transition-[box-shadow,border-color] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
     style={{ left: activeTab === 'pending' ? 0 : '50%', width: '50%',
         background: 'linear-gradient(90deg, var(--accent-primary, #14b8a6), #06b6d4)',
@@ -156,8 +156,8 @@ return (
         {received.length > 0 && <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full">{received.length} pending</span>}
         </h2>
         <div className="space-y-4">
-        {received.map((req) => (
-            <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-yellow-500">
+        {received.map((req, i) => (
+            <div key={req.id} className={`glass-panel p-5 rounded-2xl border-l-4 border-l-yellow-500 animate-slide-up stagger-${Math.min(i + 1, 8)}`}>
             <div className="flex items-start space-x-4 mb-4">
                 <Link to={`/profile/${req.collaborator_name}`} className="flex-shrink-0">
                 <div className="w-11 h-11 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
@@ -214,8 +214,8 @@ return (
         {sent.length > 0 && <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full">{sent.length} pending</span>}
         </h2>
         <div className="space-y-4">
-        {sent.map((req) => (
-            <div key={req.id} className="glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500">
+        {sent.map((req, i) => (
+            <div key={req.id} className={`glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500 animate-slide-up stagger-${Math.min(i + 1, 8)}`}>
             <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
                 <Link to={`/tracks/${toSlug(req.track_title)}`} className="text-[var(--text-primary)] font-semibold hover:text-primary-400">"{req.track_title}"</Link>

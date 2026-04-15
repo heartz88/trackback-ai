@@ -14,9 +14,9 @@ const [form, setForm] = useState({
 title:          track.title || '',
 description:    track.description || '',
 genre:          track.genre || '',
-desired_skills: Array.isArray(track.desired_skills) 
-? track.desired_skills.join(', ')
-: track.desired_skills || '',
+desired_skills: Array.isArray(track.desired_skills)
+                    ? track.desired_skills.join(', ')
+                    : track.desired_skills || '',
 });
 
 const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -227,11 +227,11 @@ if (loading) return (
 );
 
 return (
-<div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4">
+<div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4 animate-fade-in">
     <div className="max-w-7xl mx-auto">
 
     {/* Header */}
-    <div className="flex items-center justify-between mb-10">
+    <div className="flex items-center justify-between mb-10 animate-slide-up stagger-1">
         <div>
         <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">My Tracks</h1>
         <p className="text-[var(--text-secondary)]">Manage your uploaded music and collaborations</p>
@@ -266,8 +266,8 @@ return (
         </div>
     ) : (
         <div className="space-y-5">
-        {tracks.map((track) => (
-            <div key={track.id} className="glass-panel rounded-2xl overflow-hidden hover:border-primary-500/40 transition-all">
+        {tracks.map((track, i) => (
+            <div key={track.id} className={`glass-panel rounded-2xl overflow-hidden hover:border-primary-500/40 transition-all animate-slide-up stagger-${Math.min(i + 1, 8)}`}>
             <div className="p-6 pb-4">
                 <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex-1 min-w-0">

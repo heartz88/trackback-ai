@@ -199,20 +199,20 @@ return (
     <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-primary-600/5" />
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 lg:pt-32 lg:pb-32">
         <div className="text-center max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-full mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500/10 border border-primary-500/20 rounded-full mb-8 animate-slide-down">
             <span className="text-sm font-medium text-primary-400">AI-Powered Music Collaboration</span>
         </div>
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] mb-6 leading-tight">
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] mb-6 leading-tight animate-slide-up stagger-1">
             Turn Your Loops Into
             <br />
             <span className="bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
             Finished Tracks
             </span>
         </h1>
-        <p className="text-xl lg:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl lg:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto leading-relaxed animate-slide-up stagger-2">
             Connect with producers who have the skills you need to complete your unfinished music
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-slide-up stagger-3">
             <Link
             to="/register"
             className="px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-500 text-white text-lg font-semibold rounded-xl shadow-lg shadow-primary-500/25"
@@ -226,7 +226,7 @@ return (
             Explore Tracks
             </Link>
         </div>
-        <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-8 border-t border-[var(--border-color)]">
+        <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-8 border-t border-[var(--border-color)] animate-slide-up stagger-4">
             <div>
             <div className="text-3xl font-bold text-primary-400 mb-1">84%</div>
             <div className="text-sm text-[var(--text-tertiary)]">BPM Accuracy</div>
@@ -247,7 +247,7 @@ return (
     {/* How it works */}
     <section className="py-24 bg-[var(--bg-secondary)]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 animate-fade-in">
         <h2 className="text-4xl lg:text-5xl font-bold text-[var(--text-primary)] mb-4">How It Works</h2>
         <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
             Simple workflow to transform your unfinished ideas into complete tracks
@@ -291,7 +291,7 @@ return (
     {/* Features */}
     <section className="py-24">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 animate-fade-in">
         <h2 className="text-4xl lg:text-5xl font-bold text-[var(--text-primary)] mb-4">Powerful Features</h2>
         <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
             Everything you need to collaborate and complete your music
@@ -306,7 +306,7 @@ return (
             { icon: 'M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122', title: 'Waveform Preview', desc: 'Visual audio playback with synchronized waveform display' },
             { icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4', title: 'Advanced Filtering', desc: 'Find exactly what you need with precise BPM, genre, and energy filters' },
         ].map((f, i) => (
-            <div key={i} className="p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-colors">
+            <div key={i} className={`p-6 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-color)] hover:border-primary-500/50 transition-colors animate-slide-up stagger-${Math.min(i + 1, 8)}`}>
             <div className="w-12 h-12 bg-primary-500/10 rounded-xl flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={f.icon} />
@@ -359,7 +359,7 @@ return (
     {/* Final CTA */}
     <section className="py-24">
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="bg-gradient-to-br from-primary-500/10 to-primary-600/10 rounded-3xl p-12 border border-primary-500/20">
+        <div className="bg-gradient-to-br from-primary-500/10 to-primary-600/10 rounded-3xl p-12 border border-primary-500/20 animate-scale-in">
         <h2 className="text-4xl lg:text-5xl font-bold text-[var(--text-primary)] mb-4">
             Ready to Complete Your Tracks?
         </h2>

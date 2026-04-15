@@ -239,10 +239,10 @@ return (
 
         {/* MIR tags */}
         <div className="tdp-tags">
-        {track.bpm          && <span className="tdp-tag tdp-tag-bpm">🎵 {Math.round(track.bpm)} BPM</span>}
-        {track.musical_key  && <span className="tdp-tag tdp-tag-key">🎹 {track.musical_key}</span>}
-        {track.energy_level && <span className={energyClass(track.energy_level)}>⚡ {track.energy_level}</span>}
-        {track.genre        && <span className="tdp-tag tdp-tag-genre">🎸 {track.genre}</span>}
+        {track.bpm          && <span className="tdp-tag tdp-tag-bpm">{Math.round(track.bpm)} BPM</span>}
+        {track.musical_key  && <span className="tdp-tag tdp-tag-key">{track.musical_key}</span>}
+        {track.energy_level && <span className={energyClass(track.energy_level)}>{track.energy_level}</span>}
+        {track.genre        && <span className="tdp-tag tdp-tag-genre">{track.genre}</span>}
         </div>
 
         {track.description && (<>
@@ -266,7 +266,7 @@ return (
         {/* Live leaderboard card */}
         {submissions.length > 0 && (
         <div className="tdp-action-card sp-leaderboard-card">
-            <div className="section-label">🏆 Leaderboard</div>
+            <div className="section-label">Leaderboard</div>
             <div className="sp-leaderboard">
             {[...submissions]
                 .sort((a,b) => (parseInt(b.upvotes)||0) - (parseInt(a.upvotes)||0))
@@ -340,7 +340,7 @@ return (
             </Link>
             {submissions.length > 0 && (
                 <button onClick={handleCompleteTrack} className="btn-primary" style={{ width:'100%' }}>
-                ✅ Mark as Completed
+                Mark as Completed
                 </button>
             )}
             </div>
@@ -352,10 +352,10 @@ return (
         <div className="tdp-action-card sp-guidelines">
             <div className="section-label">📋 Guidelines</div>
             <ul className="sp-guidelines-list">
-            <li>✅ Submit only your own work</li>
-            <li>✅ Describe what you changed</li>
-            <li>✅ Max file size: 50 MB</li>
-            <li>✅ MP3, WAV or FLAC only</li>
+            <li>Submit only your own work</li>
+            <li>Describe what you changed</li>
+            <li>Max file size: 50 MB</li>
+            <li>MP3, WAV or FLAC only</li>
             <li>⭐ Top voted gets featured</li>
             </ul>
         </div>
@@ -393,7 +393,7 @@ return (
             className="btn-primary"
             style={{ fontSize:13, padding:'7px 14px' }}
         >
-            ✅ Pick Winner
+            Pick Winner
         </button>
         )}
     </div>

@@ -200,10 +200,10 @@ return (
         </div>
 
         <div className="tdp-tags">
-        {track.bpm          && <span className="tdp-tag tdp-tag-bpm">🎵 {Math.round(track.bpm)} BPM</span>}
-        {track.musical_key  && <span className="tdp-tag tdp-tag-key">🎹 {track.musical_key}</span>}
-        {track.energy_level && <span className={energyClass(track.energy_level)}>⚡ {track.energy_level}</span>}
-        {track.genre        && <span className="tdp-tag tdp-tag-genre">🎸 {track.genre}</span>}
+        {track.bpm          && <span className="tdp-tag tdp-tag-bpm">{Math.round(track.bpm)} BPM</span>}
+        {track.musical_key  && <span className="tdp-tag tdp-tag-key"> {track.musical_key}</span>}
+        {track.energy_level && <span className={energyClass(track.energy_level)}>{track.energy_level}</span>}
+        {track.genre        && <span className="tdp-tag tdp-tag-genre"> {track.genre}</span>}
         </div>
 
         {track.description && (<>
