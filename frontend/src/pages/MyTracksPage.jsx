@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useConfirm, useToast } from '../components/common/Toast';
+import WaveformPlayer from '../components/tracks/WaveformPlayer';
 import api from '../services/api';
 
 const toSlug = (title) => title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '';
@@ -209,12 +210,7 @@ return (
 
                 {/* Audio Player */}
                 {track.audio_url && (
-                <audio
-                    controls
-                    className="w-full rounded-lg h-10 mb-4"
-                    style={{ filter: 'invert(1) hue-rotate(180deg)' }}
-                    src={track.audio_url}
-                />
+                <WaveformPlayer audioUrl={track.audio_url} height={56} />
                 )}
             </div>
 
