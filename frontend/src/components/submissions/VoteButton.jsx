@@ -15,12 +15,11 @@ trackOwnerId,
 const { user } = useAuth();
 const toast = useToast();
 
-const [liked,   setLiked]   = useState(false);
+const [liked,   setLiked]   = useState(initialVote === 'upvote');
 const [upvotes, setUpvotes] = useState(Number(initialCounts?.upvotes) || 0);
 const [loading, setLoading] = useState(false);
 
-// Sync liked state whenever initialVote changes (including on mount and
-// after parent finishes fetching — covers the "grey on load" bug)
+// Sync when parent re-fetches and passes a new initialVote
 useEffect(() => {
 setLiked(initialVote === 'upvote');
 }, [initialVote]);
@@ -52,6 +51,7 @@ const prevLiked   = liked;
 const prevUpvotes = upvotes;
 const newLiked    = !liked;
 const newUpvotes  = newLiked ? upvotes + 1 : upvotes - 1;
+if (newLiked) { setBouncing(true); setTimeout(() => setBouncing(false), 400); }
 
 setLiked(newLiked);
 setUpvotes(newUpvotes);
@@ -86,7 +86,7 @@ const blockedReason = getBlockedReason();
 
 return (
 <button
-    className={`sp-like-btn ${liked ? 'liked' : ''} ${blocked ? 'blocked' : ''} ${loading ? 'loading' : ''}`}
+    className={`sp-like-btn ${liked ? 'liked' : ''} ${blocked ? 'blocked' : ''} ${loading ? 'loading' : ''} ${bouncing ? 'heart-bounce' : ''}`}
     onClick={handleClick}
     disabled={loading}
     aria-label={liked ? 'Unlike' : 'Like'}

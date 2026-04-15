@@ -102,7 +102,10 @@ return (
         {/* MIR Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
             {track.bpm && (
-                <div className="px-3 py-1.5 bg-primary-500/10 border border-primary-500/30 rounded-full text-xs text-primary-300 font-medium">
+                <div
+                    className="px-3 py-1.5 bg-primary-500/10 border border-primary-500/30 rounded-full text-xs text-primary-300 font-medium bpm-pulse"
+                    style={{ animationDuration: `${(60 / track.bpm).toFixed(2)}s` }}
+                >
                     {Math.round(track.bpm)} BPM
                 </div>
             )}

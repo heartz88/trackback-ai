@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Footer from './components/common/Footer';
 import Navigation from './components/common/Navigation';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -106,6 +106,17 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
   }, { capture: true });
 })();
 
+
+// Fades out old page, fades in new one on route change
+function PageTransition({ children }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="animate-fade-in">
+      {children}
+    </div>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -115,6 +126,7 @@ function App() {
           <div className="flex flex-col min-h-screen bg-[var(--bg-primary)]">
             <Navigation />
             <main className="flex-grow pt-20">
+              <PageTransition>
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -136,6 +148,7 @@ function App() {
                 <Route path="/resend-verification" element={<ResendVerificationPage />} />
                 <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
               </Routes>
+              </PageTransition>
             </main>
             <Footer />
             <ToastContainer />

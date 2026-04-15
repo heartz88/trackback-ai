@@ -5091,6 +5091,38 @@ transition: transform 0.15s ease;
 .sp-like-btn.liked .sp-heart-icon {
 transform: scale(1.15);
 }
+/* ── Heart bounce on like ─────────────────────────────────────── */
+@keyframes heartBounce {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.45); }
+  50%  { transform: scale(1.15); }
+  70%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+.sp-like-btn.heart-bounce .sp-heart-icon {
+  animation: heartBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── BPM pulse — border glows at the track tempo ─────────────── */
+/* animationDuration is set inline from JS: 60/bpm seconds        */
+@keyframes bpmPulse {
+  0%, 100% {
+    border-color: rgba(20, 184, 166, 0.3);
+    box-shadow: none;
+  }
+  50% {
+    border-color: rgba(20, 184, 166, 0.8);
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.35);
+  }
+}
+
+.bpm-pulse {
+  animation: bpmPulse var(--bpm-duration, 0.5s) ease-in-out infinite;
+  animation-duration: inherit;
+}
+
+
 
 .sp-like-count {
 font-variant-numeric: tabular-nums;
