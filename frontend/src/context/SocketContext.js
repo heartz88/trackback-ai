@@ -79,7 +79,6 @@ const handleNewMessage = (message) => {
 // Handle message deleted - let it pass through to components
 const handleMessageDeleted = (data) => {
     // This event will be handled by individual components
-    // No need to do anything here
 };
 
 const handleCollaborationRequest = (data) => {
