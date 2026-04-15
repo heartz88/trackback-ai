@@ -5,7 +5,8 @@ import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 export function useConversations() {
-const { username } = useParams();
+const { username: rawUsername } = useParams();
+const username = rawUsername ? decodeURIComponent(rawUsername) : undefined;
 const [searchParams] = useSearchParams();
 const navigate = useNavigate();
 const { user } = useAuth();
