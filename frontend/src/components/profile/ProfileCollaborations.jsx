@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 
+const toSlug = (title) => title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '';
+
 export default function ProfileCollaborations({ collaborations, profile, currentUser, isOwnProfile }) {
 if (collaborations.length === 0) {
 return (
@@ -62,7 +64,7 @@ return (
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                 {isOwnerOfTrack ? 'collaborated on ' : 'collaborating on '}
                 <Link 
-                    to={`/tracks/${collab.track_id}`} 
+                    to={`/tracks/${toSlug(collab.track_title)}`} 
                     className="text-primary-400 hover:text-primary-300 font-medium"
                 >
                     "{collab.track_title}"
@@ -72,7 +74,7 @@ return (
             </div>
             <div className="flex items-center gap-2">
             <Link 
-                to={`/tracks/${collab.track_id}/submissions`} 
+                to={`/tracks/${toSlug(collab.track_title)}/submissions`} 
                 className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition-[box-shadow,border-color]"
             >
                 Submissions
