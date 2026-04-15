@@ -122,9 +122,14 @@ toast.success('Submission uploaded! 🎵');
 };
 
 const handleCompleteTrack = async () => {
+const winnerName = topSubmission?.collaborator_name;
+const winnerScore = topScore;
+const winnerMsg = winnerName
+? `"${winnerName}" is currently leading with ${winnerScore} vote${winnerScore !== 1 ? 's' : ''}. Their version will be selected as the final version.`
+: 'The highest voted submission will be selected as the final version.';
 const ok = await confirm({
     title: 'Mark as completed?',
-    message: 'The highest voted submission will be selected as the final version.',
+    message: winnerMsg,
     confirmText: 'Complete Track',
 });
 if (!ok) return;
