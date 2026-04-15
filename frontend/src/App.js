@@ -110,8 +110,9 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 // Fades out old page, fades in new one on route change
 function PageTransition({ children }) {
   const location = useLocation();
+  const isMessages = location.pathname.startsWith('/messages');
   return (
-    <div key={location.pathname} className="animate-fade-in">
+    <div key={isMessages ? 'messages' : location.pathname} className={isMessages ? undefined : 'animate-fade-in'}>
       {children}
     </div>
   );
