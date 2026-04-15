@@ -13,7 +13,7 @@ const [newTrackBanner, setNewTrackBanner] = useState(false);
 const [filters, setFilters] = useState({ search: '', bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
 const [loading, setLoading] = useState(true);
 const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [gridKey, setGridKey] = useState(0);
+const [gridKey, setGridKey] = useState(0);
 
 const fetchTracks = useCallback(async () => {
 setLoading(true);
@@ -219,9 +219,9 @@ return (
     ) : (
         <div key={gridKey} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tracks.map((track, i) => (
-          <div key={track.id} className={`animate-slide-up stagger-${Math.min(i + 1, 8)}`}>
-            <TrackCard track={track} />
-          </div>
+        <div key={track.id} className={`animate-slide-up stagger-${Math.min(i + 1, 8)}`}>
+        <TrackCard track={track} />
+        </div>
         ))}
         </div>
     )}
