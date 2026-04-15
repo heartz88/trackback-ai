@@ -138,7 +138,7 @@ return (
     {/* Header */}
     <div className="mb-8">
     <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
-        🏆 Community Showcase
+        Community Showcase
     </h1>
     <p className="text-[var(--text-secondary)]">
         Tracks that started as unfinished loops — completed by the community.
