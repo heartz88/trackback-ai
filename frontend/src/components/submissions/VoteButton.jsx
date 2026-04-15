@@ -15,11 +15,12 @@ trackOwnerId,
 const { user } = useAuth();
 const toast = useToast();
 
-const [liked,   setLiked]   = useState(initialVote === 'upvote');
+const [liked,   setLiked]   = useState(false);
 const [upvotes, setUpvotes] = useState(Number(initialCounts?.upvotes) || 0);
 const [loading, setLoading] = useState(false);
 
-// Sync when parent re-fetches and passes a new initialVote
+// Sync liked state whenever initialVote changes (including on mount and
+// after parent finishes fetching — covers the "grey on load" bug)
 useEffect(() => {
 setLiked(initialVote === 'upvote');
 }, [initialVote]);

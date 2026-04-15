@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -16,9 +16,16 @@ const commentSectionRef = useRef(null);
 const [expanded, setExpanded] = useState(false);
 const [showComments, setShowComments] = useState(false);
 const [commentCount, setCommentCount] = useState(0);
-const [liked, setLiked] = useState(track.winning_submission?.user_vote === 'upvote');
+const [liked, setLiked] = useState(false);
 const [likeCount, setLikeCount] = useState(parseInt(track.winning_submission?.upvotes) || 0);
 const [likeLoading, setLikeLoading] = useState(false);
+
+// Sync liked/likeCount whenever the parent passes updated submission data
+// (fixes the "grey on load then red on reclick" bug)
+useEffect(() => {
+setLiked(track.winning_submission?.user_vote === 'upvote');
+setLikeCount(parseInt(track.winning_submission?.upvotes) || 0);
+}, [track.winning_submission?.user_vote, track.winning_submission?.upvotes]);
 
 const winner = track.winning_submission;
 const isSubmitter = user && winner && user.id === Number(winner.collaborator_id);
