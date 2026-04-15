@@ -13,6 +13,7 @@ const [newTrackBanner, setNewTrackBanner] = useState(false);
 const [filters, setFilters] = useState({ search: '', bpm_min: '', bpm_max: '', energy_level: '', genre: '' });
 const [loading, setLoading] = useState(true);
 const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [gridKey, setGridKey] = useState(0);
 
 const fetchTracks = useCallback(async () => {
 setLoading(true);
