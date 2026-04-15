@@ -115,7 +115,6 @@ return (
                 <NavLink to="/my-tracks">My Tracks</NavLink>
                 <NavLink to="/collaborations">Collabs</NavLink>
                 <NavLink to="/messages" badge={unreadCount}>Messages</NavLink>
-                <NavLink to="/community">Community</NavLink>
             </div>
             )}
         </div>
@@ -206,12 +205,7 @@ return (
             </>
             ) : (
             <>
-                <Link 
-                to="/community" 
-                className="px-4 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--accent-primary)] transition-colors"
-                >Community
-                </Link>
-                <Link 
+                <Link
                 to="/login" 
                 className="px-4 py-2 text-[var(--text-secondary)] font-medium hover:text-[var(--accent-primary)] transition-colors"
                 >
