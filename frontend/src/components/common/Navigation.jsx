@@ -351,7 +351,6 @@ return (
                         <MenuItem to="/my-tracks" onClick={closeMenu}>My Tracks</MenuItem>
                         <MenuItem to="/collaborations" onClick={closeMenu}>Collaborations</MenuItem>
                         <MenuItem to="/messages" badge={unreadCount} onClick={closeMenu}>Messages</MenuItem>
-                        <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
                         <MenuItem to="/edit-profile" onClick={closeMenu}>Settings</MenuItem>
                         
                         <div className="pt-4 mt-4 border-t border-[var(--border-color)]">
@@ -369,7 +368,6 @@ return (
                     </>
                 ) : (
                     <>
-                        <MenuItem to="/community" onClick={closeMenu}>Community</MenuItem>
                         <MenuItem to="/login" onClick={closeMenu}>Sign In</MenuItem>
                         <MenuItem to="/register" onClick={closeMenu}>Join Now</MenuItem>
                     </>
