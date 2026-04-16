@@ -124,7 +124,7 @@ return (
 <div className={`comment-item ${isReply ? 'reply' : ''}`}>
     {/* Avatar */}
     <div className="comment-avatar">
-    <Avatar user={comment.user} size={40} />
+    <Avatar user={comment.user_avatar_url} size={40} />
     </div>
 
     <div className="comment-content">
