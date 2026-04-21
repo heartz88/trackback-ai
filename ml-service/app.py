@@ -143,7 +143,10 @@ def analyze():
         backend_url = f"{BACKEND_API_URL}/api/tracks/{data['track_id']}/analysis"
         print(f"📤 Sending results to backend: {backend_url}")
         
-        response = requests.put(backend_url, json=results, timeout=10)
+        headers = {
+            'x-internal-secret': os.getenv('INTERNAL_API_SECRET', '')
+        }
+        response = requests.put(backend_url, json=results, headers=headers, timeout=10)
         response.raise_for_status()
         
         print(f"✅ Backend updated successfully")
