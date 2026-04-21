@@ -228,7 +228,7 @@ return (
         </div>
         <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-8 border-t border-[var(--border-color)] animate-slide-up stagger-4">
             <div>
-            <div className="text-3xl font-bold text-primary-400 mb-1">84%</div>
+            <div className="text-3xl font-bold text-primary-400 mb-1">98%</div>
             <div className="text-sm text-[var(--text-tertiary)]">BPM Accuracy</div>
             </div>
             <div>

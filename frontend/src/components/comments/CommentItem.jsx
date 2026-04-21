@@ -4,15 +4,6 @@ import api from '../../services/api';
 import Avatar from '../common/Avatar';
 import { useConfirm, useToast } from '../common/Toast';
 
-/**
- * CommentItem
- *
- * Like system:
- * - Uses comment_likes table on backend (UNIQUE per user+comment)
- * - One like per user — clicking again unlikes (toggle)
- * - Heart fills when liked, count updates optimistically
- * - Accepts `user_liked` and `likes` from the comments fetch
- */
 const CommentItem = ({ comment, onDelete, onUpdate, isReply = false }) => {
 const toast   = useToast();
 const confirm = useConfirm();

@@ -11,12 +11,20 @@ password_hash VARCHAR(255) NOT NULL,
 bio TEXT,
 skills TEXT[], -- Array of skills like ['mixing', 'mastering', 'production']
 
--- New profile columns (added with IF NOT EXISTS checks)
+-- New profile columns for enhanced user profiles
 social_links JSONB DEFAULT '{}',
 reset_token VARCHAR(255),
 reset_token_expiry TIMESTAMP,
 looking_for_collab BOOLEAN DEFAULT true,
 last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+email_notifications JSONB DEFAULT '{"enabled": true, "vote": false, "comment": true, "message": false, "submission": true, "collaboration_request": true, "collaboration_response": true}'::JSONB,
+equipment TEXT[] DEFAULT '{}',
+avatar_url TEXT,
+preferred_genres TEXT[] DEFAULT '{}',
+avatar_s3_key TEXT,
+email_verified BOOLEAN DEFAULT false,
+verification_token VARCHAR(255),
+verification_token_expiry TIMESTAMP,
 
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -107,11 +115,10 @@ status VARCHAR(20) DEFAULT 'pending_review', -- 'pending_review', 'approved', 'r
 upvotes INTEGER DEFAULT 0,
 downvotes INTEGER DEFAULT 0,
 
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+version_number INTEGER DEFAULT 1,
 
--- Prevent duplicate submissions from same collaborator
-UNIQUE(track_id, collaborator_id)
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Votes on submissions
