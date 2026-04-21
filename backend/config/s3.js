@@ -47,7 +47,6 @@ try {
 }
 };
 
-// expiresIn is optional — auto-detected from key prefix if omitted
 const getSignedUrl = (key, expiresIn) => {
 try {
     if (!key) return null;
