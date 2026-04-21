@@ -45,11 +45,19 @@ const result = await db.query(
 
 const comment = result.rows[0];
 
-const userResult = await db.query('SELECT username, email FROM users WHERE id = $1', [userId]);
+const userResult = await db.query('SELECT username, email, avatar_url, avatar_s3_key FROM users WHERE id = $1', [userId]);
 
+const { getSignedUrl } = require('../config/s3');
 const commentWithUser = {
     ...comment,
-    user: { id: userId, ...userResult.rows[0] },
+    user: {
+        id: userId,
+        username:   userResult.rows[0].username,
+        email:      userResult.rows[0].email,
+        avatar_url: userResult.rows[0].avatar_s3_key
+            ? getSignedUrl(userResult.rows[0].avatar_s3_key)
+            : userResult.rows[0].avatar_url,
+    },
     likes: 0,
     user_liked: false,
     replies: []
@@ -120,6 +128,8 @@ const result = await db.query(
             u.username,
             u.email,
             u.id AS user_id,
+            u.avatar_url,
+            u.avatar_s3_key,
             (SELECT COUNT(*)::int FROM comment_likes WHERE comment_id = c.id) AS likes,
             (SELECT COUNT(*)::int FROM comment_likes WHERE comment_id = c.id AND user_id = $2) > 0 AS user_liked
     FROM comments c
@@ -143,7 +153,14 @@ result.rows.forEach(row => {
     created_at:    row.created_at,
     updated_at:    row.updated_at,
     parent_id:     row.parent_id,
-    user: { id: row.user_id, username: row.username, email: row.email },
+    user: {
+        id:          row.user_id,
+        username:    row.username,
+        email:       row.email,
+        avatar_url:  row.avatar_s3_key
+            ? require('../config/s3').getSignedUrl(row.avatar_s3_key)
+            : row.avatar_url,
+    },
     replies: []
     };
     commentsMap.set(row.id, comment);

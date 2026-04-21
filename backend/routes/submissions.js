@@ -116,7 +116,9 @@ const result = await db.query(
     `SELECT s.id, s.track_id, s.collaborator_id, s.title, s.description,
             s.s3_key, s.file_format, s.status, s.created_at, s.updated_at,
             COALESCE(s.version_number, 1) AS version_number,
-            u.username AS collaborator_name,
+            u.username   AS collaborator_name,
+            u.avatar_url AS avatar_url,
+            u.avatar_s3_key AS avatar_s3_key,
             t.user_id  AS track_owner_id,
             (SELECT COUNT(*)::int FROM votes WHERE submission_id = s.id AND vote_type = 'upvote') AS upvotes,
             (SELECT vote_type FROM votes WHERE submission_id = s.id AND user_id = $2 LIMIT 1) AS user_vote
@@ -131,6 +133,7 @@ const result = await db.query(
 const submissions = result.rows.map(sub => ({
     ...sub,
     audio_url: getSignedUrl(sub.s3_key),
+    avatar_url: sub.avatar_s3_key ? getSignedUrl(sub.avatar_s3_key) : sub.avatar_url,
     score: sub.upvotes || 0,
 }));
 
