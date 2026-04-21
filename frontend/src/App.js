@@ -7,7 +7,6 @@ import { ConfirmModal, ToastContainer } from './components/common/Toast';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import CollaborationsPage from './pages/CollaborationsPage';
-import CommunityPage from './pages/CommunityPage';
 import DiscoverPage from './pages/DiscoverPage';
 import EditProfilePage from './pages/EditProfilePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -138,7 +137,6 @@ function App() {
                 <Route path="/collaborations" element={<ProtectedRoute><CollaborationsPage /></ProtectedRoute>} />
                 <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
                 <Route path="/messages/:conversationId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-                <Route path="/community" element={<CommunityPage />} />
                 <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
                 <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/tracks/:trackSlug" element={<ProtectedRoute><TrackDetailPage /></ProtectedRoute>} />
