@@ -69,7 +69,7 @@ def analyze_audio(file_path):
         del onset_env
 
         # 4. KEY DETECTION (The Memory Hog)
-        # Optimization: Only use the first 90 seconds for Key analysis.
+        # Only use the first 90 seconds for Key analysis.
         # This prevents RAM spikes on long tracks like your 3:10 example.
         y_for_key = y[:sr*90] if len(y) > sr*90 else y
         chroma = librosa.feature.chroma_cqt(y=y_for_key, sr=sr)
