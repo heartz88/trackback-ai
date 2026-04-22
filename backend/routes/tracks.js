@@ -779,11 +779,11 @@ if (track.status === 'completed') {
 
 // Find the submission with the most votes
 const winnerResult = await db.query(
-    `SELECT s.id, s.collaborator_id, s.upvote_count, u.username
+    `SELECT s.id, s.collaborator_id, s.upvotes, u.username
     FROM submissions s
     JOIN users u ON s.collaborator_id = u.id
     WHERE s.track_id = $1
-    ORDER BY s.upvote_count DESC, s.created_at ASC
+    ORDER BY s.upvotes DESC, s.created_at ASC
     LIMIT 1`,
     [id]
 );
@@ -821,7 +821,7 @@ res.json({
     winner: {
     submissionId: winner.id,
     username: winner.username,
-    votes: winner.upvote_count
+    votes: winner.upvotes
     }
 });
 } catch (error) {
