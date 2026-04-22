@@ -78,7 +78,7 @@ try {
     const s3Key = `tracks/${userId}/${timestamp}_${safeFileName}`;
 
     const s3Result = await uploadToS3(req.file, s3Key);
-    
+
     let skillsArray = [];
     if (desired_skills) {
     if (typeof desired_skills === 'string') {
@@ -114,11 +114,11 @@ try {
     })
     .then(() => {})
     .catch((mlError) => {
-    console.error(`ML service request error for track ${track.id}:`, mlError.message);
-    if (mlError.code !== 'ECONNABORTED' && mlError.message !== 'timeout of 120000ms exceeded') {
+        console.error(`ML service request error for track ${track.id}:`, mlError.message);
+        if (mlError.code !== 'ECONNABORTED' && mlError.message !== 'timeout of 120000ms exceeded') {
         db.query('UPDATE tracks SET analysis_status = $1 WHERE id = $2', ['failed', track.id])
-        .catch(err => console.error('Error updating track status:', err));
-    }
+            .catch(err => console.error('Error updating track status:', err));
+        }
     });
 
     // Emit real-time event so Discover page updates live
@@ -504,16 +504,14 @@ console.error('Get user tracks by ID error:', error);
 res.status(500).json({ error: { message: 'Failed to fetch tracks' } });
 }
 });
+
 // ─────────────────────────────────────────────────────────────────
 // GET /by-slug/:slug — Fetch track by URL slug (title-based)
-// Slug format: title lowercased, spaces→hyphens, non-alphanumeric stripped
 // ─────────────────────────────────────────────────────────────────
 router.get('/by-slug/:slug', async (req, res) => {
 try {
 const { slug } = req.params;
 
-// Convert slug back to a search pattern:
-// "my-cool-track" → search for title that slugifies to this
 const result = await db.query(
     `SELECT t.*,
             u.username,
@@ -524,7 +522,7 @@ const result = await db.query(
     FROM tracks t
     JOIN users u ON t.user_id = u.id
     WHERE LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g')) = $1
-       OR LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g')) = LOWER($1)
+        OR LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g')) = LOWER($1)
     ORDER BY t.created_at DESC
     LIMIT 1`,
     [slug]
@@ -541,7 +539,6 @@ track.duration = track.duration ? Math.round(track.duration) : null;
 track.bpm = track.bpm ? Math.round(track.bpm) : null;
 track.desired_skills = track.desired_skills || [];
 track.musical_key = track.musical_key || null;
-// Include the slug so the frontend can use it
 track.slug = slug;
 
 res.json({ track });
@@ -551,6 +548,9 @@ res.status(500).json({ error: { message: 'Failed to fetch track' } });
 }
 });
 
+// ─────────────────────────────────────────────────────────────────
+// GET /:id — Single track by ID
+// ─────────────────────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
 try {
 const { id } = req.params;
@@ -574,7 +574,6 @@ if (result.rows.length === 0) {
 
 const track = result.rows[0];
 
-// Refresh owner avatar URL if exists
 if (track.avatar_s3_key) {
     track.avatar_url = getSignedUrl(track.avatar_s3_key);
 }
@@ -584,7 +583,6 @@ track.duration = track.duration ? Math.round(track.duration) : null;
 track.bpm = track.bpm ? Math.round(track.bpm) : null;
 track.desired_skills = track.desired_skills || [];
 track.musical_key = track.musical_key || null;
-// Generate a URL-friendly slug from the title
 track.slug = track.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 res.json({ track });
@@ -602,12 +600,11 @@ res.status(500).json({
 // ─────────────────────────────────────────────────────────────────
 // PUT /:id/analysis — ML service callback
 // ─────────────────────────────────────────────────────────────────
-// Analysis endpoint - protected by internal secret shared with ML service
 router.put('/:id/analysis', async (req, res) => {
-    const internalSecret = req.headers['x-internal-secret'];
-    if (!internalSecret || internalSecret !== process.env.INTERNAL_API_SECRET) {
-        return res.status(403).json({ error: { message: 'Unauthorized' } });
-    }
+const internalSecret = req.headers['x-internal-secret'];
+if (!internalSecret || internalSecret !== process.env.INTERNAL_API_SECRET) {
+return res.status(403).json({ error: { message: 'Unauthorized' } });
+}
 try {
 const { id } = req.params;
 const { bpm, energy_level, duration, key, musical_key } = req.body;
@@ -753,6 +750,87 @@ res.status(500).json({
 });
 
 // ─────────────────────────────────────────────────────────────────
+// POST /:id/complete — Mark track as completed (owner only)
+// ─────────────────────────────────────────────────────────────────
+router.post('/:id/complete', authMiddleware, async (req, res) => {
+try {
+const { id } = req.params;
+const userId = req.user.id;
+
+// Verify ownership
+const trackResult = await db.query(
+    'SELECT id, user_id, status FROM tracks WHERE id = $1',
+    [id]
+);
+
+if (trackResult.rows.length === 0) {
+    return res.status(404).json({ error: { message: 'Track not found' } });
+}
+
+const track = trackResult.rows[0];
+
+if (track.user_id !== userId) {
+    return res.status(403).json({ error: { message: 'Only the track owner can mark it as completed' } });
+}
+
+if (track.status === 'completed') {
+    return res.status(400).json({ error: { message: 'Track is already completed' } });
+}
+
+// Find the submission with the most votes
+const winnerResult = await db.query(
+    `SELECT s.id, s.collaborator_id, s.upvote_count, u.username
+    FROM submissions s
+    JOIN users u ON s.collaborator_id = u.id
+    WHERE s.track_id = $1
+    ORDER BY s.upvote_count DESC, s.created_at ASC
+    LIMIT 1`,
+    [id]
+);
+
+if (winnerResult.rows.length === 0) {
+    return res.status(400).json({ error: { message: 'No submissions to complete' } });
+}
+
+const winner = winnerResult.rows[0];
+
+// Update track status and set winning submission
+const updatedTrack = await db.query(
+    `UPDATE tracks
+    SET status = 'completed',
+        completed_submission_id = $1,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = $2
+    RETURNING *`,
+    [winner.id, id]
+);
+
+// Notify via Socket.IO
+try {
+    const { io } = require('../server');
+    io.emit('track:completed', {
+    trackId: parseInt(id),
+    winningSubmissionId: winner.id,
+    winnerUsername: winner.username
+    });
+} catch (e) { /* non-critical */ }
+
+res.json({
+    message: 'Track marked as completed',
+    track: updatedTrack.rows[0],
+    winner: {
+    submissionId: winner.id,
+    username: winner.username,
+    votes: winner.upvote_count
+    }
+});
+} catch (error) {
+console.error('Complete track error:', error);
+res.status(500).json({ error: { message: 'Failed to complete track' } });
+}
+});
+
+// ─────────────────────────────────────────────────────────────────
 // DELETE /:id — Delete track and its S3 file
 // ─────────────────────────────────────────────────────────────────
 router.delete('/:id', authMiddleware, async (req, res) => {
@@ -790,7 +868,9 @@ res.status(500).json({
 }
 });
 
-// POST /:id/reanalyze — re-trigger ML analysis for stuck tracks
+// ─────────────────────────────────────────────────────────────────
+// POST /:id/reanalyze — Re-trigger ML analysis for stuck tracks
+// ─────────────────────────────────────────────────────────────────
 router.post('/:id/reanalyze', authMiddleware, async (req, res) => {
 try {
 const { id } = req.params;
@@ -819,10 +899,10 @@ axios.post(`${mlServiceUrl}/analyze`, {
     s3_key: track.s3_key,
     s3_bucket: process.env.S3_BUCKET
 }, { timeout: 120000 })
-.catch((mlError) => {
+    .catch((mlError) => {
     console.error(`Re-analyze ML error for track ${track.id}:`, mlError.message);
     db.query("UPDATE tracks SET analysis_status = 'failed' WHERE id = $1", [track.id]).catch(() => {});
-});
+    });
 
 res.json({ message: 'Re-analysis started' });
 } catch (error) {
