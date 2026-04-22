@@ -143,7 +143,7 @@ return (
                         track.analysis_status === 'completed'
                         ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
                         : 'bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] border border-[var(--border-color)]'}`}>
-                        {track.analysis_status === 'completed' ? '🎵 Analyzed' : '⏳ Analyzing...'}
+                        {track.analysis_status === 'completed' ? '🎵 Analyzed' : '⏳ Pending...'}
                     </span>
                     {track.analysis_status !== 'completed' && (
                         <button onClick={() => handleReanalyze(track.id)}
