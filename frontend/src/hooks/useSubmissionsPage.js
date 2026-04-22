@@ -79,13 +79,10 @@ const id = trackIdRef.current;
 if (!id) { setSubmissionsLoading(false); return; }
 setSubmissionsLoading(true);
 try {
-    const res = await api.get(`/collaborations/${id}/submissions`);
-    setSubmissions(res.data.submissions || []);
-} catch {
-    try {
     const res = await api.get(`/submissions/track/${id}`);
     setSubmissions(res.data.submissions || []);
-    } catch { setSubmissions([]); }
+} catch {
+    setSubmissions([]);
 } finally {
     setSubmissionsLoading(false);
 }
@@ -105,7 +102,7 @@ const ok = await confirm({
 });
 if (!ok) return;
 try {
-    await api.post(`/collaborations/${trackIdRef.current}/complete`);
+    await api.post(`/tracks/${trackIdRef.current}/complete`);
     toast.success('Track marked as completed!');
     navigate(`/tracks/${trackSlug}`);
 } catch (err) {
