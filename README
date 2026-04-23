@@ -159,10 +159,10 @@ DATABASE_URL=postgresql://user:pass@host:5432/dbname
 JWT_SECRET=your-secret
 AWS_ACCESS_KEY_ID=your-key
 AWS_SECRET_ACCESS_KEY=your-secret
-AWS_REGION=eu-west-2
-S3_BUCKET=your-bucket
-RESEND_API_KEY=your-key
-EMAIL_FROM=noreply@yourdomain.com
+AWS_REGION=REGION
+S3_BUCKET=BUCKET
+RESEND_API_KEY=API KEY
+EMAIL_FROM=noreply@domain.com
 FRONTEND_URL=http://localhost:3000
 ML_SERVICE_URL=http://localhost:5000
 ALLOWED_ORIGINS=http://localhost:3000
@@ -179,11 +179,12 @@ REACT_APP_SOCKET_URL=http://localhost:5001
 **ML Service (.env)**
 ```
 BACKEND_URL=http://localhost:5001
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_REGION=eu-west-2
-S3_BUCKET=your-bucket
+AWS_ACCESS_KEY_ID=key
+AWS_SECRET_ACCESS_KEY=secret
+AWS_REGION=REGION
+S3_BUCKET=bucket
 ```
+IF YOU NEED THE ACTUAL FULL CREDENTIALS PLEASE DO SEND ME AN EMAIL INSTEAD
 
 ### Run with Docker Compose
 
