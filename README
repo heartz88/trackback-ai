@@ -1,302 +1,297 @@
 # TrackBackAI
 
-> A Cooperative Music Creation Platform for Completing Unfinished Tracks
+A collaborative music production platform that uses Music Information Retrieval (MIR) to help producers complete unfinished tracks.
 
-**Final Year Project - 6COSC023W**  
-**Student:** David Afful (W1886235)  
-**Supervisor:** Francesco Tusa  
-**University of Westminster**
+**Live:** [trackbackai.me](https://trackbackai.me)
 
 ---
 
-## Overview
+## What It Does
 
-TrackBackAI is a web platform that helps music producers complete their unfinished tracks by connecting them with collaborators who have complementary skills. The platform uses Music Information Retrieval (MIR) technology to automatically analyze audio and match producers based on musical characteristics.
+Producers upload incomplete loops → the platform automatically detects BPM and energy level using Librosa → collaborators discover tracks by filtering musical characteristics → they submit completed versions → the community votes → the track gets finished.
 
-### The Problem
-
-Music producers often create short loops or ideas that never become finished tracks—a phenomenon known as "Loop Land." Existing platforms focus on sharing completed music, but there's no dedicated solution for collaborative track completion.
-
-### The Solution
-
-TrackBackAI provides:
-
-- Automated audio analysis (BPM, energy level, key)
-- Smart producer matching based on musical features
-- Structured collaboration workflow (upload → discover → collaborate → vote → complete)
-- Real-time messaging and notifications
-
----
-
-## Features
-
-- 🎵 **Audio Upload & Analysis** — Automatic BPM, key, and energy detection
-- 🔍 **Track Discovery** — Filter by BPM, key, and energy level
-- 🤝 **Collaboration System** — Request to work on tracks, submit versions
-- 💬 **Real-time Messaging** — Chat with collaborators
-- 🔔 **Notifications** — Stay updated on collaboration activity
-- 🎨 **Light/Dark Mode** — Adaptive teal-themed interface
-- 📊 **Waveform Visualization** — Visual audio playback
+**Workflow:** Upload → MIR Analysis → Discover → Collaborate → Submit → Vote → Complete
 
 ---
 
 ## Tech Stack
 
-### Frontend
-
-- React 18
-- Tailwind CSS
-- Socket.io Client
-- React Router
-
-### Backend
-
-- Node.js + Express
-- PostgreSQL
-- Socket.io (WebSockets)
-- JWT Authentication
-
-### ML Service
-
-- Python + Flask
-- Librosa (audio analysis)
-- NumPy/SciPy
-
-### DevOps
-
-- Docker & Docker Compose
-
----
-
-## Prerequisites
-
-- Node.js (v20+)
-- Python (v3.11+)
-- PostgreSQL (v16+)
-- Docker & Docker Compose (optional)
-
----
-
-## Installation
-
-### 1. Clone Repository
-
-```bash
-git clone https://github.com/heartz88/trackback-ai.git
-cd trackback-ai
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
-npm install
-
-# Create .env file with:
-# NODE_ENV=development
-# PORT=5000
-# DB_HOST=localhost
-# DB_PORT=5432
-# DB_NAME=trackbackai
-# DB_USER=postgres
-# DB_PASSWORD=db_password
-# JWT_SECRET=secretkey
-# ML_SERVICE_URL=http://localhost:8000
-# FRONTEND_URL=http://localhost:3000
-
-# Initialize database
-psql -U postgres -f init.sql
-```
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-npm install
-
-# Create .env file with:
-# REACT_APP_API_URL=http://localhost:5000
-# REACT_APP_SOCKET_URL=http://localhost:5000
-```
-
-### 4. ML Service Setup
-
-```bash
-cd ml-service
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
----
-
-## Running the Application
-
-### Using Docker
-
-```bash
-docker-compose up --build
-```
-
-Access the app:
-
-- Frontend: http://localhost:3005
-- Backend: http://localhost:5000
-- ML Service: http://localhost:8000
-
-### Manual Start
-
-**Terminal 1 — Backend:**
-
-```bash
-cd backend
-npm run dev
-```
-
-**Terminal 2 — Frontend:**
-
-```bash
-cd frontend
-npm start
-```
-
-**Terminal 3 — ML Service:**
-
-```bash
-cd ml-service
-source venv/bin/activate
-python app.py
-```
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Tailwind CSS, WaveSurfer.js |
+| Backend API | Node.js, Express.js, Socket.IO |
+| Database | PostgreSQL |
+| ML Service | Python, Flask, Librosa |
+| File Storage | AWS S3 (private bucket, signed URLs) |
+| Email | Resend |
+| Deployment | Docker Compose, Render |
 
 ---
 
 ## Project Structure
 
 ```
-trackback-ai/
 ├── backend/
 │   ├── config/
+│   │   ├── database.js          # PostgreSQL connection pool
+│   │   ├── email.js             # Resend email templates (6 types)
+│   │   ├── emailTrigger.js      # Email dispatch logic
+│   │   ├── onlineUsers.js       # Online user tracking
+│   │   └── s3.js                # AWS S3 signed URL management
 │   ├── middleware/
+│   │   ├── auth.js              # JWT verification (TOKEN_EXPIRED vs INVALID_TOKEN)
+│   │   └── optionalAuth.js      # Optional auth for public routes
 │   ├── routes/
-│   ├── .env
+│   │   ├── auth.js              # Register, login, verify email, password reset
+│   │   ├── collaborations.js    # Request, approve, reject collaborations
+│   │   ├── comments.js          # Submission comments
+│   │   ├── messages.js          # Real-time messaging + REST fallback
+│   │   ├── notifications.js     # In-app notification system
+│   │   ├── online.js            # Online status tracking
+│   │   ├── submissions.js       # Version-numbered submission uploads
+│   │   ├── tracks.js            # Upload, discover, filter, complete
+│   │   ├── users.js             # Profiles, avatar upload, social links
+│   │   └── votes.js             # Upvote/toggle with self-vote prevention
+│   ├── init.sql                 # Full PostgreSQL schema
+│   ├── server.js                # Express + Socket.IO server
 │   ├── Dockerfile
-│   ├── init.sql
-│   ├── package.json
-│   └── server.js
+│   └── load_test.txt            # NFR4 load test script (50 concurrent users)
+│
 ├── frontend/
-│   ├── public/
 │   ├── src/
-│   │   ├── assets/
 │   │   ├── components/
+│   │   │   ├── collaborations/  # ReceivedRequestCard, SentRequestCard
+│   │   │   ├── comments/        # CommentForm, CommentItem, CommentList, CommentSection
+│   │   │   ├── common/          # Avatar, Navigation, NotificationBell, Toast, Footer, ThemeToggle
+│   │   │   ├── community/       # CommunityStats, CompletedTrackCard, RankBadge
+│   │   │   ├── editprofile/     # EditProfileTab, EditMusicTab, EditSecurityTab, EditSocialTab
+│   │   │   ├── messages/        # MessageBubble, MessageThread, ConversationList, TypingIndicator
+│   │   │   ├── profile/         # ProfileHeader, ProfileBanner, ProfileTracks, SocialLinks
+│   │   │   ├── submissions/     # SubmissionCard, SubmissionForm, VoteButton
+│   │   │   └── tracks/          # TrackCard, TrackEditForm, WaveformPlayer
 │   │   ├── context/
-│   │   ├── pages/
+│   │   │   ├── AuthContext.js   # JWT auth state + token refresh
+│   │   │   └── SocketContext.js # Socket.IO connection management
+│   │   ├── hooks/
+│   │   │   ├── useCollaborations.js
+│   │   │   ├── useConversations.js
+│   │   │   ├── useMessages.js
+│   │   │   ├── useSubmissionsPage.js
+│   │   │   └── useTrackDetail.js
+│   │   ├── pages/               # 17 page components
 │   │   ├── services/
+│   │   │   ├── api.js           # Axios instance with JWT interceptor + refresh queue
+│   │   │   └── socket.js        # SocketService singleton
 │   │   ├── App.js
-│   │   ├── index.css
+│   │   ├── index.css            # Tailwind + custom theme (dark/light)
 │   │   └── index.js
-│   ├── .env
-│   ├── Dockerfile
-│   ├── package.json
-│   └── tailwind.config.js
+│   ├── tailwind.config.js
+│   └── Dockerfile
+│
 ├── ml-service/
-│   ├── app.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── .env
-├── .gitignore
-├── docker-compose.yml
-├── package.json
-└── README
+│   ├── app.py                   # Flask + Librosa BPM/energy analysis
+│   ├── bpm_test.txt             # BPM accuracy test script (50 tracks, 98% accuracy)
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── docker-compose.yml           # All services orchestration
+└── .gitignore
 ```
 
 ---
 
-## API Endpoints
+## Features
 
-### Authentication
+**Audio Analysis (MIR)**
+- Automated BPM detection using Librosa with median interval filtering
+- Energy level classification (Low/Medium/High) via raw RMS thresholds
+- Asynchronous processing — API returns immediately, MIR service posts results back via webhook
 
-- `POST /api/auth/register` — Register new user
-- `POST /api/auth/login` — Login user
+**Collaboration Workflow**
+- Track discovery with multi-parameter filtering (BPM range, energy, genre, title search)
+- Collaboration request/approve/reject with real-time Socket.IO notifications
+- Version-numbered submissions (v1, v2, v3... auto-incremented per collaborator)
+- Community voting with self-vote prevention
+- Track completion with automatic winner selection
 
-### Tracks
+**Real-Time Messaging**
+- Socket.IO WebSocket with polling fallback
+- Typing indicators, online status, conversation search
+- Dual-path message deletion (Socket.IO + REST for reliability)
+- Optimistic UI updates with server confirmation
 
-- `POST /api/tracks/upload` — Upload track
-- `GET /api/tracks` — Get all tracks (with filters)
-- `GET /api/tracks/user/my-tracks` — Get user's tracks
-- `DELETE /api/tracks/:id` — Delete track
+**Authentication & Security**
+- JWT with granular error codes (TOKEN_EXPIRED vs INVALID_TOKEN)
+- Email verification with 24-hour token expiry
+- Password reset with 15-minute tokens
+- bcrypt (cost factor 12), Helmet.js CSP, parameterised SQL
+- Rate limiting: auth (10/15min), registration (5/hr), uploads (20/hr), global (200/15min)
+- Private S3 bucket with prefix-based signed URL expiry (15min avatars, 1hr audio)
 
-### Collaborations
+**Email Notifications**
+- 6 notification types via Resend: collaboration request, response, new submission, vote, comment, new message
+- Per-user preference management (toggle each type on/off)
+- HTML branded email templates
 
-- `POST /api/collaborations/:trackId/request` — Request collaboration
-- `GET /api/collaborations` — Get user's collaborations
-
-### Submissions
-
-- `POST /api/submissions/:trackId/submit` — Submit completed version
-- `POST /api/submissions/:id/vote` — Vote on submission
-
-### Messages
-
-- `GET /api/messages/conversations` — Get conversations
-- `POST /api/messages/conversations` — Start conversation
-- `GET /api/messages/conversations/:id/messages` — Get messages
-- `POST /api/messages/conversations/:id/messages` — Send message
+**UI/UX**
+- Dark/light theme with CSS variables
+- Waveform visualisation (WaveSurfer.js)
+- Responsive design with iOS Safari tap-fix
+- Glass-morphic card design system
+- Avatar with signed URL + initial letter fallback
 
 ---
 
-## WebSocket Events
+## Setup
 
-```javascript
-// Authentication
-socket.emit("authenticate", { token });
+### Prerequisites
+- Node.js 18+
+- Python 3.10+
+- PostgreSQL 14+
+- AWS S3 bucket (private, Block All Public Access)
+- Docker & Docker Compose (optional)
 
-// Messaging
-socket.emit("conversation:join", { conversationId });
-socket.emit("message:send", { conversationId, content });
-socket.on("message:new", (message) => {});
+### Environment Variables
 
-// Online status
-socket.emit("user:online");
-socket.on("user:status", ({ userId, online }) => {});
+**Backend (.env)**
+```
+ADMIN_EMAIL=admin@trackbackai.com
+ADMIN_PASSWORD=admin123
+ALLOWED_ORIGINS=https://trackbackai.me,http://localhost:3005
+AWS_ACCESS_KEY_ID=AKIA6C3IHGGHP6FD4KNV
+AWS_REGION=eu-north-1
+AWS_S3_BUCKET=trackback-ai
+AWS_SECRET_ACCESS_KEY=p/7s4K44acXHToXHtHhvR9afAVOlDpXYpgCpjWrZ
+CORS_ORIGIN=https://trackbackai.me
+DATABASE_URL=postgresql://trackback_user:wYqtxc1Bz49go0ANWsvXzvd37Okk4nQJ@dpg-d612l1ggjchc73ej9ehg-a/trackback_ai_db
+DB_HOST=dpg-d612l1ggjchc73ej9ehg-a
+DB_NAME=trackback_ai_db
+DB_PASSWORD=wYqtxc1Bz49go0ANWsvXzvd37Okk4nQJ
+DB_PORT=5432
+DB_USER=trackback_user
+EMAIL_FROM="TrackBackAI <notifications@trackbackai.me>"
+FRONTEND_URL=https://trackbackai.me
+INTERNAL_API_SECRET=044b495554d50709099042ec418d0daeaca8787019a4bdca40ffffb59f9f1b0e
+JWT_SECRET=5bc7229a2e56a0480e5c179caa5ecfa623780ea8dfdce4e9a3583f677bdac54c
+ML_SERVICE_URL=https://trackback-ml-service.onrender.com
+NODE_ENV=production
+PORT=3001
+RESEND_API_KEY=re_BaH8L9k3_N9uMhQ21zaioiKB35yQxqsEg
+S3_BUCKET=trackback-ai
+SOCKET_PORT=3001
+```
 
-// Typing indicators
-socket.emit("user:typing", { conversationId, isTyping });
-socket.on("user:typing", ({ userId, isTyping }) => {});
+**Frontend (.env)**
+```
+# --- FRONTEND ENV ---
+
+# Frontend Configuration
+REACT_APP_API_URL=http://localhost:3001
+REACT_APP_SOCKET_URL=http://localhost:3001
+REACT_APP_VERSION=1.0.0
+
+# Development settings
+CHOKIDAR_USEPOLLING=true
+WDS_SOCKET_PORT=0
+```
+
+**ML Service (.env)**
+```
+AWS_ACCESS_KEY_ID=AKIA6C3IHGGHP6FD4KNV
+AWS_REGION=eu-north-1
+AWS_SECRET_ACCESS_KEY=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
+BACKEND_API_URL=https://trackback-backend.onrender.com
+INTERNAL_API_SECRET=044b495554d50709099042ec418d0daeaca8787019a4bdca40ffffb59f9f1b0e
+PYTHON_VERSION=3.11.5
+S3_BUCKET=trackback-ai
+```
+
+### Run with Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+This starts all services:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5001
+- ML Service: http://localhost:5000
+- PostgreSQL: localhost:5432
+
+### Run Manually
+
+```bash
+# Database
+psql -U postgres -f backend/init.sql
+
+# Backend
+cd backend
+npm install
+node server.js
+
+# Frontend
+cd frontend
+npm install
+npm start
+
+# ML Service
+cd ml-service
+pip install -r requirements.txt
+python app.py
 ```
 
 ---
 
 ## Testing
 
+**BPM Accuracy Test (98% on 50 tracks)**
 ```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd frontend
-npm test
-
-# ML service tests
 cd ml-service
-pytest
+python bpm_test.txt /path/to/audio/folder
+```
+
+**Load Test (50 concurrent users)**
+```bash
+cd backend
+node load_test.txt
 ```
 
 ---
 
-## Project Objectives
+## Deployment
 
-1. **Platform Infrastructure** — User authentication, file management, responsive UI
-2. **MIR Integration** — Automated BPM detection (≥80% accuracy), energy classification
-3. **Collaborative Workflow** — Complete submission/voting system
-4. **User Evaluation** — SUS score ≥70, 5+ completed collaborations
+Deployed on Render with three services:
+- **Frontend** — Static site serving React build
+- **Backend** — Web service running Node.js/Express
+- **ML Service** — Web service running Python/Flask
 
-## Contact
+All connected via environment variables. HTTPS enforced automatically by Render.
 
-**David Afful** (W1886235)  
+---
+
+## Database Schema
+
+13 tables: `users`, `tracks`, `collaboration_requests`, `active_collaborations`, `submissions`, `votes`, `comments`, `messages`, `conversations`, `notifications`, `password_reset_tokens`, `social_links`, `email_preferences`
+
+Key constraints:
+- `UNIQUE(track_id, collaborator_id)` on active_collaborations
+- `UNIQUE(submission_id, user_id)` on votes
+- `analysis_status` enum on tracks (pending/completed/failed)
+- `read_by INTEGER[]` on messages (PostgreSQL array for read tracking)
+
+Full schema in `backend/init.sql`.
+
+---
+
+## Author
+
+**David Afful** — W1886235  
+BSc (Hons) Software Engineering  
 University of Westminster  
 Supervisor: Francesco Tusa
 
 ---
 
-**TrackBackAI** — _Helping producers finish what they started_ 🎵
+## License
+
+This project was developed as a final year project for 6COSC023W Computer Science Final Project at the University of Westminster.
