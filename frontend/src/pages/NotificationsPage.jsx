@@ -5,7 +5,7 @@ import { useSocket } from '../context/SocketContext';
 import api from '../services/api';
 
 const TYPE_CONFIG = {
-collaboration_request:  { label: 'Collaboration Request',  bg: 'from-primary-500 to-primary-600',   icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13 1a6 6 0 01-9 5.197" /> },
+collaboration_request:  { label: 'Collaboration Request',  bg: 'from-primary-500 to-primary-600',   icon: <><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></> },
 collaboration_response: { label: 'Collaboration Response', bg: 'from-emerald-500 to-teal-500',       icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /> },
 submission:             { label: 'New Submission',         bg: 'from-violet-500 to-purple-600',      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /> },
 vote:                   { label: 'New Like',               bg: 'from-rose-500 to-pink-500',          heart: true },
