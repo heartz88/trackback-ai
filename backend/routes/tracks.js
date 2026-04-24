@@ -521,7 +521,8 @@ const result = await db.query(
             u.avatar_s3_key
     FROM tracks t
     JOIN users u ON t.user_id = u.id
-    WHERE TRIM(BOTH '-' FROM LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g'))) = LOWER($1)
+    WHERE LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g')) = $1
+        OR LOWER(REGEXP_REPLACE(t.title, '[^a-zA-Z0-9]+', '-', 'g')) = LOWER($1)
     ORDER BY t.created_at DESC
     LIMIT 1`,
     [slug]
