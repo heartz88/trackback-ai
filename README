@@ -310,9 +310,6 @@ Environment Variables
 Backend (.env)
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
 JWT_SECRET=your-secret
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_REGION=eu-west-2
 S3_BUCKET=your-bucket
 RESEND_API_KEY=your-key
 EMAIL_FROM=noreply@yourdomain.com
@@ -326,9 +323,6 @@ REACT_APP_API_URL=http://localhost:5001/api
 REACT_APP_SOCKET_URL=http://localhost:5001
 ML Service (.env)
 BACKEND_URL=http://localhost:5001
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_REGION=eu-west-2
 S3_BUCKET=your-bucket
 Run with Docker Compose
 bashdocker-compose up --build
