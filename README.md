@@ -3,7 +3,7 @@
 
 =======
 
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>> 
 A collaborative music production platform that uses Music Information Retrieval (MIR) to help producers complete unfinished tracks.
 
 **Live:** [trackbackai.me](https://trackbackai.me)
@@ -47,7 +47,7 @@ LayerTechnologyFrontendReact 18, Tailwind CSS, WaveSurfer.jsBackend APINode.js, 
 
 Project Structure
 
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>>  
 ├── backend/
 │   ├── config/
 │   │   ├── database.js          # PostgreSQL connection pool
@@ -119,14 +119,14 @@ Project Structure
 
 =======
 
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>> 
 
 ---
 
-<<<<<<< HEAD:README.md
+<<<<<<<
 =======
 
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>> 
 ## Features
 
 **Audio Analysis (MIR)**
@@ -210,7 +210,7 @@ Avatar with signed URL + initial letter fallback
 
 
 
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>> 
 ## Setup
 
 ### Prerequisites
@@ -368,7 +368,7 @@ bashcd backend
 node load_test.txt
 
 
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>>  
 ## Deployment
 
 Deployed on Render with three services:
@@ -387,7 +387,7 @@ All services are connected via environment variables. HTTPS is enforced automati
 14 tables: `users`, `tracks`, `collaboration_requests`, `active_collaborations`, `submissions`, `votes`, `comments`, `messages`, `conversations`, `conversation_participants`, `notifications`, `password_reset_tokens`, `social_links`, `email_preferences`
 =======
 14 tables: `users`, `tracks`, `collaboration_requests`, `active_collaborations`, `submissions`, `votes`, `comments`, `messages`, `conversations`, `notifications`, `password_reset_tokens`, `social_links`, `email_preferences`, 'conversation_participants'
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>>  
 
 Key constraints:
 - `UNIQUE(track_id, collaborator_id)` on `active_collaborations`
@@ -423,4 +423,4 @@ Backend — Web service running Node.js/Express
 ML Service — Web service running Python/Flask
 
 All connected via environment variables. HTTPS enforced automatically by Render.
->>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
+>>>>>>>  
