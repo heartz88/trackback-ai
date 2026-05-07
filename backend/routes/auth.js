@@ -162,14 +162,14 @@ router.post('/register',
         // Insert user with email_verified = false
         const result = await db.query(
             `INSERT INTO users (
-                username, email, password_hash, bio, skills, 
+                username, email, password_hash, bio, skills,
                 social_links, looking_for_collab, last_active, created_at,
                 email_verified, verification_token, verification_token_expiry
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), $8, $9, $10)
-            RETURNING id, username, email, bio, skills, social_links, looking_for_collab, 
-                      avatar_url, avatar_s3_key, created_at, email_verified`,
-            [username, email, hashedPassword, bio || '', skills || [], '{}', true, 
-             false, verificationToken, tokenExpiry]
+            RETURNING id, username, email, bio, skills, social_links, looking_for_collab,
+            avatar_url, avatar_s3_key, created_at, email_verified`,
+            [username, email, hashedPassword, bio || '', skills || [], '{}', true,
+            false, verificationToken, tokenExpiry]
         );
 
         const user = result.rows[0];
@@ -262,9 +262,9 @@ router.post('/login',
         
         const token = jwt.sign(
             { 
-                id: user.id, 
-                userId: user.id, 
-                username: user.username, 
+                id: user.id,
+                userId: user.id,
+                username: user.username,
                 email: user.email,
                 email_verified: user.email_verified
             },
@@ -311,8 +311,8 @@ router.get('/verify-email', async (req, res) => {
         // Find user with this token and check expiry
         const result = await db.query(
             `SELECT id, username, email, verification_token_expiry 
-             FROM users 
-             WHERE verification_token = $1`,
+            FROM users
+            WHERE verification_token = $1`,
             [token]
         );
 
@@ -333,23 +333,23 @@ router.get('/verify-email', async (req, res) => {
 
         // Update user as verified
         await db.query(
-            `UPDATE users 
-             SET email_verified = true, 
-                 verification_token = NULL, 
-                 verification_token_expiry = NULL 
-             WHERE id = $1`,
+            `UPDATE users
+            SET email_verified = true,
+                verification_token = NULL,
+                verification_token_expiry = NULL
+            WHERE id = $1`,
             [user.id]
         );
 
-        res.json({ 
+        res.json({
             message: 'Email verified successfully! You can now log in.',
-            verified: true 
+            verified: true
         });
 
     } catch (error) {
         console.error('Email verification error:', error);
-        res.status(500).json({ 
-            error: { message: 'Failed to verify email' } 
+        res.status(500).json({
+            error: { message: 'Failed to verify email' }
         });
     }
 });
@@ -360,8 +360,8 @@ router.post('/resend-verification', async (req, res) => {
         const { email } = req.body;
 
         if (!email) {
-            return res.status(400).json({ 
-                error: { message: 'Email is required' } 
+            return res.status(400).json({
+                error: { message: 'Email is required' }
             });
         }
 
@@ -374,15 +374,15 @@ router.post('/resend-verification', async (req, res) => {
         if (userResult.rows.length === 0) {
             // Don't reveal that email doesn't exist (security)
             return res.json({ 
-                message: 'If an account exists, a verification email has been sent.' 
+                message: 'If an account exists, a verification email has been sent.'
             });
         }
 
         const user = userResult.rows[0];
 
         if (user.email_verified) {
-            return res.status(400).json({ 
-                error: { message: 'Email already verified' } 
+            return res.status(400).json({
+                error: { message: 'Email already verified' }
             });
         }
 
@@ -391,23 +391,23 @@ router.post('/resend-verification', async (req, res) => {
         const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         await db.query(
-            `UPDATE users 
-             SET verification_token = $1, verification_token_expiry = $2 
-             WHERE id = $3`,
+            `UPDATE users
+            SET verification_token = $1, verification_token_expiry = $2 
+            WHERE id = $3`,
             [verificationToken, tokenExpiry, user.id]
         );
 
         // Send email
         await sendVerificationEmail(user.email, user.username, verificationToken);
 
-        res.json({ 
-            message: 'If an account exists, a verification email has been sent.' 
+        res.json({
+            message: 'If an account exists, a verification email has been sent.'
         });
 
     } catch (error) {
         console.error('Resend verification error:', error);
-        res.status(500).json({ 
-            error: { message: 'Failed to resend verification email' } 
+        res.status(500).json({
+            error: { message: 'Failed to resend verification email' }
         });
     }
 });

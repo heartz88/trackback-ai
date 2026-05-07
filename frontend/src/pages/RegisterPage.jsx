@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
-import { useToast } from '../components/common/Toast'; // Add this import
+import { useToast } from '../components/common/Toast';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 

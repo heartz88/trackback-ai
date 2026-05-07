@@ -46,8 +46,8 @@ function ResendVerificationPage() {
                     </p>
                 </div>
 
-                <form 
-                    onSubmit={handleSubmit} 
+                <form
+                    onSubmit={handleSubmit}
                     className="glass-panel rounded-2xl p-8 space-y-6 animate-slide-up"
                     style={{ animationDelay: '0.1s' }}
                 >

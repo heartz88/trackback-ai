@@ -117,7 +117,7 @@ res.status(500).json({ error: { message: 'Failed to fetch stats' } });
 }
 });
 
-// POST /:id/vote — Upvote toggle
+// POST /:id/vote — Upvote/Like toggle
 router.post('/:id/vote', authMiddleware, async (req, res) => {
 try {
 const { id } = req.params;

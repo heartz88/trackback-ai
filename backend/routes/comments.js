@@ -112,7 +112,7 @@ router.get('/submission/:submissionId', async (req, res) => {
 try {
 const { submissionId } = req.params;
 
-// Optionally authenticate — guests see comments but not their own like state
+//authenticate — guests see comments but not their own like state
 let userId = null;
 const authHeader = req.headers.authorization;
 if (authHeader && authHeader.startsWith('Bearer ')) {
