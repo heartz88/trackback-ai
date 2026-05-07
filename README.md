@@ -1,6 +1,6 @@
 # TrackBackAI
 
-<<<<<<< HEAD:README.md
+
 =======
 
 >>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
