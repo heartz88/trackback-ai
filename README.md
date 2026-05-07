@@ -1,5 +1,9 @@
 # TrackBackAI
 
+<<<<<<< HEAD:README.md
+=======
+
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
 A collaborative music production platform that uses Music Information Retrieval (MIR) to help producers complete unfinished tracks.
 
 **Live:** [trackbackai.me](https://trackbackai.me)
@@ -31,6 +35,19 @@ Producers upload incomplete loops, the platform automatically detects BPM and en
 ## Project Structure
 
 ```
+<<<<<<< HEAD:README.md
+=======
+=======
+What It Does
+Producers upload incomplete loops → the platform automatically detects BPM and energy level using Librosa → collaborators discover tracks by filtering musical characteristics → they submit completed versions → the community votes → the track gets finished.
+Workflow: Upload → MIR Analysis → Discover → Collaborate → Submit → Vote → Complete
+
+Tech Stack
+LayerTechnologyFrontendReact 18, Tailwind CSS, WaveSurfer.jsBackend APINode.js, Express.js, Socket.IODatabasePostgreSQLML ServicePython, Flask, LibrosaFile StorageAWS S3 (private bucket, signed URLs)EmailResendDeploymentDocker Compose, Render
+
+Project Structure
+
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
 ├── backend/
 │   ├── config/
 │   │   ├── database.js          # PostgreSQL connection pool
@@ -96,10 +113,20 @@ Producers upload incomplete loops, the platform automatically detects BPM and en
 │
 ├── docker-compose.yml
 └── .gitignore
+<<<<<<< HEAD:README.md
 ```
+=======
+
+=======
+
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
 
 ---
 
+<<<<<<< HEAD:README.md
+=======
+
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
 ## Features
 
 **Audio Analysis (MIR)**
@@ -142,6 +169,48 @@ Producers upload incomplete loops, the platform automatically detects BPM and en
 
 ---
 
+<<<<<<< HEAD:README.md
+=======
+Track discovery with multi-parameter filtering (BPM range, energy, genre, title search)
+Collaboration request/approve/reject with real-time Socket.IO notifications
+Version-numbered submissions (v1, v2, v3... auto-incremented per collaborator)
+Community voting with self-vote prevention
+Track completion with automatic winner selection
+
+Real-Time Messaging
+
+Socket.IO WebSocket with polling fallback
+Typing indicators, online status, conversation search
+Dual-path message deletion (Socket.IO + REST for reliability)
+Optimistic UI updates with server confirmation
+
+Authentication & Security
+
+JWT with granular error codes (TOKEN_EXPIRED vs INVALID_TOKEN)
+Email verification with 24-hour token expiry
+Password reset with 15-minute tokens
+bcrypt (cost factor 12), Helmet.js CSP, parameterised SQL
+Rate limiting: auth (10/15min), registration (5/hr), uploads (20/hr), global (200/15min)
+Private S3 bucket with prefix-based signed URL expiry (15min avatars, 1hr audio)
+
+Email Notifications
+
+6 notification types via Resend: collaboration request, response, new submission, vote, comment, new message
+Per-user preference management (toggle each type on/off)
+HTML branded email templates
+
+UI/UX
+
+Dark/light theme with CSS variables
+Waveform visualisation (WaveSurfer.js)
+Responsive design with iOS Safari tap-fix
+Glass-morphic card design system
+Avatar with signed URL + initial letter fallback
+
+
+
+
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
 ## Setup
 
 ### Prerequisites
@@ -241,6 +310,65 @@ node load_test.txt
 
 ---
 
+<<<<<<< HEAD:README.md
+=======
+Environment Variables
+Backend (.env)
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+JWT_SECRET=your-secret
+S3_BUCKET=your-bucket
+RESEND_API_KEY=your-key
+EMAIL_FROM=noreply@yourdomain.com
+FRONTEND_URL=http://localhost:3000
+ML_SERVICE_URL=http://localhost:5000
+ALLOWED_ORIGINS=http://localhost:3000
+NODE_ENV=development
+PORT=5001
+Frontend (.env)
+REACT_APP_API_URL=http://localhost:5001/api
+REACT_APP_SOCKET_URL=http://localhost:5001
+ML Service (.env)
+BACKEND_URL=http://localhost:5001
+S3_BUCKET=your-bucket
+Run with Docker Compose
+bashdocker-compose up --build
+This starts all services:
+
+Frontend: http://localhost:3000
+Backend API: http://localhost:5001
+ML Service: http://localhost:5000
+PostgreSQL: localhost:5432
+
+Run Manually
+bash# Database
+psql -U postgres -f backend/init.sql
+
+# Backend
+cd backend
+npm install
+node server.js
+
+# Frontend
+cd frontend
+npm install
+npm start
+
+# ML Service
+cd ml-service
+pip install -r requirements.txt
+python app.py
+
+
+Testing
+BPM Accuracy Test (98% on 50 tracks)
+bashcd ml-service
+python bpm_test.txt /path/to/audio/folder
+Load Test (50 concurrent users)
+bashcd backend
+node load_test.txt
+
+
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
 ## Deployment
 
 Deployed on Render with three services:
@@ -255,7 +383,11 @@ All services are connected via environment variables. HTTPS is enforced automati
 
 ## Database Schema
 
+<<<<<<< HEAD:README.md
 14 tables: `users`, `tracks`, `collaboration_requests`, `active_collaborations`, `submissions`, `votes`, `comments`, `messages`, `conversations`, `conversation_participants`, `notifications`, `password_reset_tokens`, `social_links`, `email_preferences`
+=======
+14 tables: `users`, `tracks`, `collaboration_requests`, `active_collaborations`, `submissions`, `votes`, `comments`, `messages`, `conversations`, `notifications`, `password_reset_tokens`, `social_links`, `email_preferences`, 'conversation_participants'
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
 
 Key constraints:
 - `UNIQUE(track_id, collaborator_id)` on `active_collaborations`
@@ -278,4 +410,17 @@ Supervisor: Francesco Tusa
 
 ## License
 
+<<<<<<< HEAD:README.md
 Developed as a final year project for 6COSC023W Computer Science Final Project at the University of Westminster.
+=======
+This project was developed as a final year project for 6COSC023W Computer Science Final Project at the University of Westminster.
+=======
+Deployment
+Deployed on Render with three services:
+
+Frontend — Static site serving React build
+Backend — Web service running Node.js/Express
+ML Service — Web service running Python/Flask
+
+All connected via environment variables. HTTPS enforced automatically by Render.
+>>>>>>> 7157560f8f2c004c427fb6db4355951cee62f6ba:README
