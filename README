@@ -2,7 +2,7 @@ TrackBackAI
 A collaborative music production platform that uses Music Information Retrieval (MIR) to help producers complete unfinished tracks.
 Live: trackbackai.me
 
-<<<<<<< HEAD
+
 A collaborative music production platform that uses Music Information Retrieval (MIR) to help producers complete unfinished tracks.
 
 **Live:** [trackbackai.me](https://trackbackai.me)
@@ -43,7 +43,7 @@ Tech Stack
 LayerTechnologyFrontendReact 18, Tailwind CSS, WaveSurfer.jsBackend APINode.js, Express.js, Socket.IODatabasePostgreSQLML ServicePython, Flask, LibrosaFile StorageAWS S3 (private bucket, signed URLs)EmailResendDeploymentDocker Compose, Render
 
 Project Structure
->>>>>>> a7f1b7a30356d60cf50d8776b70b18b0dc3b43c2
+
 ├── backend/
 │   ├── config/
 │   │   ├── database.js          # PostgreSQL connection pool
@@ -109,15 +109,14 @@ Project Structure
 │
 ├── docker-compose.yml           # All services orchestration
 └── .gitignore
-<<<<<<< HEAD
-```
+
 =======
->>>>>>> a7f1b7a30356d60cf50d8776b70b18b0dc3b43c2
+
 
 Features
 Audio Analysis (MIR)
 
-<<<<<<< HEAD
+
 ## Features
 
 **Audio Analysis (MIR)**
@@ -199,10 +198,10 @@ Waveform visualisation (WaveSurfer.js)
 Responsive design with iOS Safari tap-fix
 Glass-morphic card design system
 Avatar with signed URL + initial letter fallback
->>>>>>> a7f1b7a30356d60cf50d8776b70b18b0dc3b43c2
 
 
-<<<<<<< HEAD
+
+
 ## Setup
 
 ### Prerequisites
@@ -351,7 +350,7 @@ npm start
 cd ml-service
 pip install -r requirements.txt
 python app.py
->>>>>>> a7f1b7a30356d60cf50d8776b70b18b0dc3b43c2
+
 
 Testing
 BPM Accuracy Test (98% on 50 tracks)
@@ -361,7 +360,7 @@ Load Test (50 concurrent users)
 bashcd backend
 node load_test.txt
 
-<<<<<<< HEAD
+
 ## Deployment
 
 Deployed on Render with three services:
@@ -375,7 +374,7 @@ All connected via environment variables. HTTPS enforced automatically by Render.
 
 ## Database Schema
 
-13 tables: `users`, `tracks`, `collaboration_requests`, `active_collaborations`, `submissions`, `votes`, `comments`, `messages`, `conversations`, `notifications`, `password_reset_tokens`, `social_links`, `email_preferences`
+14 tables: `users`, `tracks`, `collaboration_requests`, `active_collaborations`, `submissions`, `votes`, `comments`, `messages`, `conversations`, `notifications`, `password_reset_tokens`, `social_links`, `email_preferences`, 'conversation_participants'
 
 Key constraints:
 - `UNIQUE(track_id, collaborator_id)` on active_collaborations
@@ -408,24 +407,3 @@ Backend — Web service running Node.js/Express
 ML Service — Web service running Python/Flask
 
 All connected via environment variables. HTTPS enforced automatically by Render.
-
-Database Schema
-13 tables: users, tracks, collaboration_requests, active_collaborations, submissions, votes, comments, messages, conversations, notifications, password_reset_tokens, social_links, email_preferences
-Key constraints:
-
-UNIQUE(track_id, collaborator_id) on active_collaborations
-UNIQUE(submission_id, user_id) on votes
-analysis_status enum on tracks (pending/completed/failed)
-read_by INTEGER[] on messages (PostgreSQL array for read tracking)
-
-Full schema in backend/init.sql.
-
-Author
-David Afful — W1886235
-BSc (Hons) Software Engineering
-University of Westminster
-Supervisor: Francesco Tusa
-
-License
-This project was developed as a final year project for 6COSC023W Computer Science Final Project at the University of Westminster.
->>>>>>> a7f1b7a30356d60cf50d8776b70b18b0dc3b43c2
